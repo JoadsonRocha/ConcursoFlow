@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about the registered user.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "currentContestId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Contest": {
+      "title": "Contest",
+      "description": "Study material and schedule for a specific contest.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "examDate": { "type": "string" },
+        "dailyGoalHours": { "type": "number" },
+        "dailyGoalQuestions": { "type": "number" },
+        "ownerId": { "type": "string" },
+        "subjects": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "schedule": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "role", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profile data."
+    },
+    "/users/{userId}/contests/{contestId}": {
+      "schema": "Contest",
+      "description": "Stores user-specific contest data and progress."
+    }
+  }
+}

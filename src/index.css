@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: #6366F1;
+  --color-primary-dark: #4F46E5;
+  --color-secondary: #EC4899;
+  --color-accent: #10B981;
+  --color-bg: #F9FAFB;
+  --color-sidebar: #FFFFFF;
+  --color-card-bg: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-main: #0F172A;
+  --color-text-sub: #64748B;
+  --color-accent-bg: #EEF2FF;
+  --color-dark-panel: #0F172A;
+}
+
+.dark {
+  --color-bg: #0B1120;
+  --color-sidebar: #0F172A;
+  --color-card-bg: #1E293B;
+  --color-border: #334155;
+  --color-text-main: #F8FAF6;
+  --color-text-sub: #94A3B8;
+  --color-accent-bg: #1E293B;
+  --color-primary: #6366F1;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-text-main font-sans transition-colors duration-300;
+  }
+
+  /* Custom scrollbar for minimalism */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+}
