@@ -2,7 +2,7 @@
   "projectId": "gen-lang-client-0925764429",
   "appId": "1:684995404002:web:e71faf4f0cb7fc0110febb",
   "apiKey": "AIzaSyANWdIvng5P-cf9Tpi7P4AbNSk9qscf2y4",
-  "authDomain": "gen-lang-client-0925764429.firebaseapp.com",
+  "authDomain": "https://concursoflow.vercel.app/",
   "firestoreDatabaseId": "ai-studio-ef378564-20e2-44ad-ad66-d81251638619",
   "storageBucket": "gen-lang-client-0925764429.firebasestorage.app",
   "messagingSenderId": "684995404002",
