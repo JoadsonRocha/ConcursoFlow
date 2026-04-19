@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, loginWithGoogle, logout } from '../lib/firebase';
+import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from '../lib/firebase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: () => Promise<any>;
+  loginEmail: (email: string, pass: string) => Promise<any>;
+  signup: (email: string, pass: string, name: string) => Promise<any>;
   logout: () => Promise<void>;
   profile: any;
 }
@@ -35,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updatedAt: serverTimestamp(),
             currentContestId: null
           };
-          await setDoc(userRef, newProfile);
+          await setDoc(userRef, newProfile, { merge: true });
           setProfile(newProfile);
         } else {
           setProfile(userDoc.data());
@@ -49,8 +51,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
+  const signup = async (email: string, pass: string, name: string) => {
+    const res = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(res.user, { displayName: name });
+    return res;
+  };
+
+  const loginEmail = (email: string, pass: string) => {
+    return signInWithEmailAndPassword(auth, email, pass);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login: loginWithGoogle, logout, profile }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login: loginWithGoogle, 
+      loginEmail,
+      signup,
+      logout, 
+      profile 
+    }}>
       {children}
     </AuthContext.Provider>
   );
