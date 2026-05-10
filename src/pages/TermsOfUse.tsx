@@ -24,14 +24,14 @@ export default function TermsOfUse() {
         <section className="space-y-4">
           <h2 className="text-2xl font-display text-text-main">1. Aceitação dos Termos</h2>
           <p className="text-text-sub leading-relaxed">
-            Ao acessar e usar o Flow.AI, você concorda em cumprir e estar vinculado a estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços.
+            Ao acessar e usar o Stratis, você concorda em cumprir e estar vinculado a estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços.
           </p>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-2xl font-display text-text-main">2. Descrição do Serviço</h2>
           <p className="text-text-sub leading-relaxed">
-            O Flow.AI é uma plataforma de organização de estudos que utiliza Inteligência Artificial para verticalizar editais e otimizar a preparação para concursos. Nossos serviços são fornecidos "como estão".
+            O Stratis é uma plataforma de organização de estudos que utiliza Inteligência Artificial para verticalizar editais e otimizar a preparação para concursos. Nossos serviços são fornecidos "como estão".
           </p>
         </section>
 
@@ -45,20 +45,20 @@ export default function TermsOfUse() {
         <section className="space-y-4">
           <h2 className="text-2xl font-display text-text-main">4. Propriedade Intelectual</h2>
           <p className="text-text-sub leading-relaxed">
-            Todo o conteúdo presente no Flow.AI, incluindo textos, gráficos, logotipos e software, é de propriedade exclusiva ou licenciado para nós e está protegido por leis de direitos autorais.
+            Todo o conteúdo presente no Stratis, incluindo textos, gráficos, logotipos e software, é de propriedade exclusiva ou licenciado para nós e está protegido por leis de direitos autorais.
           </p>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-2xl font-display text-text-main">5. Limitação de Responsabilidade</h2>
           <p className="text-text-sub leading-relaxed">
-            Em nenhuma circunstância o Flow.AI será responsável por quaisquer danos diretos, indiretos, incidentais ou consequentes resultantes do uso ou da incapacidade de usar nossos serviços.
+            Em nenhuma circunstância o Stratis será responsável por quaisquer danos diretos, indiretos, incidentais ou consequentes resultantes do uso ou da incapacidade de usar nossos serviços.
           </p>
         </section>
       </div>
 
       <footer className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-10">
-        Flow.AI © 2026 — Todos os direitos reservados.
+        Stratis © 2026 — Todos os direitos reservados.
       </footer>
     </div>
   );

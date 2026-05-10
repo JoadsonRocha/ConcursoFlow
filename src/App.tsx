@@ -25,6 +25,8 @@ import {
   User as UserIcon,
   ArrowRight,
   Trash2,
+  Users,
+  Heart,
   Target
 } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -41,7 +43,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Users, Heart } from 'lucide-react';
 
 // Dashboard Component
 const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest: Contest) => void }) => {
@@ -121,21 +122,26 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative pb-6 border-b border-border">
         <div className="space-y-1.5 overflow-hidden">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em]">Ambiente de Estudo</div>
-          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-2">
+            <Sparkles className="w-3 h-3" />
+            <span>Painel de Alta Performance</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-display leading-[0.85] text-text-main tracking-tighter">
             Olá, <span className="italic text-primary">{user?.displayName?.split(' ')[0] || 'Guerreiro'}</span>.
           </h1>
-          <p className="text-text-sub text-sm font-medium pt-2">Hoje é um ótimo dia para conquistar sua vaga.</p>
+          <p className="text-text-sub text-base font-medium pt-3 max-w-lg">
+            Sua jornada até a nomeação exige consistência. <span className="text-text-main font-bold">O que vamos conquistar hoje?</span>
+          </p>
         </div>
         {!isDefaultContest && (
           <button 
             onClick={() => setShowLogModal(true)}
-            className="w-full md:w-auto bg-text-main text-bg px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group"
+            className="w-full md:w-auto bg-text-main text-bg px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group"
           >
             Registrar Desempenho
-            <TrendingUp className="w-4 h-4 group-hover:translate-y-[-2px] transition-transform" />
+            <TrendingUp className="w-5 h-5 group-hover:translate-y-[-2px] transition-transform" />
           </button>
         )}
       </header>
@@ -143,88 +149,106 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
       {!isDefaultContest && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Hero Stat - Global Progress */}
-          <div className="lg:col-span-4 glass-card rounded-[3rem] p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-6 opacity-[0.05] group-hover:scale-110 transition-transform">
-              <Sparkles className="w-32 h-32 text-primary" />
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-border rounded-[3.5rem] p-12 flex flex-col items-center justify-center text-center relative overflow-hidden group shadow-sm hover:shadow-xl transition-all">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
+              <Sparkles className="w-48 h-48 text-primary" />
             </div>
             
-            <div className="relative w-48 h-48 mb-8">
+            <div className="relative w-56 h-56 mb-10">
               <svg className="w-full h-full transform -rotate-90">
-                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800" />
+                <circle cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-slate-100 dark:text-slate-800" />
                 <circle 
-                  cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" 
-                  strokeDasharray={552.9}
-                  strokeDashoffset={552.9 - (552.9 * globalProgress.percent) / 100}
+                  cx="112" cy="112" r="100" stroke="currentColor" strokeWidth="16" fill="transparent" 
+                  strokeDasharray={628.3}
+                  strokeDashoffset={628.3 - (628.3 * globalProgress.percent) / 100}
                   strokeLinecap="round"
                   className="text-primary transition-all duration-1000 ease-out" 
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-display text-text-main leading-none">{globalProgress.percent}%</span>
-                <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mt-2">Concluido</span>
+                <span className="text-6xl font-display text-text-main leading-none">{globalProgress.percent}%</span>
+                <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mt-3">Progresso Geral</span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 text-accent font-black text-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span>{streak} Dias Seguidores</span>
+            <div className="grid grid-cols-2 gap-8 w-full border-t border-border mt-6 pt-10">
+              <div className="space-y-1">
+                <div className="text-2xl font-display text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
+                <div className="text-[10px] text-text-sub font-black uppercase tracking-widest">Tópicos</div>
               </div>
-              <p className="text-[10px] text-text-sub font-black uppercase tracking-[0.2em]">Foco Inabalável</p>
+              <div className="space-y-1">
+                <div className="text-2xl font-display text-accent">{streak}d</div>
+                <div className="text-[10px] text-text-sub font-black uppercase tracking-widest">Streak</div>
+              </div>
             </div>
           </div>
 
           {/* Quick Info & Next Subject */}
-          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-             {/* Today's Target */}
-             <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
-                <div className="space-y-4">
-                   <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                      <Target className="w-6 h-6" />
+          <div className="lg:col-span-7 flex flex-col gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                {/* Today's Target */}
+                <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                           <Target className="w-7 h-7" />
+                        </div>
+                        <div className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full">Foco Total</div>
+                      </div>
+                      <div className="space-y-1">
+                         <h3 className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mb-1">Meta de Questões</h3>
+                         <div className="text-5xl font-display text-text-main">{todayTask ? todayTask.questionGoal : contest.dailyGoalQuestions || 20} <span className="text-lg font-sans font-medium text-text-sub lowercase tracking-normal">itens</span></div>
+                      </div>
                    </div>
-                   <h3 className="text-2xl font-display text-text-main">Meta Diária</h3>
-                   <div className="space-y-1">
-                      <div className="text-4xl font-display text-text-main">{todayTask ? todayTask.questionGoal : contest.dailyGoalQuestions || 20} <span className="text-lg font-sans font-medium text-text-sub">itens</span></div>
-                      <p className="text-xs text-text-sub font-medium">Resolva questões focadas no edital hoje.</p>
+                   <div className="space-y-3 mt-8">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Esforço estimado</span>
+                        <span className="text-xs font-bold text-text-main">{~~((todayTask?.questionGoal || 20) * 1.5)} min</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                         <div className="bg-primary h-full transition-all duration-500" style={{ width: '0%' }} />
+                      </div>
                    </div>
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-8">
-                   <div className="bg-primary h-full transition-all duration-500" style={{ width: '0%' }} />
+
+                {/* Exam Countdown */}
+                <div className="bg-slate-950 dark:bg-slate-950 rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
+                      <Clock className="w-32 h-32" />
+                   </div>
+                   <div className="space-y-3 relative z-10">
+                      <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">Próxima Batalha</div>
+                      <h3 className="text-3xl font-display leading-[0.9]">{contest.name || 'Edital'}</h3>
+                      <div className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] mt-2">D-Day: {contest.examDate ? new Date(contest.examDate).toLocaleDateString('pt-BR') : '--/--/--'}</div>
+                   </div>
+                   <div className="flex gap-10 mt-10 relative z-10 border-t border-white/10 pt-10">
+                      <div className="space-y-1">
+                         <div className="text-5xl font-display">{timeLeft.days}</div>
+                         <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Dias</div>
+                      </div>
+                      <div className="space-y-1">
+                         <div className="text-5xl font-display">{timeLeft.hours}</div>
+                         <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Hs</div>
+                      </div>
+                      <div className="space-y-1">
+                         <div className="text-5xl font-display">{timeLeft.minutes}</div>
+                         <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Min</div>
+                      </div>
+                   </div>
                 </div>
              </div>
 
-             {/* Exam Countdown */}
-             <div className="bg-slate-950 rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
-                   <Clock className="w-24 h-24" />
+             {/* Study Tip Card */}
+             <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-[3rem] p-10 flex flex-col md:flex-row items-center gap-8 group hover:border-primary/30 transition-all">
+                <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-[2rem] flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
+                   <BrainCircuit className="w-10 h-10" />
                 </div>
-                <div className="space-y-2 relative z-10">
-                   <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">Contagem Regressiva</div>
-                   <h3 className="text-2xl font-display">{contest.name || 'Próximo Desafio'}</h3>
+                <div className="flex-1 space-y-2 text-center md:text-left">
+                   <h4 className="text-[10px] font-black text-text-main uppercase tracking-[0.3em]">IA Strategy Engine</h4>
+                   <p className="text-text-sub text-lg font-medium leading-tight">"A constância vence o talento. Foque nos <span className="text-primary font-bold italic">20% que geram 80%</span> dos resultados hoje."</p>
                 </div>
-                <div className="flex gap-6 mt-8 relative z-10">
-                   <div className="space-y-1">
-                      <div className="text-4xl font-display">{timeLeft.days}</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Dias</div>
-                   </div>
-                   <div className="space-y-1">
-                      <div className="text-4xl font-display">{timeLeft.hours}</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Horas</div>
-                   </div>
-                </div>
-             </div>
-
-             {/* Tips Marquee/Card */}
-             <div className="md:col-span-2 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-6 group hover:border-primary/30 transition-all">
-                <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
-                   <BrainCircuit className="w-8 h-8" />
-                </div>
-                <div className="space-y-1 text-center md:text-left">
-                   <h4 className="text-sm font-black text-text-main uppercase tracking-widest">Estudo de Fluxo</h4>
-                   <p className="text-text-sub text-sm font-medium italic">"A excelência não é um ato, mas um hábito. Somos o que repetidamente fazemos."</p>
-                </div>
-                <Link to="/microaprendizado" className="md:ml-auto w-full md:w-auto bg-primary text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all text-center">
-                   IA Flashcards
+                <Link to="/microaprendizado" className="w-full md:w-auto bg-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all text-center">
+                   Gerar Materiais
                 </Link>
              </div>
           </div>
@@ -345,12 +369,19 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
   <Link 
     to={to} 
     className={cn(
-      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative text-sm font-medium",
-      active ? "bg-accent-bg text-primary" : "text-text-sub hover:bg-gray-100 hover:text-text-main"
+      "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative text-xs font-black uppercase tracking-widest",
+      active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-text-main"
     )}
   >
-    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "text-text-sub group-hover:text-text-main")} />
+    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-text-sub group-hover:text-text-main")} />
     {!collapsed && <span>{label}</span>}
+    {active && !collapsed && (
+      <motion.div 
+        layoutId="active-nav"
+        className="absolute left-0 w-1 h-4 bg-white rounded-full opacity-50"
+        initial={false}
+      />
+    )}
   </Link>
 );
 
@@ -556,17 +587,18 @@ export default function App() {
 
       {/* Sidebar - Desktop */}
       <aside className={cn(
-        "bg-sidebar dark:bg-slate-950 border-r border-border transition-all duration-300 z-50",
+        "bg-white dark:bg-slate-950 border-r border-border transition-all duration-300 z-50",
         "fixed md:relative h-full flex flex-col shrink-0 hidden md:flex",
-        isSidebarOpen ? "w-64 px-6 py-8" : "w-20 px-4 py-8 translate-x-0"
+        isSidebarOpen ? "w-72 px-8 py-10" : "w-20 px-4 py-10 translate-x-0"
       )}>
-        <div className="mb-12 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-primary/20 shrink-0">
-            <Sparkles className="w-6 h-6" />
+        <div className="mb-16 flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black shadow-2xl shadow-primary/30 shrink-0 rotate-3 group-hover:rotate-0 transition-transform">
+            <Sparkles className="w-7 h-7" />
           </div>
           {isSidebarOpen && (
-            <div className="text-text-main font-display text-xl tracking-tighter leading-none">
-              FLOW<span className="text-primary italic">.AI</span>
+            <div className="flex flex-col">
+              <span className="text-text-main font-display text-2xl tracking-tighter leading-none">STRATIS</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em] mt-1">Intelligence</span>
             </div>
           )}
         </div>
@@ -645,26 +677,46 @@ export default function App() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] glass px-6 py-3 flex items-center justify-between border-t border-border rounded-t-[2.5rem] shadow-2xl">
-        <Link to="/" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
-          <LayoutDashboard className="w-6 h-6" />
+      <nav className="md:hidden fixed bottom-6 left-6 right-6 z-[100] bg-slate-900/90 dark:bg-slate-900/90 backdrop-blur-xl px-2 py-2 flex items-center justify-between border border-white/10 rounded-[2.5rem] shadow-2xl">
+        <Link to="/" className={cn(
+          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
+          location.pathname === '/' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
+        )}>
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Início</span>
         </Link>
-        <Link to="/materias" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/materias' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
-          <BookOpen className="w-6 h-6" />
+        <Link to="/materias" className={cn(
+          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
+          location.pathname === '/materias' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
+        )}>
+          <BookOpen className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Matérias</span>
         </Link>
-        <Link to="/cronograma" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/cronograma' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
-          <Calendar className="w-6 h-6" />
+        <Link to="/cronograma" className={cn(
+          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
+          location.pathname === '/cronograma' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
+        )}>
+          <Calendar className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Plano</span>
         </Link>
-        <Link to="/comunidade" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/comunidade' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
-          <Users className="w-6 h-6" />
+        <Link to="/comunidade" className={cn(
+          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
+          location.pathname === '/comunidade' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
+        )}>
+          <Users className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Comum</span>
         </Link>
-        <Link to="/configuracoes" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
-          <Settings className="w-6 h-6" />
+        <Link to="/configuracoes" className={cn(
+          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
+          location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
+        )}>
+          <Settings className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Ajustes</span>
         </Link>
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-24">
+      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-32">
         <header className="sticky top-0 z-40 glass px-4 md:px-10 py-5 flex items-center justify-between border-b border-border/50">
           <div className="flex items-center gap-4">
             <button 
@@ -678,7 +730,7 @@ export default function App() {
                 <Sparkles className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-display text-text-main tracking-tight leading-none md:hidden">
-                FLOW<span className="text-primary italic">.AI</span>
+                STRATIS
               </h2>
             </div>
           </div>

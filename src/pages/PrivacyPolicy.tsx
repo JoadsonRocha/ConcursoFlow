@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
       </div>
 
       <footer className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-10">
-        Flow.AI © 2026 — Segurança e Transparência.
+        Stratis © 2026 — Segurança e Transparência.
       </footer>
     </div>
   );

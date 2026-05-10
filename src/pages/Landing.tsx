@@ -117,7 +117,7 @@ const Landing = () => {
               <Sparkles className="w-6 h-6" />
             </div>
             <span className="text-2xl font-black text-text-main tracking-tighter">
-              Concurso<span className="text-primary italic">Flow</span>
+              Stratis
             </span>
           </div>
           
@@ -150,11 +150,11 @@ const Landing = () => {
               <Zap className="w-4 h-4 fill-primary" />
               Gestão de Estudos com IA
             </div>
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-display text-text-main leading-[0.9] tracking-tighter mix-blend-multiply dark:mix-blend-normal">
-              Sua aprovação no <br />
-              <span className="text-primary italic relative">
-                Fluxo
-                <svg className="absolute -bottom-2 left-0 w-full h-3 text-secondary/30 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
+            <h1 className="text-5xl md:text-8xl lg:text-9xl font-display text-text-main leading-[0.85] tracking-tighter mix-blend-multiply dark:mix-blend-normal">
+              Sua aprovação com <br />
+              <span className="text-primary italic relative inline-block">
+                Stratis
+                <svg className="absolute -bottom-2 left-0 w-full h-4 text-secondary/30 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                   <path d="M0 5 Q 25 0 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="4" />
                 </svg>
               </span>.
@@ -535,7 +535,7 @@ const Landing = () => {
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <span className="text-xl font-black text-text-main tracking-tighter">
-                  Concurso<span className="text-primary italic">Flow</span>
+                  Stratis
                 </span>
               </div>
               <p className="text-sm text-text-sub max-w-sm font-medium">
@@ -562,7 +562,7 @@ const Landing = () => {
            </div>
         </div>
         <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-           <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">© 2026 Concurso Flow AI. All rights reserved.</span>
+           <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">© 2026 Stratis. All rights reserved.</span>
            <div className="flex gap-6">
               <Smartphone className="w-4 h-4 text-text-sub" />
               <Database className="w-4 h-4 text-text-sub" />

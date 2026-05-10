@@ -1,4 +1,4 @@
-# Security Specification for ConcursoFlow
+# Security Specification for Stratis
 
 ## Data Invariants
 1. A user can only read and write their own profile (`/users/{userId}`).
