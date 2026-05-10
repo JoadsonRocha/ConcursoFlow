@@ -35,213 +35,11 @@ import Microlearning from './pages/Microlearning';
 import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
+import Landing from './pages/Landing';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Users, Heart } from 'lucide-react';
-
-// Landing Component
-const Landing = () => {
-  const { login, loginEmail, signup } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        await loginEmail(email, password);
-      } else {
-        await signup(email, password, name);
-      }
-    } catch (err: any) {
-      console.error(err);
-      let msg = 'Erro ao processar autenticação';
-      if (err.code === 'auth/user-not-found') msg = 'Usuário não encontrado';
-      if (err.code === 'auth/wrong-password') msg = 'Senha incorreta';
-      if (err.code === 'auth/email-already-in-use') msg = 'Este e-mail já está em uso';
-      if (err.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres';
-      if (err.code === 'auth/invalid-email') msg = 'E-mail inválido';
-      if (err.code === 'auth/operation-not-allowed') msg = 'O login por e-mail ainda não foi ativado no Firebase Console';
-      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signInGoogle = async () => {
-    setError('');
-    try {
-      await login();
-    } catch (err: any) {
-      console.error(err);
-      let msg = 'Erro ao entrar com Google';
-      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado antes de ser concluído';
-      if (err.code === 'auth/cancelled-popup-request') msg = 'Apenas uma janela de login pode ser aberta por vez';
-      if (err.code === 'auth/popup-blocked') msg = 'O navegador bloqueou a janela de login. Verifique as configurações de pop-up.';
-      setError(msg);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-bg flex flex-col items-center justify-center p-6 text-center space-y-12 animate-in fade-in duration-1000">
-      <div className="space-y-4 max-w-2xl">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest animate-bounce">
-          <BrainCircuit className="w-4 h-4" />
-          IA Study Personalization
-        </div>
-        <h1 className="text-6xl md:text-8xl font-black text-text-main tracking-tighter">
-          Concur<span className="text-primary italic">soFlow</span>
-        </h1>
-        <p className="text-text-sub text-lg font-medium leading-relaxed max-w-lg mx-auto">
-          A plataforma definitiva para quem quer ser nomeado nas carreiras de TI. 
-          Cronogramas via IA e gerenciamento profissional.
-        </p>
-      </div>
-
-      <div className="w-full max-w-md space-y-8 bg-white dark:bg-card-bg p-8 rounded-[40px] border border-border shadow-2xl shadow-primary/5 relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-accent"></div>
-        
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black text-text-main tracking-tight">
-            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
-          </h2>
-          <p className="text-xs font-bold text-text-sub uppercase tracking-wider">
-            {isLogin ? 'Estude com foco e disciplina' : 'Comece sua jornada hoje mesmo'}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4 text-left">
-          {!isLogin && (
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Nome Completo</label>
-              <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub" />
-                <input 
-                  type="text"
-                  required
-                  placeholder="Seu nome"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-bg border border-border rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold focus:ring-2 ring-primary/10 outline-none transition-all"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">E-mail</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub" />
-              <input 
-                type="email"
-                required
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bg border border-border rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold focus:ring-2 ring-primary/10 outline-none transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Senha</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub" />
-              <input 
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-bg border border-border rounded-2xl py-3.5 pl-11 pr-4 text-sm font-bold focus:ring-2 ring-primary/10 outline-none transition-all"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 p-3 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400 text-[11px] font-bold animate-in shake duration-300">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              <>
-                {isLogin ? 'Entrar Agora' : 'Criar minha Conta'}
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        <div className="relative pt-4">
-          <div className="absolute inset-0 flex items-center pt-4">
-            <div className="w-full border-t border-border"></div>
-          </div>
-          <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest">
-            <span className="bg-white dark:bg-card-bg px-4 text-text-sub">Ou continue com</span>
-          </div>
-        </div>
-
-        <button 
-          onClick={signInGoogle}
-          className="w-full bg-bg border border-border text-text-main py-3.5 rounded-2xl font-bold text-sm hover:bg-gray-50 dark:hover:bg-bg/80 transition-all flex items-center justify-center gap-3 active:scale-95"
-        >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
-          Google
-        </button>
-
-        <p className="text-[11px] font-bold text-text-sub">
-          {isLogin ? 'Ainda não tem conta?' : 'Já possui uma conta?'}
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="ml-1 text-primary hover:underline"
-          >
-            {isLogin ? 'Cadastre-se' : 'Faça Login'}
-          </button>
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
-        <div className="bg-white dark:bg-card-bg border border-border p-6 rounded-3xl text-left space-y-3 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent"><Sparkles className="w-5 h-5"/></div>
-          <h3 className="font-bold text-text-main text-sm">Cronograma IA</h3>
-          <p className="text-[11px] text-text-sub leading-relaxed">Crie planos de estudo personalizados baseados no seu edital em segundos.</p>
-        </div>
-        <div className="bg-white dark:bg-card-bg border border-border p-6 rounded-3xl text-left space-y-3 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><PenTool className="w-5 h-5"/></div>
-          <h3 className="font-bold text-text-main text-sm">Caderno de Erros</h3>
-          <p className="text-[11px] text-text-sub leading-relaxed">Registre gatilhos mentais para nunca mais errar o mesmo assunto.</p>
-        </div>
-        <div className="bg-white dark:bg-card-bg border border-border p-6 rounded-3xl text-left space-y-3 shadow-sm hover:border-primary/30 transition-colors">
-          <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary"><Save className="w-5 h-5"/></div>
-          <h3 className="font-bold text-text-main text-sm">Sincronização Cloud</h3>
-          <p className="text-[11px] text-text-sub leading-relaxed">Estude de qualquer lugar. Seus dados sempre seguros e sincronizados.</p>
-        </div>
-      </div>
-
-      <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest opacity-50">
-        Mais de 1.250 concurseiros já estão estudando com a gente.
-      </div>
-    </div>
-  );
-};
 
 // Dashboard Component
 const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest: Contest) => void }) => {
@@ -440,6 +238,29 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
               </div>
               <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
                 <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.revPercent}%` }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Tips Section */}
+          <div className="bg-gradient-to-br from-indigo-500 to-primary rounded-[32px] p-8 text-white relative overflow-hidden shadow-xl shadow-primary/20 lg:col-span-4">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20"></div>
+            <div className="relative z-10 space-y-4">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5" />
+                Dica de Mestre
+              </div>
+              <h3 className="text-xl font-black leading-tight">A constância vence o talento quando o talento não é constante.</h3>
+              <p className="text-xs text-indigo-100 font-medium leading-relaxed max-w-lg">
+                Foque em bater suas metas diárias, mesmo que pequenas. O acúmulo de conhecimento é exponencial. Não pare!
+              </p>
+              <div className="pt-2">
+                <Link 
+                  to="/microaprendizado"
+                  className="bg-white text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all inline-block shadow-lg"
+                >
+                  Ver Flashcards
+                </Link>
               </div>
             </div>
           </div>
