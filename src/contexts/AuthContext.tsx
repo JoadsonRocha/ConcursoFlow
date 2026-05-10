@@ -24,23 +24,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        // Fetch or create profile
-        const userRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userRef);
-        
-        if (!userDoc.exists()) {
-          const newProfile = {
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            currentContestId: null
-          };
-          await setDoc(userRef, newProfile, { merge: true });
-          setProfile(newProfile);
-        } else {
-          setProfile(userDoc.data());
+        try {
+          // Fetch or create profile
+          const userRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (!userDoc.exists()) {
+            const newProfile: any = {
+              email: user.email,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              currentContestId: null
+            };
+            if (user.displayName) newProfile.displayName = user.displayName;
+            if (user.photoURL) newProfile.photoURL = user.photoURL;
+
+            await setDoc(userRef, newProfile, { merge: true });
+            setProfile(newProfile);
+          } else {
+            setProfile(userDoc.data());
+          }
+        } catch (err) {
+          console.error("Erro ao carregar perfil:", err);
+          // Permite que o usuário entre mesmo se o perfil falhar, 
+          // mas o app pode ter comportamento limitado
         }
       } else {
         setProfile(null);

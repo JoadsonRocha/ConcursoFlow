@@ -40,6 +40,9 @@ export interface Contest {
   dailyGoalQuestions?: number;
   schedule?: ScheduleDay[];
   ownerId?: string;
+  ownerName?: string;
+  likesCount?: number;
+  isPublic?: boolean;
   createdAt?: any;
   updatedAt?: any;
 }

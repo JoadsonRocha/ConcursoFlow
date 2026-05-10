@@ -31,23 +31,29 @@ service cloud.firestore {
     // Pillar 2 & 3: Validation Blueprints with Hardened IDs
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'createdAt', 'updatedAt']) &&
+             data.keys().size() >= 3 && data.keys().size() <= 10 &&
              data.email == request.auth.token.email &&
-             data.email is string &&
+             request.auth.token.email_verified == true &&
+             data.email is string && data.email.size() <= 256 &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp &&
-             (data.get('displayName', null) == null || data.displayName is string) &&
-             (data.get('photoURL', null) == null || data.photoURL is string) &&
-             (data.get('currentContestId', null) == null || data.currentContestId is string);
+             (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (data.get('photoURL', null) == null || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
+             (data.get('currentContestId', null) == null || (data.currentContestId is string && data.currentContestId.size() <= 128));
     }
 
     function isValidContest(data) {
       return data.keys().hasAll(['name', 'role', 'ownerId', 'createdAt', 'updatedAt']) &&
+             data.keys().size() >= 5 && data.keys().size() <= 15 &&
              data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
              data.role is string && data.role.size() <= 200 &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp &&
-             (data.get('examDate', '') is string) &&
+             (data.get('ownerName', '') is string && data.get('ownerName', '').size() <= 100) &&
+             (data.get('isPublic', false) is bool) &&
+             (data.get('likesCount', 0) is number) &&
+             (data.get('examDate', '') is string && data.get('examDate', '').size() <= 100) &&
              (data.get('dailyGoalHours', 0) is number || data.get('dailyGoalHours', 0) == '') &&
              (data.get('dailyGoalQuestions', 0) is number || data.get('dailyGoalQuestions', 0) == '') &&
              (data.get('subjects', []) is list) &&
@@ -59,20 +65,41 @@ service cloud.firestore {
       allow get: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId) && isValidUser(incoming()) && request.resource.data.createdAt == request.time;
       allow update: if isSignedIn() && isOwner(userId) && isValidUser(incoming()) && 
+                    (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currentContestId', 'updatedAt'])) &&
+                    incoming().email == existing().email &&
                     incoming().createdAt == existing().createdAt &&
-                    request.resource.data.updatedAt == request.time;
+                    incoming().updatedAt == request.time;
       allow delete: if false;
 
-      // Contests
+      // Contests (Private)
       match /contests/{contestId} {
         allow read: if isSignedIn() && isOwner(userId);
-        allow create: if isSignedIn() && isOwner(userId) && isValidContest(incoming()) && request.resource.data.createdAt == request.time;
+        allow create: if isSignedIn() && isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
         allow update: if isSignedIn() && isOwner(userId) && isValidContest(incoming()) && 
+                      (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'dailyGoalHours', 'dailyGoalQuestions', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName'])) &&
                       incoming().ownerId == existing().ownerId &&
                       incoming().createdAt == existing().createdAt &&
-                      request.resource.data.updatedAt == request.time;
+                      incoming().updatedAt == request.time;
         allow delete: if isSignedIn() && isOwner(userId);
       }
+    }
+
+    // Shared Contests (Community)
+    match /shared_contests/{sharedId} {
+      allow list: if isSignedIn(); // Any signed-in user can see the gallery
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && isValidContest(incoming()) && 
+                    incoming().ownerId == request.auth.uid &&
+                    incoming().isPublic == true &&
+                    incoming().createdAt == request.time;
+      allow update: if isSignedIn() && (
+        // Action: Own Update
+        (existing().ownerId == request.auth.uid && isValidContest(incoming()) &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName'])) ||
+        // Action: Like (Atomic Increment)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']) && incoming().likesCount == existing().likesCount + 1)
+      );
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
     }
   }
 }

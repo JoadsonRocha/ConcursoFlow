@@ -10,10 +10,15 @@ import {
   Sparkles,
   ChevronLeft,
   Clock,
-  BookOpen
+  BookOpen,
+  Share2,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CronogramaProps {
   contest: Contest;
@@ -21,13 +26,50 @@ interface CronogramaProps {
 }
 
 export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
+  const { user } = useAuth();
   const [activeWeek, setActiveWeek] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [weeksCount, setWeeksCount] = useState(4);
 
   const schedule = contest.schedule || [];
   const maxDay = schedule.length > 0 ? Math.max(...schedule.map(d => d.dayNumber)) : 0;
   const totalWeeks = Math.ceil(maxDay / 7);
+
+  const handleShare = async () => {
+    if (!user || !contest) return;
+    setSharing(true);
+    try {
+      const sharedId = `shared-${contest.id}`;
+      const sharedRef = doc(db, 'shared_contests', sharedId);
+      
+      const sharedData = {
+        ...contest,
+        id: sharedId,
+        ownerId: user.uid,
+        ownerName: user.displayName || user.email?.split('@')[0] || 'Concurseiro',
+        isPublic: true,
+        likesCount: contest.likesCount || 0,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (!sharedData.createdAt) {
+        sharedData.createdAt = serverTimestamp();
+      }
+
+      await setDoc(sharedRef, sharedData);
+      
+      // Update local contest state to mark as public
+      onUpdate({ ...contest, isPublic: true });
+      
+      alert("Cronograma compartilhado com sucesso na Comunidade! 🚀");
+    } catch (error) {
+      console.error("Erro ao compartilhar:", error);
+      alert("Erro ao compartilhar. Verifique suas permissões.");
+    } finally {
+      setSharing(false);
+    }
+  };
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -133,10 +175,28 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
           <h1 className="text-2xl font-black text-text-main">Plano de Guerra: {contest.role}</h1>
           <p className="text-text-sub text-sm">Cronograma personalizado gerado via IA.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
+           <button 
+            onClick={handleShare}
+            disabled={sharing || contest.isPublic}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border",
+              contest.isPublic 
+                ? "bg-accent/10 border-accent/20 text-accent opacity-70 cursor-default" 
+                : "bg-secondary text-white border-secondary hover:scale-105 active:scale-95 shadow-lg shadow-secondary/20"
+            )}
+           >
+             {sharing ? (
+               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+             ) : (
+               <Share2 className="w-4 h-4" />
+             )}
+             {contest.isPublic ? 'Já na Comunidade' : 'Publicar na Comunidade'}
+           </button>
+
            <button 
             onClick={exportText}
-            className="bg-white dark:bg-card-bg border border-border px-4 py-2 rounded-xl text-xs font-bold text-text-sub flex items-center gap-2 hover:bg-gray-100 transition-colors"
+            className="bg-white dark:bg-card-bg border border-border px-4 py-2 rounded-xl text-xs font-bold text-text-sub flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-bg transition-colors"
            >
              <Download className="w-4 h-4" />
              Exportar TXT

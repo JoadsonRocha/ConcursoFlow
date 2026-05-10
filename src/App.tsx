@@ -34,9 +34,11 @@ import Subjects from './pages/Subjects';
 import Microlearning from './pages/Microlearning';
 import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
+import Comunidade from './pages/Comunidade';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Users, Heart } from 'lucide-react';
 
 // Landing Component
 const Landing = () => {
@@ -66,6 +68,9 @@ const Landing = () => {
       if (err.code === 'auth/wrong-password') msg = 'Senha incorreta';
       if (err.code === 'auth/email-already-in-use') msg = 'Este e-mail já está em uso';
       if (err.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres';
+      if (err.code === 'auth/invalid-email') msg = 'E-mail inválido';
+      if (err.code === 'auth/operation-not-allowed') msg = 'O login por e-mail ainda não foi ativado no Firebase Console';
+      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
       setError(msg);
     } finally {
       setLoading(false);
@@ -77,7 +82,12 @@ const Landing = () => {
     try {
       await login();
     } catch (err: any) {
-      setError(err.message || 'Erro ao entrar com Google');
+      console.error(err);
+      let msg = 'Erro ao entrar com Google';
+      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado antes de ser concluído';
+      if (err.code === 'auth/cancelled-popup-request') msg = 'Apenas uma janela de login pode ser aberta por vez';
+      if (err.code === 'auth/popup-blocked') msg = 'O navegador bloqueou a janela de login. Verifique as configurações de pop-up.';
+      setError(msg);
     }
   };
 
@@ -334,6 +344,10 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
   const isDefaultContest = !contest || !contest.ownerId;
   const hasNoSchedule = !contest?.schedule || contest.schedule.length === 0;
 
+  // Calculate global progress
+  const globalProgress = calculateProgress(contest?.subjects || []);
+  const streak = (contest?.schedule || []).filter(d => d.completed).length;
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -354,6 +368,83 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
           </button>
         )}
       </header>
+
+      {/* Main Stats Grid */}
+      {!isDefaultContest && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Circular Progress & Streak */}
+          <div className="lg:col-span-1 bg-white dark:bg-card-bg border border-border rounded-[40px] p-8 flex flex-col items-center justify-center space-y-6 relative overflow-hidden shadow-sm">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
+            
+            <div className="relative w-32 h-32">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-bg" />
+                <circle 
+                  cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" 
+                  strokeDasharray={364.4}
+                  strokeDashoffset={364.4 - (364.4 * globalProgress.percent) / 100}
+                  strokeLinecap="round"
+                  className="text-primary transition-all duration-1000 ease-out" 
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-black text-text-main leading-none">{globalProgress.percent}%</span>
+                <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">Completo</span>
+              </div>
+            </div>
+
+            <div className="text-center space-y-1">
+              <div className="flex items-center justify-center gap-2 text-accent font-black">
+                <TrendingUp className="w-4 h-4" />
+                <span>{streak} dias de luta</span>
+              </div>
+              <p className="text-[10px] text-text-sub font-bold uppercase tracking-widest leading-none">Sua constância atual</p>
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-secondary/30 transition-all">
+              <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-black text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
+                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos Vencidos</div>
+              </div>
+              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
+                <div className="bg-secondary h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.percent}%` }} />
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-accent/30 transition-all">
+              <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-black text-text-main">{globalProgress.questions}/{globalProgress.total}</div>
+                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos com Questões</div>
+              </div>
+              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
+                <div className="bg-accent h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.quesPercent}%` }} />
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-primary/30 transition-all">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                <Award className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-2xl font-black text-text-main">{globalProgress.revisions}/{globalProgress.total}</div>
+                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos Revisados</div>
+              </div>
+              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.revPercent}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Daily Log Modal */}
       <AnimatePresence>
@@ -972,6 +1063,7 @@ export default function App() {
               <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/materias" icon={BookOpen} label="Matérias" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Microaprendizado" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
@@ -1049,6 +1141,7 @@ export default function App() {
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub">Importe um edital primeiro</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub">Importe um edital primeiro</div>} />
+              <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
             </Routes>
           </AnimatePresence>
         </div>

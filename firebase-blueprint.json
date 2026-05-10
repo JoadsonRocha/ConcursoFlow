@@ -25,6 +25,9 @@
         "dailyGoalHours": { "type": "number" },
         "dailyGoalQuestions": { "type": "number" },
         "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "isPublic": { "type": "boolean" },
         "subjects": {
           "type": "array",
           "items": { "type": "object" }
@@ -47,6 +50,10 @@
     "/users/{userId}/contests/{contestId}": {
       "schema": "Contest",
       "description": "Stores user-specific contest data and progress."
+    },
+    "/shared_contests/{sharedId}": {
+      "schema": "Contest",
+      "description": "Stores public syllabi shared by users for the community."
     }
   }
 }
