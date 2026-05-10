@@ -103,114 +103,71 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
               />
             </div>
             <div className="pt-2">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className={cn(
-                  "w-5 h-5 rounded border flex items-center justify-center transition-all",
-                  autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-gray-50 dark:bg-card-bg"
-                )}>
-                  {autoSchedule && <CheckCircle2 className="w-3.5 h-3.5" />}
-                </div>
-                <input 
-                  type="checkbox" 
-                  className="hidden" 
-                  checked={autoSchedule}
-                  onChange={(e) => setAutoSchedule(e.target.checked)}
-                />
-                <div>
-                  <span className="block text-xs font-bold text-text-main group-hover:text-primary transition-colors">Gerar Cronograma IA</span>
-                  <span className="block text-[10px] text-text-sub">Cria um plano de estudos automaticamente</span>
-                </div>
-              </label>
-            </div>
-
-            {autoSchedule && (
-              <div className="pl-8 space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
-                <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest">Duração desejada:</span>
-                <div className="flex flex-wrap gap-2">
-                  {[2, 4, 8, 12].map((w) => (
-                    <button
-                      key={w}
-                      onClick={() => setScheduleWeeks(w)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
-                        scheduleWeeks === w 
-                          ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
-                          : "bg-white dark:bg-card-bg border-border text-text-sub hover:border-primary/50"
-                      )}
-                    >
-                      {w} Semanas
-                    </button>
-                  ))}
-                </div>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className={cn(
+                "w-5 h-5 rounded border flex items-center justify-center transition-all",
+                autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-gray-50 dark:bg-card-bg"
+              )}>
+                {autoSchedule && <CheckCircle2 className="w-3.5 h-3.5" />}
               </div>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-dark-panel p-6 rounded-2xl text-white flex flex-col justify-center">
-          <p className="text-sm opacity-80 leading-relaxed italic">
-            "O sucesso é a soma de pequenos esforços repetidos dia após dia."
-          </p>
-          <div className="mt-4 pt-4 border-t border-white/10 text-[10px] font-bold uppercase tracking-widest opacity-60">
-            Foco & Disciplina
-          </div>
-        </section>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        <section className="bg-white border border-border rounded-2xl p-8 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-red-500/10 text-red-500">
-                <Trash2 className="w-6 h-6" />
-              </div>
+              <input 
+                type="checkbox" 
+                className="hidden" 
+                checked={autoSchedule}
+                onChange={(e) => setAutoSchedule(e.target.checked)}
+              />
               <div>
-                <h2 className="text-lg font-bold text-text-main">Gerenciar Meus Cargos</h2>
-                <p className="text-text-sub text-sm">Visualize e apague editais salvos em sua conta.</p>
+                <span className="block text-xs font-bold text-text-main group-hover:text-primary transition-colors">Gerar Cronograma IA</span>
+                <span className="block text-[10px] text-text-sub">Cria um plano de estudos automaticamente</span>
               </div>
-            </div>
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {contests.length === 0 ? (
-              <div className="col-span-2 py-10 text-center border-2 border-dashed border-border rounded-2xl text-text-sub text-sm">
-                Nenhum edital importado ainda.
-              </div>
-            ) : (
-              contests.map((c) => (
-                <div 
-                  key={c.id} 
-                  className={cn(
-                    "p-4 rounded-xl border flex items-center justify-between transition-all",
-                    currentContest?.id === c.id ? "bg-primary/5 border-primary/30" : "bg-gray-50 border-border hover:border-primary/20"
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <h4 className="text-sm font-bold text-text-main truncate">{c.role}</h4>
-                    <p className="text-[10px] text-text-sub font-medium">{c.subjects.length} Matérias • {(c.schedule || []).length} Dias</p>
-                  </div>
-                  <button 
-                    onClick={() => { if(confirm(`Tem certeza que deseja apagar o edital para ${c.role}?`)) onDelete(c.id); }}
-                    className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-2"
+          {autoSchedule && (
+            <div className="pl-8 space-y-3 animate-in fade-in slide-in-from-left-2 duration-300">
+              <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest">Duração desejada:</span>
+              <div className="flex flex-wrap gap-2">
+                {[2, 4, 8, 12].map((w) => (
+                  <button
+                    key={w}
+                    onClick={() => setScheduleWeeks(w)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
+                      scheduleWeeks === w 
+                        ? "bg-primary border-primary text-white shadow-md shadow-primary/20" 
+                        : "bg-white dark:bg-card-bg border-border text-text-sub hover:border-primary/50"
+                    )}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {w} Semanas
                   </button>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
-        <section className="bg-white border border-border rounded-2xl p-8 space-y-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-text-main">Gerador de Edital Verticalizado</h2>
-              <p className="text-text-sub text-sm">Cole o conteúdo programático abaixo para que a IA crie seu checklist.</p>
-            </div>
+      <section className="bg-dark-panel p-6 rounded-2xl text-white flex flex-col justify-center">
+        <p className="text-sm opacity-80 leading-relaxed italic">
+          "O sucesso é a soma de pequenos esforços repetidos dia após dia."
+        </p>
+        <div className="mt-4 pt-4 border-t border-white/10 text-[10px] font-bold uppercase tracking-widest opacity-60">
+          Foco & Disciplina
+        </div>
+      </section>
+    </div>
+
+    <div className="grid grid-cols-1 gap-6">
+      <section className="bg-white border border-border rounded-2xl p-8 space-y-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="w-6 h-6" />
           </div>
+          <div>
+            <h2 className="text-lg font-bold text-text-main">Gerador de Edital Verticalizado</h2>
+            <p className="text-text-sub text-sm">Cole o conteúdo programático abaixo para que a IA crie seu checklist.</p>
+          </div>
+        </div>
 
           <div className="space-y-4">
             <textarea
@@ -264,12 +221,6 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           </ul>
           
           <div className="pt-6 border-t border-white/10">
-            <button 
-              onClick={() => { if(confirm("Tem certeza que deseja apagar todos os seus editais e progresso?")) { localStorage.clear(); window.location.reload(); } }}
-              className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
-            >
-              Apagar todos os dados locais
-            </button>
           </div>
         </section>
       </div>

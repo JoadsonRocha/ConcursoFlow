@@ -24,10 +24,9 @@ import {
   Lock,
   User as UserIcon,
   ArrowRight,
-  AlertCircle
+  Trash2
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { CONTESTS } from './data/contests';
 import { Contest, Subject } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import Subjects from './pages/Subjects';
@@ -36,6 +35,8 @@ import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
 import Landing from './pages/Landing';
+import TermsOfUse from './pages/TermsOfUse';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -312,19 +313,23 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
       </AnimatePresence>
 
       {isDefaultContest && (
-        <section className="bg-primary/5 border-2 border-dashed border-primary/20 rounded-3xl p-10 text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-            <Sparkles className="w-10 h-10" />
+        <section className="bg-white border border-border rounded-[40px] p-12 text-center space-y-8 shadow-sm">
+          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary relative">
+            <Sparkles className="w-12 h-12" />
+            <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-25"></div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black text-text-main italic">Inicie sua Jornada</h2>
-            <p className="text-text-sub max-w-md mx-auto text-sm">
-              Você ainda não configurou seu plano de estudos pessoal. Importe um edital para que a IA gere seu cronograma personalizado e checklist.
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black text-text-main tracking-tight">Comece sua Preparação</h2>
+            <p className="text-text-sub max-w-lg mx-auto text-sm font-medium leading-relaxed">
+              Importe seu edital utilizando nossa Inteligência Artificial para gerar um plano de estudos verticalizado e cronograma personalizado.
             </p>
           </div>
-          <div className="flex justify-center gap-4">
-            <Link to="/configuracoes" className="bg-primary text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-all">
-              Configurar Meu Edital
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to="/configuracoes" className="bg-primary text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+              Importar Novo Edital
+            </Link>
+            <Link to="/comunidade" className="bg-white border border-border text-text-main px-10 py-4 rounded-2xl font-black text-sm hover:bg-bg transition-all">
+              Explorar Comunidade
             </Link>
           </div>
         </section>
@@ -637,10 +642,10 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
 export default function App() {
   const { user, profile, loading: authLoading, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-  const [contests, setContests] = useState<Contest[]>(CONTESTS);
-  const [currentContest, setCurrentContest] = useState<Contest | null>(CONTESTS[0] || null);
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
-  const [migrated, setMigrated] = useState(false);
+  const [migrated, setMigrated] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
@@ -688,47 +693,7 @@ export default function App() {
     const contestsRef = collection(db, 'users', user.uid, 'contests');
     const q = query(contestsRef);
     
-    // One-time migration from LocalStorage to Firestore
-    const migrateData = async () => {
-      if (migrated) return;
-      const saved = localStorage.getItem('dynamicContests');
-      if (saved) {
-        try {
-          const localContests = JSON.parse(saved) as Contest[];
-          const remaining: Contest[] = [];
-          
-          for (const c of localContests) {
-            try {
-              const docRef = doc(db, 'users', user.uid, 'contests', c.id);
-              // Ensure we don't send string dates to timestamp fields
-              const contestData = { ...c };
-              delete (contestData as any).createdAt;
-              delete (contestData as any).updatedAt;
-
-              await setDoc(docRef, { 
-                ...contestData, 
-                ownerId: user.uid, 
-                createdAt: serverTimestamp(), 
-                updatedAt: serverTimestamp() 
-              }, { merge: true });
-            } catch (itemError) {
-              console.error("Failed to migrate item:", c.id, itemError);
-              remaining.push(c);
-            }
-          }
-          
-          if (remaining.length === 0) {
-            localStorage.removeItem('dynamicContests');
-          } else {
-            localStorage.setItem('dynamicContests', JSON.stringify(remaining));
-          }
-        } catch (e) {
-          console.error("Migration error:", e);
-        }
-      }
-      setMigrated(true);
-    };
-    migrateData();
+    setMigrated(true);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const dbContests = snapshot.docs.map(doc => {
@@ -740,17 +705,8 @@ export default function App() {
           schedule: data.schedule || []
         } as Contest;
       });
-      const allContests = [...CONTESTS];
+      const allContests = dbContests;
       
-      dbContests.forEach(dbC => {
-        const index = allContests.findIndex(c => c.id === dbC.id);
-        if (index > -1) {
-          allContests[index] = dbC;
-        } else {
-          allContests.push(dbC);
-        }
-      });
-
       setContests(allContests);
       
       // Auto-set current contest if not set or if current one was updated
@@ -849,22 +805,9 @@ export default function App() {
       const docRef = doc(db, 'users', user.uid, 'contests', id);
       await deleteDoc(docRef);
       
-      // Also clean up from local storage if it's still there (prevents ghost items)
-      const saved = localStorage.getItem('dynamicContests');
-      if (saved) {
-        const localContests = JSON.parse(saved) as Contest[];
-        const filtered = localContests.filter(c => c.id !== id);
-        if (filtered.length === 0) {
-          localStorage.removeItem('dynamicContests');
-        } else {
-          localStorage.setItem('dynamicContests', JSON.stringify(filtered));
-        }
-      }
-      
       alert("Cargo removido com sucesso!");
     } catch (err) {
       console.error("Erro ao deletar cargo:", err);
-      // Revert optimism if needed (onSnapshot will actually handle this anyway)
       alert("Erro ao remover cargo. Verifique sua conexão ou permissões.");
     }
   };
@@ -926,6 +869,45 @@ export default function App() {
           </div>
 
           <div>
+            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-4">Meus Cargos</span>}
+            <div className="space-y-2">
+              {contests.length === 0 ? (
+                isSidebarOpen && <div className="px-3 text-[10px] text-text-sub font-bold italic">Nenhum cargo</div>
+              ) : (
+                contests.map(c => (
+                  <div key={c.id} className="group relative flex items-center gap-2 pr-2">
+                    <button 
+                      onClick={() => setCurrentContest(c)}
+                      className={cn(
+                        "flex-1 flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left overflow-hidden",
+                        currentContest?.id === c.id 
+                          ? "bg-primary/10 text-primary border border-primary/20" 
+                          : "text-text-sub hover:bg-gray-100 dark:hover:bg-card-bg"
+                      )}
+                    >
+                      <Award className={cn("w-4 h-4 shrink-0", currentContest?.id === c.id ? "text-primary" : "text-text-sub")} />
+                      {isSidebarOpen && (
+                        <div className="overflow-hidden">
+                          <div className="text-xs font-bold truncate">{c.role}</div>
+                          <div className="text-[9px] opacity-60 font-medium truncate">{c.name}</div>
+                        </div>
+                      )}
+                    </button>
+                    {isSidebarOpen && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteContest(c.id); }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div>
             {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-4">Configuração</span>}
             <nav className="space-y-1">
               <SidebarItem to="/configuracoes" icon={Settings} label="Importar Edital" active={location.pathname === '/configuracoes'} collapsed={!isSidebarOpen} />
@@ -976,21 +958,11 @@ export default function App() {
                 <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest leading-none mb-1">Bem-vindo,</div>
                 <div className="text-xs font-bold text-text-main leading-none">{user.displayName || user.email}</div>
               </div>
-              <div className="flex items-center gap-2 pl-4 border-l border-border">
-                <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest">Cargo:</div>
-                <select 
-                  value={currentContest?.id || ''}
-                  onChange={(e) => {
-                    const contest = contests.find(c => c.id === e.target.value);
-                    if (contest) setCurrentContest(contest);
-                  }}
-                  className="bg-white dark:bg-card-bg border border-border rounded-lg px-3 py-1.5 text-[11px] font-bold focus:ring-2 ring-primary/20 transition-all outline-none text-text-main cursor-pointer hover:border-primary/50 shadow-sm"
-                >
-                  {contests.length === 0 && <option value="">Nenhum cargo</option>}
-                  {contests.map(c => (
-                    <option key={c.id} value={c.id}>{c.role}</option>
-                  ))}
-                </select>
+              <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-border">
+                <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest">Cargo Atual:</div>
+                <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-lg text-xs font-black tracking-tight border border-primary/10">
+                  {currentContest?.role || 'Selecione um edital'}
+                </div>
               </div>
             </div>
           </div>
@@ -1000,11 +972,13 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />
-              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub">Importe um edital primeiro</div>} />
-              <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub">Importe um edital primeiro</div>} />
+              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
-              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub">Importe um edital primeiro</div>} />
+              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
+              <Route path="/termos" element={<TermsOfUse />} />
+              <Route path="/privacidade" element={<PrivacyPolicy />} />
             </Routes>
           </AnimatePresence>
         </div>

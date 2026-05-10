@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Landing = () => {
@@ -493,8 +494,8 @@ const Landing = () => {
               <div className="space-y-4">
                  <h4 className="text-[10px] font-black text-text-main uppercase tracking-widest">Legal</h4>
                  <ul className="space-y-2 text-sm font-bold text-text-sub">
-                    <li>Termos de Uso</li>
-                    <li>Privacidade</li>
+                    <li><Link to="/termos" className="hover:text-primary transition-colors">Termos de Uso</Link></li>
+                    <li><Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link></li>
                     <li>Cookies</li>
                  </ul>
               </div>
