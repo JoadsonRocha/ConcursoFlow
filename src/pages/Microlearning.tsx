@@ -8,7 +8,8 @@ import {
   CheckCircle2, 
   XCircle,
   Play,
-  ArrowRight
+  ArrowRight,
+  Award
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';

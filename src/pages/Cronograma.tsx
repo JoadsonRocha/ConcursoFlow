@@ -12,7 +12,8 @@ import {
   Clock,
   BookOpen,
   Share2,
-  Users
+  Users,
+  PenTool
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';

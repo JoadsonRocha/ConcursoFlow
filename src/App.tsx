@@ -24,7 +24,8 @@ import {
   Lock,
   User as UserIcon,
   ArrowRight,
-  Trash2
+  Trash2,
+  Target
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
