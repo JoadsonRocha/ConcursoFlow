@@ -40,6 +40,7 @@ import Comunidade from './pages/Comunidade';
 import Landing from './pages/Landing';
 import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import Perfil from './pages/Perfil';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -124,14 +125,14 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative pb-6 border-b border-border">
         <div className="space-y-1.5 overflow-hidden">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.4em] mb-2">
-            <Sparkles className="w-3 h-3" />
-            <span>Painel de Alta Performance</span>
+          <div className="flex items-center gap-2 text-primary font-black text-[9px] uppercase tracking-[0.3em] mb-2">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Dashboard de Performance</span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-display leading-[0.85] text-text-main tracking-tighter">
+          <h1 className="text-3xl md:text-5xl font-display leading-[1.1] text-text-main tracking-tighter">
             Olá, <span className="italic text-primary">{user?.displayName?.split(' ')[0] || 'Guerreiro'}</span>.
           </h1>
-          <p className="text-text-sub text-base font-medium pt-3 max-w-lg">
+          <p className="text-text-sub text-sm font-medium pt-1 max-w-md leading-relaxed border-l-2 border-primary/20 pl-4 mt-4">
             Sua jornada até a nomeação exige consistência. <span className="text-text-main font-bold">O que vamos conquistar hoje?</span>
           </p>
         </div>
@@ -751,17 +752,19 @@ export default function App() {
                   Focado
                 </div>
               </div>
-              <button 
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="relative group outline-none"
-              >
-                {user.photoURL ? (
-                  <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" alt="Profile" />
-                ) : (
-                  <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub group-hover:scale-105 transition-transform">
-                    <UserIcon className="w-5 h-5" />
-                  </div>
-                )}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="group outline-none block"
+                >
+                  {user.photoURL ? (
+                    <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" alt="Profile" />
+                  ) : (
+                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub group-hover:scale-105 transition-transform">
+                      <UserIcon className="w-5 h-5" />
+                    </div>
+                  )}
+                </button>
                 
                 <AnimatePresence>
                   {isUserMenuOpen && (
@@ -778,14 +781,14 @@ export default function App() {
                           <div className="text-[10px] text-text-sub truncate">{user?.email}</div>
                         </div>
                         <Link 
-                          to="/configuracoes" 
+                          to="/perfil" 
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                         >
-                          <Settings className="w-4 h-4 text-text-sub" />
+                          <UserIcon className="w-4 h-4 text-text-sub" />
                           <div className="flex flex-col">
                             <span className="text-xs font-bold text-text-main">Configurações Pessoais</span>
-                            <span className="text-[9px] text-text-sub uppercase tracking-tighter">Perfil e Metas</span>
+                            <span className="text-[9px] text-text-sub uppercase tracking-tighter">Perfil e Segurança</span>
                           </div>
                         </Link>
                         <hr className="border-border/50 my-1 mx-4" />
@@ -800,7 +803,7 @@ export default function App() {
                     </>
                   )}
                 </AnimatePresence>
-              </button>
+              </div>
             </div>
           </div>
         </header>
@@ -812,6 +815,7 @@ export default function App() {
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
+              <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
               <Route path="/termos" element={<TermsOfUse />} />

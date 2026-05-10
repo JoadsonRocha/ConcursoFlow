@@ -1,9 +1,13 @@
-import { useState } from 'react';
-import { BrainCircuit, Upload, Sparkles, AlertCircle, CheckCircle2, Calendar, Trash2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { BrainCircuit, Upload, Sparkles, AlertCircle, CheckCircle2, Calendar, FileText, Loader2 } from 'lucide-react';
 import { parseEdital, generateSchedule } from '../services/gemini';
 import { Contest } from '../types';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import * as pdfjs from 'pdfjs-dist';
+
+// Configure worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface SettingsProps {
   onImport: (contest: Contest) => void;
@@ -22,8 +26,55 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
   const [autoSchedule, setAutoSchedule] = useState(true);
   const [scheduleWeeks, setScheduleWeeks] = useState(4);
   const [loading, setLoading] = useState(false);
+  const [extractingPdf, setExtractingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
+      
+      // Limit to first 20 pages to avoid performance issues if it's a massive document
+      // Usually the syllabus (conteúdo programático) is within the first 20 pages or near the end.
+      // But let's try to get all if it's reasonable.
+      const numPages = Math.min(pdf.numPages, 50); 
+      
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
+    } catch (err) {
+      console.error("PDF Extraction error:", err);
+      throw new Error("Não foi possível ler o PDF. Tente copiar e colar o texto manualmente.");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      setError("Por favor, selecione um arquivo PDF.");
+      return;
+    }
+
+    setExtractingPdf(true);
+    setError(null);
+    try {
+      const text = await extractTextFromPDF(file);
+      setRawText(text);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao extrair texto do PDF.");
+    } finally {
+      setExtractingPdf(false);
+    }
+  };
 
   const handleImport = async () => {
     if (!rawText.trim()) return;
@@ -76,7 +127,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         <p className="text-text-sub text-sm font-medium pt-2">Transforme conteúdo bruto em um ecossistema de estudos de alta performance.</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <section className="bg-white border border-border rounded-2xl p-6 space-y-4 shadow-sm">
           <h2 className="text-sm font-bold text-text-main uppercase tracking-wider">Metas Diárias</h2>
           <div className="space-y-4">
@@ -103,7 +154,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-text-sub mb-2">DATA DA PROVA</label>
+              <label className="block text-xs font-bold text-text-sub mb-2 uppercase tracking-widest">DATA DA PROVA</label>
               <input 
                 type="date" 
                 className="w-full bg-gray-50 border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 ring-primary/10 dark:bg-card-bg"
@@ -155,39 +206,42 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           )}
         </div>
       </section>
-
-      <section className="bg-slate-900 dark:bg-slate-950 p-6 rounded-3xl text-white flex flex-col justify-between border border-white/5 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
-          <Sparkles className="w-32 h-32 text-primary" />
-        </div>
-        <div className="relative z-10">
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4">Arquiteto de Estudos</div>
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary border border-white/10">
-                <BrainCircuit className="w-6 h-6" />
-             </div>
-             <div className="space-y-0.5">
-                <div className="text-lg font-display text-white">Pronto para a Nomeação?</div>
-                <div className="text-[10px] text-white/50 font-black uppercase tracking-widest italic">A disciplina é a base de tudo</div>
-             </div>
-          </div>
-        </div>
-        <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center relative z-10">
-           <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Membro Premium Stratis</span>
-           <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-        </div>
-      </section>
     </div>
 
     <div className="grid grid-cols-1 gap-6">
       <section className="bg-white border border-border rounded-2xl p-8 space-y-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-primary/10 text-primary">
-            <Sparkles className="w-6 h-6" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-text-main">Gerador de Edital Verticalizado</h2>
+              <p className="text-text-sub text-sm">Use PDF ou cole o texto para que a IA organize seus estudos.</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-text-main">Gerador de Edital Verticalizado</h2>
-            <p className="text-text-sub text-sm">Cole o conteúdo programático abaixo para que a IA crie seu checklist.</p>
+          
+          <div className="hidden md:block">
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="application/pdf"
+              className="hidden"
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={extractingPdf}
+              className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-slate-900 hover:border-primary/50 text-text-main text-xs font-black uppercase tracking-widest rounded-2xl transition-all border border-border shadow-sm group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                {extractingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span>{extractingPdf ? 'Processando...' : 'Importar PDF'}</span>
+                <span className="text-[8px] opacity-50 tracking-tighter normal-case">Extrator IA</span>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -215,14 +269,60 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Conteúdo Programático (Edital)</label>
+            <div className="md:hidden w-full">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="application/pdf"
+                className="hidden"
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={extractingPdf}
+                className="w-full flex flex-col items-center justify-center gap-2 px-4 py-8 bg-slate-50 dark:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:border-primary/50 text-text-main rounded-[2rem] transition-all border-2 border-dashed border-border group"
+              >
+                <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  {extractingPdf ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : <FileText className="w-6 h-6 text-primary" />}
+                </div>
+                <div className="text-center">
+                  <div className="text-xs font-black uppercase tracking-widest">{extractingPdf ? 'Lendo Arquivo...' : 'Selecionar Edital em PDF'}</div>
+                  <div className="text-[10px] text-text-sub mt-1">A IA identificará as matérias automaticamente</div>
+                </div>
+              </button>
+            </div>
+
+            <div className="space-y-2 relative">
+              <label className="block text-xs font-bold text-text-sub uppercase tracking-widest flex justify-between">
+                <span>Conteúdo Programático (Edital)</span>
+                {rawText && (
+                  <button 
+                    onClick={() => setRawText('')}
+                    className="text-red-500 hover:underline lowercase tracking-normal font-medium"
+                  >
+                    limpar texto
+                  </button>
+                )}
+              </label>
               <textarea
-                className="w-full h-64 bg-gray-50 border border-border rounded-xl p-4 text-sm font-medium focus:ring-2 ring-primary/10 transition-all outline-none resize-none"
-                placeholder="Cole aqui o texto do edital para que a IA identifique as matérias e organize seus estudos..."
+                className="w-full h-80 bg-gray-50 border border-border rounded-xl p-4 text-sm font-medium focus:ring-2 ring-primary/10 transition-all outline-none resize-none"
+                placeholder="Cole aqui o texto do edital ou importe o PDF acima para que a IA identifique as matérias e organize seus estudos..."
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
               />
+              <AnimatePresence>
+                {extractingPdf && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-x-0 bottom-0 top-[28px] bg-white/60 dark:bg-slate-900/60 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center gap-3"
+                  >
+                    <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <div className="text-[10px] font-black text-text-main uppercase tracking-widest">Extraindo bits de inteligência do edital...</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {error && (
