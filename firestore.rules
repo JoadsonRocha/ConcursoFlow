@@ -29,11 +29,15 @@ service cloud.firestore {
     }
 
     // Pillar 2 & 3: Validation Blueprints with Hardened IDs
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'createdAt', 'updatedAt']) &&
-             data.keys().size() >= 3 && data.keys().size() <= 10 &&
+             data.keys().size() >= 3 && data.keys().size() <= 12 &&
              data.email == request.auth.token.email &&
-             request.auth.token.email_verified == true &&
+             isVerified() &&
              data.email is string && data.email.size() <= 256 &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp &&
@@ -44,7 +48,7 @@ service cloud.firestore {
 
     function isValidContest(data) {
       return data.keys().hasAll(['name', 'role', 'ownerId', 'createdAt', 'updatedAt']) &&
-             data.keys().size() >= 5 && data.keys().size() <= 15 &&
+             data.keys().size() >= 5 && data.keys().size() <= 18 &&
              data.ownerId == request.auth.uid &&
              data.name is string && data.name.size() <= 200 &&
              data.role is string && data.role.size() <= 200 &&
@@ -57,14 +61,15 @@ service cloud.firestore {
              (data.get('dailyGoalHours', 0) is number || data.get('dailyGoalHours', 0) == '') &&
              (data.get('dailyGoalQuestions', 0) is number || data.get('dailyGoalQuestions', 0) == '') &&
              (data.get('subjects', []) is list) &&
-             (data.get('schedule', []) is list);
+             (data.get('schedule', []) is list) &&
+             (data.get('id', '') is string);
     }
 
     // User Profile
     match /users/{userId} {
       allow get: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && isValidUser(incoming()) && request.resource.data.createdAt == request.time;
-      allow update: if isSignedIn() && isOwner(userId) && isValidUser(incoming()) && 
+      allow create: if isVerified() && isOwner(userId) && isValidUser(incoming()) && request.resource.data.createdAt == request.time;
+      allow update: if isVerified() && isOwner(userId) && isValidUser(incoming()) && 
                     (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currentContestId', 'updatedAt'])) &&
                     incoming().email == existing().email &&
                     incoming().createdAt == existing().createdAt &&
@@ -74,13 +79,13 @@ service cloud.firestore {
       // Contests (Private)
       match /contests/{contestId} {
         allow read: if isSignedIn() && isOwner(userId);
-        allow create: if isSignedIn() && isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
-        allow update: if isSignedIn() && isOwner(userId) && isValidContest(incoming()) && 
-                      (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'dailyGoalHours', 'dailyGoalQuestions', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName'])) &&
+        allow create: if isVerified() && isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
+        allow update: if isVerified() && isOwner(userId) && isValidContest(incoming()) && 
+                      (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'dailyGoalHours', 'dailyGoalQuestions', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName', 'id'])) &&
                       incoming().ownerId == existing().ownerId &&
                       incoming().createdAt == existing().createdAt &&
                       incoming().updatedAt == request.time;
-        allow delete: if isSignedIn() && isOwner(userId);
+        allow delete: if isVerified() && isOwner(userId);
       }
     }
 
@@ -88,18 +93,18 @@ service cloud.firestore {
     match /shared_contests/{sharedId} {
       allow list: if isSignedIn(); // Any signed-in user can see the gallery
       allow get: if isSignedIn();
-      allow create: if isSignedIn() && isValidContest(incoming()) && 
+      allow create: if isVerified() && isValidContest(incoming()) && 
                     incoming().ownerId == request.auth.uid &&
                     incoming().isPublic == true &&
                     incoming().createdAt == request.time;
-      allow update: if isSignedIn() && (
+      allow update: if isVerified() && (
         // Action: Own Update
         (existing().ownerId == request.auth.uid && isValidContest(incoming()) &&
-         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName'])) ||
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName', 'id'])) ||
         // Action: Like (Atomic Increment)
         (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']) && incoming().likesCount == existing().likesCount + 1)
       );
-      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow delete: if isVerified() && existing().ownerId == request.auth.uid;
     }
   }
 }

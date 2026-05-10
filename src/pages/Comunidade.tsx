@@ -237,23 +237,70 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                       IA Optimized
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-4">
                     {previewContest.subjects?.map((sub, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-border rounded-2xl group/item hover:border-primary/30 transition-all">
-                        <div className="flex items-center gap-4">
-                           <div className="w-2.5 h-2.5 rounded-full bg-primary/30 group-hover/item:scale-125 group-hover/item:bg-primary transition-all shadow-sm" />
-                           <span className="text-sm font-bold text-text-main group-hover/item:translate-x-1 transition-transform">{sub.name}</span>
+                      <div key={i} className="bg-white dark:bg-slate-800 border border-border rounded-2xl overflow-hidden group/sub hover:border-primary/30 transition-all">
+                        <div className="p-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                           <div className="flex items-center gap-3">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm" />
+                              <span className="text-sm font-bold text-text-main">{sub.name}</span>
+                              <span className="text-[10px] text-text-sub font-medium">({sub.category})</span>
+                           </div>
+                           <span className={cn(
+                             "text-[9px] px-2.5 py-1 rounded-xl font-black uppercase tracking-tight",
+                             sub.incidence === 'Muito Alta' ? "bg-red-500 text-white" : "bg-white dark:bg-slate-700 text-text-sub"
+                           )}>
+                             {sub.incidence}
+                           </span>
                         </div>
-                        <span className={cn(
-                          "text-[9px] px-2.5 py-1 rounded-xl font-black uppercase tracking-tight",
-                          sub.incidence === 'Muito Alta' ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-text-sub"
-                        )}>
-                          {sub.incidence}
-                        </span>
+                        {sub.topics && sub.topics.length > 0 && (
+                          <div className="p-4 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-border/50">
+                            {sub.topics.map((topic, j) => (
+                              <div key={j} className="flex items-center gap-2 text-[10px] text-text-sub font-medium">
+                                <div className="w-1 h-1 rounded-full bg-slate-300" />
+                                <span className="truncate">{topic.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {sub.briefing && (
+                          <div className="p-4 pt-0 text-[10px] text-text-sub italic leading-tight opacity-70">
+                            {sub.briefing}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {previewContest.schedule && previewContest.schedule.length > 0 && (
+                   <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Exemplo de Cronograma</h4>
+                        <div className="text-[9px] font-black text-secondary uppercase tracking-widest bg-secondary/10 px-3 py-1.5 rounded-full">
+                          {previewContest.schedule.length} Dias
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3">
+                        {previewContest.schedule.slice(0, 7).map((day, i) => (
+                          <div key={i} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-border">
+                             <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-[10px] font-black text-text-main shrink-0 border border-border">
+                                {day.dayNumber}
+                             </div>
+                             <div className="flex-1 min-w-0">
+                                <div className="text-xs font-bold text-text-main truncate">{day.specificTopic}</div>
+                                <div className="text-[9px] text-text-sub truncate">{day.generalTopic}</div>
+                             </div>
+                          </div>
+                        ))}
+                        {previewContest.schedule.length > 7 && (
+                          <div className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-2">
+                            + {previewContest.schedule.length - 7} dias de planejamento estratégico
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                )}
               </div>
 
               <div className="p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-border flex flex-col sm:flex-row gap-4 relative z-10">

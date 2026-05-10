@@ -44,26 +44,39 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       const sharedId = `shared-${contest.id}`;
       const sharedRef = doc(db, 'shared_contests', sharedId);
       
+      // Ensure we have only the fields allowed by the security rules
       const sharedData = {
-        ...contest,
-        id: sharedId,
+        name: contest.name,
+        role: contest.role,
+        examDate: contest.examDate || '',
+        subjects: contest.subjects || [],
+        schedule: contest.schedule || [],
+        dailyGoalHours: contest.dailyGoalHours || 0,
+        dailyGoalQuestions: contest.dailyGoalQuestions || 0,
         ownerId: user.uid,
         ownerName: user.displayName || user.email?.split('@')[0] || 'Concurseiro',
         isPublic: true,
-        likesCount: contest.likesCount || 0,
+        likesCount: 0,
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      if (!sharedData.createdAt) {
-        sharedData.createdAt = serverTimestamp();
-      }
-
       await setDoc(sharedRef, sharedData);
+      
+      // Update the local contest to reflect it's now public
+      const contestRef = doc(db, 'users', user.uid, 'contests', contest.id);
+      await setDoc(contestRef, { isPublic: true, updatedAt: serverTimestamp() }, { merge: true });
+      
       onUpdate({ ...contest, isPublic: true });
-      alert("Cronograma compartilhado com sucesso na Comunidade! 🚀");
+      alert("Cronograma e Edital Verticalizado compartilhados com sucesso na Comunidade! 🚀");
     } catch (error) {
       console.error("Erro ao compartilhar:", error);
-      alert("Erro ao compartilhar. Verifique suas permissões.");
+      // Detailed error for developers
+      if (error instanceof Error && error.message.includes('permission')) {
+        alert("Erro de permissão: Certifique-se de que seus dados estão corretos.");
+      } else {
+        alert("Erro ao compartilhar. Verifique sua conexão.");
+      }
     } finally {
       setSharing(false);
     }
