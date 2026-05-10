@@ -639,9 +639,27 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [contests, setContests] = useState<Contest[]>(CONTESTS);
   const [currentContest, setCurrentContest] = useState<Contest | null>(CONTESTS[0] || null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [migrated, setMigrated] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
+  }, [location]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -863,11 +881,29 @@ export default function App() {
   if (!user) return <Landing />;
 
   return (
-    <div className="flex min-h-screen bg-bg font-sans overflow-hidden">
-      {/* Sidebar Desktop */}
+    <div className="flex min-h-screen bg-bg font-sans overflow-hidden relative">
+      {/* Mobile Backdrop */}
+      <AnimatePresence>
+        {isSidebarOpen && window.innerWidth <= 768 && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/50 z-[45] md:hidden backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
       <aside className={cn(
-        "bg-sidebar border-r border-border transition-all duration-300 z-50 fixed md:relative h-full flex flex-col shrink-0",
-        isSidebarOpen ? "w-60 px-6 py-8" : "w-16 px-2 py-8"
+        "bg-sidebar border-r border-border transition-all duration-300 z-50",
+        "fixed md:relative h-full flex flex-col shrink-0",
+        // Mobile behavior: slide in/out
+        window.innerWidth <= 768 
+          ? (isSidebarOpen ? "translate-x-0 w-64 px-6 py-8" : "-translate-x-full w-0")
+          : (isSidebarOpen ? "w-60 px-6 py-8" : "w-16 px-2 py-8 translate-x-0"),
+        "md:translate-x-0"
       )}>
         <div className="mb-12">
           {isSidebarOpen ? (
@@ -909,14 +945,20 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg">
-        <header className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md px-10 py-6 flex items-center justify-between border-b border-border/50">
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-text-sub"
-          >
-            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+      <main className="flex-1 h-screen overflow-y-auto bg-bg relative">
+        <header className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md px-4 md:px-10 py-4 md:py-6 flex items-center justify-between border-b border-border/50">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-card-bg rounded-lg transition-colors text-text-sub"
+            >
+              {isSidebarOpen ? <X className="w-5 h-5 text-primary" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <div className="md:hidden flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-black text-xs">C</div>
+              <span className="text-sm font-black text-text-main tracking-tight italic">Flow</span>
+            </div>
+          </div>
 
           <div className="flex items-center gap-6">
             <button 
@@ -954,7 +996,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="p-10 max-w-7xl mx-auto">
+        <div className="p-4 md:p-10 max-w-7xl mx-auto">
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />
