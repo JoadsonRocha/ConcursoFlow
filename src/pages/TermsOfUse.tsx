@@ -1,62 +1,65 @@
 import React from 'react';
-import { motion } from 'motion/react';
-import { ShieldCheck, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const TermsOfUse = () => {
+export default function TermsOfUse() {
   return (
-    <div className="min-h-screen bg-bg p-6 md:p-12">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar para o Início
-        </Link>
-        
-        <div className="bg-white dark:bg-card-bg border border-border rounded-[40px] p-8 md:p-12 shadow-sm space-y-8">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-text-main tracking-tight">Termos de Uso</h1>
-              <p className="text-text-sub text-sm font-medium uppercase tracking-widest">Última atualização: 10 de Maio de 2026</p>
-            </div>
-          </div>
+    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+      <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-text-sub uppercase tracking-widest hover:text-primary transition-colors">
+        <ChevronLeft className="w-4 h-4" />
+        Voltar ao Dashboard
+      </Link>
 
-          <div className="prose prose-slate dark:prose-invert max-w-none space-y-6 text-text-main">
-            <section className="space-y-4">
-              <h2 className="text-xl font-bold">1. Aceitação dos Termos</h2>
-              <p>Ao acessar e clicar em "Começar Agora" ou utilizar qualquer parte do Concurso Flow, você concorda em cumprir estes Termos de Uso. Se você não concordar com estes termos, não deverá utilizar a nossa plataforma.</p>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-xl font-bold">2. Descrição do Serviço</h2>
-              <p>O Concurso Flow é uma ferramenta auxiliada por Inteligência Artificial para organização de estudos, verticalização de editais e acompanhamento de desempenho para concursos públicos.</p>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-xl font-bold">3. Responsabilidades do Usuário</h2>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Você é responsável por manter a confidencialidade de sua conta.</li>
-                <li>Você concorda em não utilizar a plataforma para fins ilegais ou não autorizados.</li>
-                <li>O conteúdo gerado pela IA é para fins de auxílio ao estudo, não garantindo aprovação ou exatidão total em relação aos editais oficiais.</li>
-              </ul>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-xl font-bold">4. Propriedade Intelectual</h2>
-              <p>Todo o código, design e funcionalidades do Concurso Flow são de nossa propriedade exclusiva ou licenciados para nós.</p>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-xl font-bold">5. Modificações nos Termos</h2>
-              <p>Reservamo-nos o direito de modificar estes termos a qualquer momento. Notificaremos os usuários sobre mudanças significativas via e-mail ou aviso na plataforma.</p>
-            </section>
-          </div>
+      <header className="space-y-4 text-center">
+        <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto shadow-inner">
+          <ShieldCheck className="w-8 h-8" />
         </div>
+        <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+          Termos de <span className="italic text-primary">Uso</span>.
+        </h1>
+        <p className="text-text-sub text-sm font-medium">Última atualização: 10 de maio de 2026</p>
+      </header>
+
+      <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 md:p-16 space-y-10 shadow-xl shadow-primary/[0.02]">
+        <section className="space-y-4">
+          <h2 className="text-2xl font-display text-text-main">1. Aceitação dos Termos</h2>
+          <p className="text-text-sub leading-relaxed">
+            Ao acessar e usar o Flow.AI, você concorda em cumprir e estar vinculado a estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-2xl font-display text-text-main">2. Descrição do Serviço</h2>
+          <p className="text-text-sub leading-relaxed">
+            O Flow.AI é uma plataforma de organização de estudos que utiliza Inteligência Artificial para verticalizar editais e otimizar a preparação para concursos. Nossos serviços são fornecidos "como estão".
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-2xl font-display text-text-main">3. Responsabilidades do Usuário</h2>
+          <p className="text-text-sub leading-relaxed">
+            Você é responsável por manter a confidencialidade de sua conta e senha. Você concorda em nos notificar imediatamente sobre qualquer uso não autorizado de sua conta.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-2xl font-display text-text-main">4. Propriedade Intelectual</h2>
+          <p className="text-text-sub leading-relaxed">
+            Todo o conteúdo presente no Flow.AI, incluindo textos, gráficos, logotipos e software, é de propriedade exclusiva ou licenciado para nós e está protegido por leis de direitos autorais.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-2xl font-display text-text-main">5. Limitação de Responsabilidade</h2>
+          <p className="text-text-sub leading-relaxed">
+            Em nenhuma circunstância o Flow.AI será responsável por quaisquer danos diretos, indiretos, incidentais ou consequentes resultantes do uso ou da incapacidade de usar nossos serviços.
+          </p>
+        </section>
       </div>
+
+      <footer className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-10">
+        Flow.AI © 2026 — Todos os direitos reservados.
+      </footer>
     </div>
   );
-};
-
-export default TermsOfUse;
+}

@@ -81,9 +81,6 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
     return weights[b.incidence] - weights[a.incidence];
   }).slice(0, 4);
 
-  const generalSubjects = (contest?.subjects || []).filter(s => s.category === 'Gerais');
-  const specificSubjects = (contest?.subjects || []).filter(s => s.category === 'Específicos');
-
   const calculateProgress = (subs: Subject[]) => {
     const total = subs.reduce((acc, s) => acc + s.totalTopics, 0);
     const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
@@ -95,34 +92,16 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
       revisions,
       questions,
       percent: total > 0 ? Math.round((completed / total) * 100) : 0,
-      revPercent: total > 0 ? Math.round((revisions / total) * 100) : 0,
-      quesPercent: total > 0 ? Math.round((questions / total) * 100) : 0
     };
   };
 
-  const generalProgress = calculateProgress(generalSubjects);
-  const specificProgress = calculateProgress(specificSubjects);
-
   const todayTask = contest?.schedule?.find(day => !day.completed);
-  
-  // Calculate Debt from previous completed days
-  const debt = (contest?.schedule || [])
-    .filter(day => day.completed)
-    .reduce((acc, day) => {
-      const hGoal = contest?.dailyGoalHours || 2;
-      const qGoal = day.questionGoal || 0;
-      const hActual = day.actualHours || 0;
-      const qActual = day.actualQuestions || 0;
-      
-      return {
-        hours: acc.hours + Math.max(0, hGoal - hActual),
-        questions: acc.questions + Math.max(0, (qGoal as number) - qActual)
-      };
-    }, { hours: 0, questions: 0 });
+  const isDefaultContest = !contest || !contest.ownerId;
+  const globalProgress = calculateProgress(contest?.subjects || []);
+  const streak = (contest?.schedule || []).filter(d => d.completed).length;
 
   const handleSavePerformance = () => {
     if (!todayTask || !contest) return;
-    
     const newSchedule = contest.schedule?.map(day => {
       if (day.id === todayTask.id) {
         return {
@@ -134,493 +113,229 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
       }
       return day;
     });
-    
     onUpdate({ ...contest, schedule: newSchedule });
     setShowLogModal(false);
-    setLogForm({ hours: 0, questions: 0 });
+    setLogForm({ hours: '', questions: '' });
   };
 
-  const isDefaultContest = !contest || !contest.ownerId;
-  const hasNoSchedule = !contest?.schedule || contest.schedule.length === 0;
-
-  // Calculate global progress
-  const globalProgress = calculateProgress(contest?.subjects || []);
-  const streak = (contest?.schedule || []).filter(d => d.completed).length;
-
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-black text-text-main tracking-tight">Olá, {user?.displayName?.split(' ')[0] || 'Guerreiro'}!</h1>
-          <p className="text-text-sub text-sm font-medium">Seja bem-vindo ao seu painel de controle de estudos.</p>
-          <div className="text-xs font-bold text-primary uppercase tracking-widest pt-2">
-            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </div>
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative">
+        <div className="space-y-1.5 overflow-hidden">
+          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em]">Ambiente de Estudo</div>
+          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+            Olá, <span className="italic text-primary">{user?.displayName?.split(' ')[0] || 'Guerreiro'}</span>.
+          </h1>
+          <p className="text-text-sub text-sm font-medium pt-2">Hoje é um ótimo dia para conquistar sua vaga.</p>
         </div>
         {!isDefaultContest && (
           <button 
             onClick={() => setShowLogModal(true)}
-            className="bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform flex items-center gap-2"
+            className="w-full md:w-auto bg-text-main text-bg px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group"
           >
-            <Save className="w-4 h-4" />
-            Registrar Estudos de Hoje
+            Registrar Desempenho
+            <TrendingUp className="w-4 h-4 group-hover:translate-y-[-2px] transition-transform" />
           </button>
         )}
       </header>
 
-      {/* Main Stats Grid */}
       {!isDefaultContest && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Circular Progress & Streak */}
-          <div className="lg:col-span-1 bg-white dark:bg-card-bg border border-border rounded-[40px] p-8 flex flex-col items-center justify-center space-y-6 relative overflow-hidden shadow-sm">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Hero Stat - Global Progress */}
+          <div className="lg:col-span-4 glass-card rounded-[3rem] p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-[0.05] group-hover:scale-110 transition-transform">
+              <Sparkles className="w-32 h-32 text-primary" />
+            </div>
             
-            <div className="relative w-32 h-32">
+            <div className="relative w-48 h-48 mb-8">
               <svg className="w-full h-full transform -rotate-90">
-                <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-bg" />
+                <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800" />
                 <circle 
-                  cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="8" fill="transparent" 
-                  strokeDasharray={364.4}
-                  strokeDashoffset={364.4 - (364.4 * globalProgress.percent) / 100}
+                  cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" 
+                  strokeDasharray={552.9}
+                  strokeDashoffset={552.9 - (552.9 * globalProgress.percent) / 100}
                   strokeLinecap="round"
                   className="text-primary transition-all duration-1000 ease-out" 
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-text-main leading-none">{globalProgress.percent}%</span>
-                <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">Completo</span>
+                <span className="text-5xl font-display text-text-main leading-none">{globalProgress.percent}%</span>
+                <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mt-2">Concluido</span>
               </div>
             </div>
 
-            <div className="text-center space-y-1">
-              <div className="flex items-center justify-center gap-2 text-accent font-black">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 text-accent font-black text-sm">
                 <TrendingUp className="w-4 h-4" />
-                <span>{streak} dias de luta</span>
+                <span>{streak} Dias Seguidores</span>
               </div>
-              <p className="text-[10px] text-text-sub font-bold uppercase tracking-widest leading-none">Sua constância atual</p>
+              <p className="text-[10px] text-text-sub font-black uppercase tracking-[0.2em]">Foco Inabalável</p>
             </div>
           </div>
 
-          {/* Key Metrics */}
-          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-secondary/30 transition-all">
-              <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-black text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
-                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos Vencidos</div>
-              </div>
-              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
-                <div className="bg-secondary h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.percent}%` }} />
-              </div>
-            </div>
+          {/* Quick Info & Next Subject */}
+          <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+             {/* Today's Target */}
+             <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
+                <div className="space-y-4">
+                   <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                      <Target className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-2xl font-display text-text-main">Meta Diária</h3>
+                   <div className="space-y-1">
+                      <div className="text-4xl font-display text-text-main">{todayTask ? todayTask.questionGoal : contest.dailyGoalQuestions || 20} <span className="text-lg font-sans font-medium text-text-sub">itens</span></div>
+                      <p className="text-xs text-text-sub font-medium">Resolva questões focadas no edital hoje.</p>
+                   </div>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-8">
+                   <div className="bg-primary h-full transition-all duration-500" style={{ width: '0%' }} />
+                </div>
+             </div>
 
-            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-accent/30 transition-all">
-              <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-black text-text-main">{globalProgress.questions}/{globalProgress.total}</div>
-                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos com Questões</div>
-              </div>
-              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
-                <div className="bg-accent h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.quesPercent}%` }} />
-              </div>
-            </div>
+             {/* Exam Countdown */}
+             <div className="bg-slate-950 rounded-[3rem] p-10 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
+                   <Clock className="w-24 h-24" />
+                </div>
+                <div className="space-y-2 relative z-10">
+                   <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">Contagem Regressiva</div>
+                   <h3 className="text-2xl font-display">{contest.name || 'Próximo Desafio'}</h3>
+                </div>
+                <div className="flex gap-6 mt-8 relative z-10">
+                   <div className="space-y-1">
+                      <div className="text-4xl font-display">{timeLeft.days}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Dias</div>
+                   </div>
+                   <div className="space-y-1">
+                      <div className="text-4xl font-display">{timeLeft.hours}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/40">Horas</div>
+                   </div>
+                </div>
+             </div>
 
-            <div className="bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 space-y-4 shadow-sm hover:border-primary/30 transition-all">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-2xl font-black text-text-main">{globalProgress.revisions}/{globalProgress.total}</div>
-                <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Tópicos Revisados</div>
-              </div>
-              <div className="w-full bg-bg h-1.5 rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${globalProgress.revPercent}%` }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Tips Section */}
-          <div className="bg-gradient-to-br from-indigo-500 to-primary rounded-[32px] p-8 text-white relative overflow-hidden shadow-xl shadow-primary/20 lg:col-span-4">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-20 translate-x-20"></div>
-            <div className="relative z-10 space-y-4">
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                <Sparkles className="w-3.5 h-3.5" />
-                Dica de Mestre
-              </div>
-              <h3 className="text-xl font-black leading-tight">A constância vence o talento quando o talento não é constante.</h3>
-              <p className="text-xs text-indigo-100 font-medium leading-relaxed max-w-lg">
-                Foque em bater suas metas diárias, mesmo que pequenas. O acúmulo de conhecimento é exponencial. Não pare!
-              </p>
-              <div className="pt-2">
-                <Link 
-                  to="/microaprendizado"
-                  className="bg-white text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all inline-block shadow-lg"
-                >
-                  Ver Flashcards
+             {/* Tips Marquee/Card */}
+             <div className="md:col-span-2 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-6 group hover:border-primary/30 transition-all">
+                <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
+                   <BrainCircuit className="w-8 h-8" />
+                </div>
+                <div className="space-y-1 text-center md:text-left">
+                   <h4 className="text-sm font-black text-text-main uppercase tracking-widest">Estudo de Fluxo</h4>
+                   <p className="text-text-sub text-sm font-medium italic">"A excelência não é um ato, mas um hábito. Somos o que repetidamente fazemos."</p>
+                </div>
+                <Link to="/microaprendizado" className="md:ml-auto w-full md:w-auto bg-primary text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all text-center">
+                   IA Flashcards
                 </Link>
-              </div>
-            </div>
+             </div>
           </div>
         </div>
+      )}
+
+      {/* Mission Section */}
+      {todayTask && !isDefaultContest && (
+        <section className="space-y-6">
+           <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-display text-text-main">Missão de Hoje</h2>
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight">Dia {todayTask.dayNumber}</span>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 space-y-6 hover:shadow-xl transition-all group overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-32 h-32" />
+                 </div>
+                 <div className="space-y-4">
+                    <div className="text-[10px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Gerais</div>
+                    <div className="text-xl font-display text-text-main leading-tight border-l-2 border-primary pl-4">
+                       {todayTask.generalTopic || "Revisão Geral"}
+                    </div>
+                 </div>
+              </div>
+              <div className="bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 space-y-6 hover:shadow-xl transition-all group overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
+                    <ShieldCheck className="w-32 h-32" />
+                 </div>
+                 <div className="space-y-4">
+                    <div className="text-[10px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Específicos</div>
+                    <div className="text-xl font-display text-text-main leading-tight border-l-2 border-secondary pl-4">
+                       {todayTask.specificTopic || "Aprofundamento Técnico"}
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </section>
+      )}
+
+      {isDefaultContest && (
+        <section className="glass rounded-[4rem] p-20 text-center space-y-8 shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+          <div className="w-24 h-24 bg-primary rounded-[2rem] flex items-center justify-center mx-auto text-white shadow-2xl shadow-primary/30 relative z-10 group-hover:scale-110 transition-transform">
+            <Sparkles className="w-12 h-12" />
+          </div>
+          <div className="space-y-4 relative z-10">
+            <h2 className="text-4xl md:text-6xl font-display text-text-main tracking-tighter mix-blend-multiply dark:mix-blend-normal">
+               Inicie sua <span className="italic text-primary">Jornada</span>.
+            </h2>
+            <p className="text-text-sub max-w-lg mx-auto text-lg font-medium leading-relaxed">
+              Importe seu primeiro edital para que nossa Inteligência Artificial organize toda sua preparação verticalizada.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-center gap-6 relative z-10">
+            <Link to="/configuracoes" className="bg-primary text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+              Importar Novo Edital
+            </Link>
+            <Link to="/comunidade" className="bg-white dark:bg-card-bg border border-border text-text-main px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all">
+              Ver Comunidade
+            </Link>
+          </div>
+        </section>
       )}
 
       {/* Daily Log Modal */}
       <AnimatePresence>
         {showLogModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-card-bg border border-border w-full max-w-md rounded-3xl p-8 space-y-6">
-              <h3 className="text-xl font-black text-text-main">Como foram seus estudos hoje?</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-text-sub uppercase mb-2">Horas Estudadas Realizadas</label>
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="bg-white dark:bg-slate-950 border border-border w-full max-w-md rounded-[3rem] p-10 space-y-8 shadow-2xl">
+              <div className="space-y-2">
+                 <h3 className="text-3xl font-display text-text-main leading-none">Relatório de Batalha.</h3>
+                 <p className="text-sm text-text-sub font-medium">Como foi seu desempenho nos estudos hoje?</p>
+              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] ml-1">Horas Estudadas</label>
                   <input 
                     type="number" 
                     inputMode="decimal"
-                    className="w-full bg-bg border border-border rounded-xl p-3 text-sm focus:ring-2 ring-primary/20 outline-none" 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-primary/20 outline-none transition-all" 
                     value={logForm.hours} 
                     onChange={(e) => setLogForm({...logForm, hours: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    placeholder="0"
+                    placeholder="Ex: 4.5"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-text-sub uppercase mb-2">Questões Resolvidas Realizadas</label>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] ml-1">Questões Resolvidas</label>
                   <input 
                     type="number" 
                     inputMode="numeric"
-                    className="w-full bg-bg border border-border rounded-xl p-3 text-sm focus:ring-2 ring-primary/20 outline-none" 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-primary/20 outline-none transition-all" 
                     value={logForm.questions} 
                     onChange={(e) => setLogForm({...logForm, questions: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    placeholder="0"
+                    placeholder="Ex: 50"
                   />
                 </div>
               </div>
               <div className="flex gap-4 pt-4">
-                  <button onClick={() => setShowLogModal(false)} className="flex-1 py-3 text-sm font-bold text-text-sub hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
+                  <button onClick={() => setShowLogModal(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-text-sub hover:bg-slate-50 dark:hover:bg-slate-900 rounded-2xl transition-colors">Cancelar</button>
                   <button 
                     onClick={handleSavePerformance}
-                    className="flex-1 bg-primary text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-primary/20"
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                   >
-                    Salvar Desempenho
+                    Salvar
                   </button>
                 </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {isDefaultContest && (
-        <section className="bg-white border border-border rounded-[40px] p-12 text-center space-y-8 shadow-sm">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary relative">
-            <Sparkles className="w-12 h-12" />
-            <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-25"></div>
-          </div>
-          <div className="space-y-3">
-            <h2 className="text-3xl font-black text-text-main tracking-tight">Comece sua Preparação</h2>
-            <p className="text-text-sub max-w-lg mx-auto text-sm font-medium leading-relaxed">
-              Importe seu edital utilizando nossa Inteligência Artificial para gerar um plano de estudos verticalizado e cronograma personalizado.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/configuracoes" className="bg-primary text-white px-10 py-4 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-              Importar Novo Edital
-            </Link>
-            <Link to="/comunidade" className="bg-white border border-border text-text-main px-10 py-4 rounded-2xl font-black text-sm hover:bg-bg transition-all">
-              Explorar Comunidade
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Countdown Timer */}
-      {!isDefaultContest && (
-        <section className="bg-white border border-border rounded-3xl p-8 shadow-sm overflow-hidden relative group">
-          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
-            <Calendar className="w-32 h-32" />
-          </div>
-          <div className="relative z-10 space-y-6">
-            <h2 className="text-sm font-bold text-text-sub uppercase tracking-widest text-center md:text-left">Faltam apenas para a prova {contest?.name}</h2>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 md:gap-8">
-              {[
-                { label: 'Dias', value: timeLeft.days },
-                { label: 'Horas', value: timeLeft.hours },
-                { label: 'Min', value: timeLeft.minutes },
-                { label: 'Seg', value: timeLeft.seconds },
-              ].filter((item, idx, arr) => {
-                // Keep minutes and seconds always. Hide Days/Hours if they are 0 and there's nothing larger.
-                if (idx < 2 && item.value === 0) {
-                   // Only hide if all preceding items are also 0
-                   const precedingNonZero = arr.slice(0, idx).some(i => i.value > 0);
-                   return precedingNonZero;
-                }
-                return true;
-              }).map((item) => (
-                <div key={item.label} className="flex flex-col items-center">
-                  <span className="text-4xl md:text-5xl font-black text-text-main tabular-nums">{item.value}</span>
-                  <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider mt-1">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Today's Schedule (Cronograma de Hoje) */}
-      {todayTask && (
-        <section className="bg-white border border-border rounded-[32px] overflow-hidden shadow-sm relative group transition-all hover:shadow-xl hover:shadow-primary/5">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform pointer-events-none">
-            <BrainCircuit className="w-48 h-48 text-primary" />
-          </div>
-          
-          <div className="flex flex-col lg:flex-row min-h-[220px]">
-            {/* Left Rail: Day Indicator */}
-            <div className="bg-primary text-white p-8 flex flex-col justify-between items-center lg:w-32 shrink-0">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Dia</span>
-              <span className="text-5xl font-black tabular-nums leading-none mb-2">{todayTask.dayNumber}</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
-            </div>
-
-            {/* Main Content */}
-            <div className="flex-1 p-8 space-y-8 relative">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 text-primary p-2 rounded-xl">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-text-main tracking-tight leading-tight">Sua Missão Hoje</h3>
-                  <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Seu Plano de Guerra Personalizado</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                <div className="space-y-2 group/item">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-                    <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">Conhecimentos Gerais</span>
-                  </div>
-                  <div className="text-sm font-medium text-text-main leading-relaxed pl-3.5 border-l border-border group-hover/item:border-primary transition-colors">
-                    {(() => {
-                      const topic = todayTask.generalTopic;
-                      if (!topic) return "Nenhum tópico definido";
-                      const parts = topic.split(':');
-                      if (parts.length > 1) {
-                        return <><span className="font-black text-primary/80">{parts[0]}:</span> {parts.slice(1).join(':')}</>;
-                      }
-                      return topic;
-                    })()}
-                  </div>
-                </div>
-
-                <div className="space-y-2 group/item">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary/40"></div>
-                    <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">Conhecimentos Específicos</span>
-                  </div>
-                  <div className="text-sm font-medium text-text-main leading-relaxed pl-3.5 border-l border-border group-hover/item:border-secondary transition-colors">
-                    {(() => {
-                      const topic = todayTask.specificTopic;
-                      if (!topic) return "Nenhum tópico definido";
-                      const parts = topic.split(':');
-                      if (parts.length > 1) {
-                        return <><span className="font-black text-secondary">{parts[0]}:</span> {parts.slice(1).join(':')}</>;
-                      }
-                      return topic;
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                <div className="flex flex-wrap items-center gap-6">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-bg p-2.5 rounded-xl text-text-sub">
-                      <PenTool className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[8px] font-bold text-text-sub uppercase tracking-[0.1em]">Questões</div>
-                      <div className="text-xs font-black text-text-main">{todayTask.questionGoal} itens</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-bg p-2.5 rounded-xl text-text-sub">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-[8px] font-bold text-text-sub uppercase tracking-[0.1em]">Revisão Ativa</div>
-                      <div className="text-xs font-black text-text-main line-clamp-1">{todayTask.revisionTask}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <Link 
-                  to="/cronograma"
-                  className="bg-primary text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 whitespace-nowrap"
-                >
-                  Continuar Plano
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {!isDefaultContest && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Geral Card */}
-          <div className="bg-white border border-border rounded-3xl p-6 space-y-5 shadow-sm">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-black text-text-main">Geral</h3>
-                <p className="text-[10px] font-bold text-text-sub uppercase tracking-wider">Conhecimentos Gerais</p>
-              </div>
-              <div className="bg-primary/10 p-2.5 rounded-xl text-primary">
-                <BookOpen className="w-5 h-5" />
-              </div>
-            </div>
-            <p className="text-[11px] text-text-sub line-clamp-1">{generalSubjects.map(s => s.name).join(', ')}</p>
-            
-            <div className="space-y-4 pt-1">
-              <div className="flex justify-between items-end">
-                <div>
-                  <div className="text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Progresso Total</div>
-                  <div className="text-2xl font-black text-primary">{generalProgress.percent}%</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Concluídos</div>
-                  <div className="text-sm font-bold text-text-main">{generalProgress.completed}/{generalProgress.total}</div>
-                </div>
-              </div>
-              <div className="progress-bar h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${generalProgress.percent}%` }}></div>
-              </div>
-              <div className="flex justify-between text-[10px] font-bold text-text-sub uppercase tracking-wider pt-1">
-                <span>Revisões: {generalProgress.revPercent}%</span>
-                <span>Questões: {generalProgress.quesPercent}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Técnico Card */}
-          <div className="bg-dark-panel rounded-3xl p-6 space-y-5 shadow-xl text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-black text-white">Técnico</h3>
-                <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Conhecimentos Específicos</p>
-              </div>
-              <div className="bg-white/10 p-2.5 rounded-xl text-white">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-            </div>
-            <p className="text-[11px] text-white/60 line-clamp-1">{specificSubjects.map(s => s.name).join(', ')}</p>
-            
-            <div className="space-y-4 pt-1">
-              <div className="flex justify-between items-end">
-                <div>
-                  <div className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Progresso Total</div>
-                  <div className="text-2xl font-black text-accent">{specificProgress.percent}%</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">Concluídos</div>
-                  <div className="text-sm font-bold text-white">{specificProgress.completed}/{specificProgress.total}</div>
-                </div>
-              </div>
-              <div className="progress-bar h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-accent transition-all duration-1000" style={{ width: `${specificProgress.percent}%` }}></div>
-              </div>
-              <div className="flex justify-between text-[10px] font-bold text-white/50 uppercase tracking-wider pt-1">
-                <span>Revisões: {specificProgress.revPercent}%</span>
-                <span>Questões: {specificProgress.quesPercent}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white border border-border p-6 rounded-2xl space-y-4 shadow-sm">
-          <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Meta Tempo Estudado</div>
-          <div className="text-3xl font-bold text-text-main flex items-baseline gap-2">
-            {contest.dailyGoalHours || 2}h
-            {debt.hours > 0 && <span className="text-xs text-red-500 font-black">+{debt.hours}h ATRASO</span>}
-          </div>
-          <p className="text-[11px] text-text-sub">Planejado para hoje</p>
-        </div>
-
-        <div className="bg-white border border-border p-6 rounded-2xl space-y-4 shadow-sm">
-          <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Meta Questões</div>
-          <div className="text-3xl font-bold text-text-main flex items-baseline gap-2">
-            {todayTask?.questionGoal || contest.dailyGoalQuestions || 20}
-            {debt.questions > 0 && <span className="text-xs text-red-500 font-black">+{debt.questions} ATRASO</span>}
-          </div>
-          <p className="text-[11px] text-text-sub">Foco em resolução</p>
-        </div>
-
-        <div className="bg-white border border-border p-6 rounded-2xl space-y-4 shadow-sm">
-          <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Streak Atual</div>
-          <div className="text-3xl font-bold text-primary flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
-            0 Dias
-          </div>
-          <p className="text-[11px] text-text-sub">Sua constância é a chave</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="bg-card-bg border border-border rounded-2xl overflow-hidden shadow-sm lg:col-span-2">
-          <div className="p-6 border-b border-border flex justify-between items-center bg-gray-50/50">
-            <h2 className="font-bold text-text-main text-base uppercase tracking-tight">Matérias com maior peso</h2>
-            <span className="bg-accent-bg text-primary px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest">IA Insight</span>
-          </div>
-          <div className="divide-y divide-border">
-            {prioritySubjects.map((sub) => (
-              <div key={sub.id} className="p-4 hover:bg-bg-accent/30 transition-colors flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    sub.category === 'Gerais' ? "bg-primary" : "bg-text-sub"
-                  )}></div>
-                  <h4 className="font-medium text-text-main text-sm">{sub.name}</h4>
-                </div>
-                <div className="flex items-center gap-6">
-                   <span className={cn(
-                    "text-[9px] px-2 py-0.5 rounded font-bold uppercase",
-                    sub.incidence === 'Muito Alta' ? "bg-red-500 text-white" : 
-                    sub.incidence === 'Alta' ? "bg-orange-500 text-white" :
-                    "bg-accent text-white"
-                   )}>
-                    {sub.incidence}
-                   </span>
-                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-dark-panel p-6 rounded-2xl text-white flex flex-col justify-between shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Award className="w-20 h-20" />
-          </div>
-          <div className="relative z-10">
-            <h4 className="text-lg font-bold mb-2">Treinamento com IA</h4>
-            <p className="text-sm opacity-70 leading-relaxed">
-              Gere simulados personalizados focados apenas nos tópicos que você ainda não dominou.
-            </p>
-          </div>
-          <div className="mt-8 relative z-10">
-            <Link 
-              to="/microaprendizado" 
-              className="w-full bg-white text-dark-panel py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-100 transition-all border-none"
-            >
-              Praticar Agora
-            </Link>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
@@ -838,65 +553,64 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Desktop */}
       <aside className={cn(
-        "bg-sidebar border-r border-border transition-all duration-300 z-50",
-        "fixed md:relative h-full flex flex-col shrink-0",
-        // Mobile behavior: slide in/out
-        window.innerWidth <= 768 
-          ? (isSidebarOpen ? "translate-x-0 w-64 px-6 py-8" : "-translate-x-full w-0")
-          : (isSidebarOpen ? "w-60 px-6 py-8" : "w-16 px-2 py-8 translate-x-0"),
-        "md:translate-x-0"
+        "bg-sidebar dark:bg-slate-950 border-r border-border transition-all duration-300 z-50",
+        "fixed md:relative h-full flex flex-col shrink-0 hidden md:flex",
+        isSidebarOpen ? "w-64 px-6 py-8" : "w-20 px-4 py-8 translate-x-0"
       )}>
-        <div className="mb-12">
-          {isSidebarOpen ? (
-            <div className="text-primary font-extrabold text-lg tracking-tighter">CONCURSEIRO.PRO</div>
-          ) : (
-            <div className="w-8 h-8 bg-primary rounded-lg mx-auto flex items-center justify-center text-white font-black">C</div>
+        <div className="mb-12 flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-primary/20 shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          {isSidebarOpen && (
+            <div className="text-text-main font-display text-xl tracking-tighter leading-none">
+              FLOW<span className="text-primary italic">.AI</span>
+            </div>
           )}
         </div>
 
         <div className="space-y-8 flex-grow">
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-4">Estudos</span>}
-            <nav className="space-y-1">
+            {isSidebarOpen && <span className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mb-4 ml-2">Main</span>}
+            <nav className="space-y-1.5">
               <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/materias" icon={BookOpen} label="Matérias" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Microaprendizado" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Estudos IA" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-4">Meus Cargos</span>}
-            <div className="space-y-2">
+            {isSidebarOpen && <span className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mb-4 ml-2">Editais</span>}
+            <div className="space-y-1.5">
               {contests.length === 0 ? (
-                isSidebarOpen && <div className="px-3 text-[10px] text-text-sub font-bold italic">Nenhum cargo</div>
+                isSidebarOpen && <div className="px-3 py-4 text-[10px] text-text-sub font-bold italic border-2 border-dashed border-border rounded-2xl">Vazio</div>
               ) : (
-                contests.map(c => (
-                  <div key={c.id} className="group relative flex items-center gap-2 pr-2">
+                contests.slice(0, 5).map(c => (
+                  <div key={c.id} className="group relative flex items-center gap-2">
                     <button 
                       onClick={() => setCurrentContest(c)}
                       className={cn(
-                        "flex-1 flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left overflow-hidden",
+                        "flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left overflow-hidden",
                         currentContest?.id === c.id 
                           ? "bg-primary/10 text-primary border border-primary/20" 
-                          : "text-text-sub hover:bg-gray-100 dark:hover:bg-card-bg"
+                          : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
                       )}
                     >
                       <Award className={cn("w-4 h-4 shrink-0", currentContest?.id === c.id ? "text-primary" : "text-text-sub")} />
                       {isSidebarOpen && (
                         <div className="overflow-hidden">
-                          <div className="text-xs font-bold truncate">{c.role}</div>
-                          <div className="text-[9px] opacity-60 font-medium truncate">{c.name}</div>
+                          <div className="text-xs font-bold truncate leading-none">{c.role}</div>
+                          <div className="text-[9px] opacity-60 font-medium truncate mt-1">{c.name}</div>
                         </div>
                       )}
                     </button>
                     {isSidebarOpen && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDeleteContest(c.id); }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all absolute right-1"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -906,69 +620,95 @@ export default function App() {
               )}
             </div>
           </div>
-
-          <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-4">Configuração</span>}
-            <nav className="space-y-1">
-              <SidebarItem to="/configuracoes" icon={Settings} label="Importar Edital" active={location.pathname === '/configuracoes'} collapsed={!isSidebarOpen} />
-            </nav>
-          </div>
         </div>
 
         <div className="mt-auto pt-6 border-t border-border">
+          <Link 
+            to="/configuracoes"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all mb-2 text-sm font-bold",
+              location.pathname === '/configuracoes' ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
+            )}
+          >
+            <Settings className="w-4 h-4 shrink-0" />
+            {isSidebarOpen && <span>Configurações</span>}
+          </Link>
           <button 
             onClick={() => logout()}
-            className="flex items-center gap-3 px-3 py-2 text-text-sub hover:text-red-500 transition-colors text-sm font-medium w-full"
+            className="flex items-center gap-3 px-3 py-2.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-sm font-bold w-full"
           >
-            <LogOut className="w-4 h-4" />
-            {isSidebarOpen && <span>Sair da conta</span>}
+            <LogOut className="w-4 h-4 shrink-0" />
+            {isSidebarOpen && <span>Sair</span>}
           </button>
         </div>
       </aside>
 
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] glass px-6 py-3 flex items-center justify-between border-t border-border rounded-t-[2.5rem] shadow-2xl">
+        <Link to="/" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
+          <LayoutDashboard className="w-6 h-6" />
+        </Link>
+        <Link to="/materias" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/materias' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
+          <BookOpen className="w-6 h-6" />
+        </Link>
+        <Link to="/cronograma" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/cronograma' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
+          <Calendar className="w-6 h-6" />
+        </Link>
+        <Link to="/comunidade" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/comunidade' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
+          <Users className="w-6 h-6" />
+        </Link>
+        <Link to="/configuracoes" className={cn("p-3 rounded-2xl transition-all", location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110" : "text-text-sub")}>
+          <Settings className="w-6 h-6" />
+        </Link>
+      </nav>
+
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg relative">
-        <header className="sticky top-0 z-40 bg-bg/80 backdrop-blur-md px-4 md:px-10 py-4 md:py-6 flex items-center justify-between border-b border-border/50">
+      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-24">
+        <header className="sticky top-0 z-40 glass px-4 md:px-10 py-5 flex items-center justify-between border-b border-border/50">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-card-bg rounded-lg transition-colors text-text-sub"
+              className="hidden md:flex p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-text-sub"
             >
               {isSidebarOpen ? <X className="w-5 h-5 text-primary" /> : <Menu className="w-5 h-5" />}
             </button>
-            <div className="md:hidden flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-black text-xs">C</div>
-              <span className="text-sm font-black text-text-main tracking-tight italic">Flow</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm md:hidden">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <h2 className="text-lg font-display text-text-main tracking-tight leading-none md:hidden">
+                FLOW<span className="text-primary italic">.AI</span>
+              </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-card-bg rounded-lg transition-colors text-text-sub"
-              title="Alternar Tema"
+              className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-text-sub"
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-4">
-              {user.photoURL && (
-                <img src={user.photoURL} className="w-8 h-8 rounded-full border border-border" referrerPolicy="no-referrer" alt="Profile" />
-              )}
-              <div className="hidden sm:block">
-                <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest leading-none mb-1">Bem-vindo,</div>
-                <div className="text-xs font-bold text-text-main leading-none">{user.displayName || user.email}</div>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-border">
-                <div className="text-[10px] text-text-sub font-bold uppercase tracking-widest">Cargo Atual:</div>
-                <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-lg text-xs font-black tracking-tight border border-primary/10">
-                  {currentContest?.role || 'Selecione um edital'}
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="flex flex-col items-end mr-2">
+                <div className="text-[9px] text-text-sub font-black uppercase tracking-[0.1em] leading-none mb-1">Status</div>
+                <div className="text-xs font-black text-primary leading-none flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+                  Focado
                 </div>
               </div>
+              {user.photoURL ? (
+                <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm" referrerPolicy="no-referrer" alt="Profile" />
+              ) : (
+                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        <div className="p-4 md:p-10 max-w-7xl mx-auto">
+        <div className="p-5 md:p-10 max-w-7xl mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />

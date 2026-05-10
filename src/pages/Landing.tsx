@@ -135,142 +135,202 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden px-6">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-radial from-primary/10 to-transparent -z-10 blur-3xl"></div>
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-40 overflow-hidden px-6">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-primary/10 via-transparent to-transparent -z-10 blur-[120px]"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-secondary/5 rounded-full blur-[100px] -z-10 animate-pulse"></div>
         
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-12">
           <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-8"
+            className="space-y-6 max-w-4xl"
           >
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm shadow-primary/5">
               <Zap className="w-4 h-4 fill-primary" />
               Gestão de Estudos com IA
             </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-text-main leading-[1] tracking-tighter">
-              Sua aprovação no <span className="text-primary italic">Fluxo</span>.
+            <h1 className="text-6xl md:text-8xl lg:text-9xl font-display text-text-main leading-[0.9] tracking-tighter mix-blend-multiply dark:mix-blend-normal">
+              Sua aprovação no <br />
+              <span className="text-primary italic relative">
+                Fluxo
+                <svg className="absolute -bottom-2 left-0 w-full h-3 text-secondary/30 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
+                  <path d="M0 5 Q 25 0 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="4" />
+                </svg>
+              </span>.
             </h1>
-            <p className="text-lg md:text-xl text-text-sub font-medium leading-relaxed max-w-xl">
-              Pare de perder tempo com planilhas manuais. Deixe nossa IA organizar seu edital, criar seu cronograma e gerar material de revisão.
+            <p className="text-lg md:text-2xl text-text-sub font-medium leading-relaxed max-w-2xl mx-auto pt-4">
+              A ferramenta definitiva para concurseiros de elite. Organize editais, crie cronogramas e memorize com IA.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button 
-                 onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
-                 className="flex-1 sm:flex-none bg-primary text-white px-8 py-4 rounded-2xl text-base font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/25 flex items-center justify-center gap-2"
-              >
-                Criar edital gratuito
-                <ArrowRight className="w-5 h-5" />
-              </button>
-              <div className="flex -space-x-4 items-center pl-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-bg flex items-center justify-center overflow-hidden">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="user" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-                <div className="pl-6 text-sm font-bold text-text-sub">
-                  +1.500 concurseiros no Flow
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-col sm:flex-row gap-6 w-full max-w-md"
+          >
+            <button 
+               onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })}
+               className="flex-1 bg-text-main text-bg px-8 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-text-main/10 flex items-center justify-center gap-3 group"
+            >
+              Começar Agora
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button 
+               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+               className="flex-1 bg-white dark:bg-card-bg border border-border text-text-main px-8 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-bg transition-all"
+            >
+              Ver Recursos
+            </button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.4 }}
+            className="w-full pt-12"
+          >
+            <div className="relative mx-auto max-w-5xl">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 rounded-[3rem] blur-2xl -z-10 opacity-50"></div>
+              <div className="glass-card rounded-[2.5rem] overflow-hidden p-3 shadow-2xl">
+                <div className="bg-bg/50 dark:bg-slate-900/50 rounded-[2rem] border border-border/50 overflow-hidden">
+                   <div className="h-10 bg-white/50 dark:bg-slate-800/50 border-b border-border/50 flex items-center justify-between px-6">
+                      <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+                        <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="w-3 h-3 rounded-full bg-slate-100 dark:bg-slate-700"></div>
+                      </div>
+                      <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                      <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                   </div>
+                   <div className="h-[400px] md:h-[500px] flex">
+                      <div className="w-64 border-r border-border/50 hidden md:block p-6 space-y-6">
+                        <div className="h-4 w-24 bg-primary/20 rounded-full"></div>
+                        <div className="space-y-3">
+                          {[1,2,3,4,5].map(i => <div key={i} className="h-8 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>)}
+                        </div>
+                      </div>
+                      <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                         <div className="space-y-6">
+                            <div className="h-40 w-full bg-indigo-50 dark:bg-indigo-900/20 rounded-[2rem] border border-indigo-100 dark:border-indigo-800/30"></div>
+                            <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/30 rounded-[2rem]"></div>
+                         </div>
+                         <div className="space-y-6">
+                            <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/30 rounded-[2rem]"></div>
+                            <div className="h-40 w-full bg-emerald-50 dark:bg-emerald-900/20 rounded-[2rem] border border-emerald-100 dark:border-emerald-800/30"></div>
+                         </div>
+                      </div>
+                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
-          >
-            {/* Mockup Preview */}
-            <div className="bg-white dark:bg-card-bg border border-border p-4 rounded-[40px] shadow-2xl scale-110 md:scale-100 rotate-1 group hover:rotate-0 transition-transform duration-700">
-               <div className="bg-bg dark:bg-bg/50 rounded-[32px] overflow-hidden border border-border">
-                  <div className="h-10 border-b border-border flex items-center gap-2 px-6">
-                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                       <div className="h-4 w-32 bg-primary/20 rounded-lg"></div>
-                       <div className="h-4 w-12 bg-accent/20 rounded-lg"></div>
-                    </div>
-                    <div className="grid grid-cols-4 gap-3">
-                       {[1,2,3,4].map(i => (
-                         <div key={i} className="h-20 bg-white border border-border rounded-2xl p-3 space-y-2">
-                           <div className="h-2 w-full bg-bg rounded"></div>
-                           <div className="h-2 w-2/3 bg-bg rounded"></div>
-                         </div>
-                       ))}
-                    </div>
-                    <div className="h-32 bg-white border border-border rounded-[24px] p-4 flex flex-col justify-center gap-3">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
-                            <Target className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                             <div className="h-2 w-24 bg-text-sub/20 rounded"></div>
-                             <div className="h-3 w-40 bg-text-main/20 rounded"></div>
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-               </div>
-            </div>
-          </motion.div>
-        </div>
-
-        <div className="flex justify-center mt-20 md:mt-32 animate-bounce">
-          <ChevronDown className="w-6 h-6 text-text-sub" />
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-white dark:bg-card-bg border-y border-border">
-         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
-            <div className="text-center md:text-left space-y-1">
-               <div className="text-4xl font-black text-text-main">100%</div>
-               <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Automaticizado</div>
+      {/* Stats Section with Technical Grid */}
+      <section className="py-24 border-y border-border overflow-hidden bg-white/50 dark:bg-slate-900/30">
+         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 relative">
+            <div className="absolute inset-y-0 left-1/4 w-[1px] bg-border hidden md:block"></div>
+            <div className="absolute inset-y-0 left-2/4 w-[1px] bg-border hidden md:block"></div>
+            <div className="absolute inset-y-0 left-3/4 w-[1px] bg-border hidden md:block"></div>
+            
+            <div className="p-8 space-y-2 group">
+               <div className="text-5xl font-display text-text-main group-hover:text-primary transition-colors">100%</div>
+               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Automatizado</div>
             </div>
-            <div className="text-center md:text-left space-y-1">
-               <div className="text-4xl font-black text-primary">+200</div>
-               <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Editais na Comunidade</div>
+            <div className="p-8 space-y-2 group border-l md:border-l-0 border-border">
+               <div className="text-5xl font-display text-primary">+200</div>
+               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Editais Ativos</div>
             </div>
-            <div className="text-center md:text-left space-y-1">
-               <div className="text-4xl font-black text-text-main">24/7</div>
-               <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Suporte via IA</div>
+            <div className="p-8 space-y-2 group border-t md:border-t-0 border-border">
+               <div className="text-5xl font-display text-text-main group-hover:text-secondary transition-colors">24/7</div>
+               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Mentoria IA</div>
             </div>
-            <div className="text-center md:text-left space-y-1">
-               <div className="text-4xl font-black text-accent">5x</div>
-               <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Mais agilidade no estudo</div>
+            <div className="p-8 space-y-2 group border-t border-l md:border-t-0 border-border">
+               <div className="text-5xl font-display text-accent">5x</div>
+               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Foco & Retenção</div>
             </div>
          </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-32 px-6">
-        <div className="max-w-7xl mx-auto space-y-20">
-          <div className="text-center space-y-4 max-w-2xl mx-auto">
-             <h2 className="text-4xl md:text-5xl font-black text-text-main tracking-tighter">
-                Tudo o que você precisa para <span className="text-secondary italic">vencer</span> o edital.
-             </h2>
-             <p className="text-text-sub font-medium">
-                Desenvolvemos as ferramentas certas para quem não quer perder tempo com burocracia e focar apenas no que cai na prova.
+      {/* Features Bento Grid */}
+      <section id="features" className="py-40 px-6 bg-slate-50/50 dark:bg-slate-900/20">
+        <div className="max-w-7xl mx-auto space-y-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+             <div className="space-y-4 max-w-xl">
+                <div className="text-primary font-black text-[10px] uppercase tracking-[0.3em]">Recursos de Ponta</div>
+                <h2 className="text-5xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+                   Toda a tecnologia a favor da sua <span className="italic text-secondary">aprovação</span>.
+                </h2>
+             </div>
+             <p className="text-text-sub font-medium max-w-sm text-lg leading-relaxed">
+                Desenvolvemos ferramentas exclusivas que transformam a maneira como você estuda para concursos.
              </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-             {features.map((f, i) => (
-               <div key={i} className="group bg-white dark:bg-card-bg border border-border p-8 rounded-[40px] shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all hover:border-primary/30 flex flex-col items-center text-center space-y-6">
-                  <div className={cn("w-16 h-16 rounded-[24px] flex items-center justify-center transition-transform group-hover:scale-110 duration-500", f.color)}>
-                     <f.icon className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-3">
-                     <h3 className="text-xl font-black text-text-main tracking-tight">{f.title}</h3>
-                     <p className="text-sm text-text-sub leading-relaxed">{f.description}</p>
-                  </div>
-               </div>
-             ))}
+          <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-8">
+             {/* Feature 1: Large Bento */}
+             <div className="md:col-span-6 lg:col-span-8 bg-white dark:bg-slate-900 border border-border p-10 rounded-[3rem] shadow-sm hover:shadow-xl hover:border-primary/20 transition-all flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                <div className="relative z-10 space-y-4">
+                   <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <BrainCircuit className="w-8 h-8" />
+                   </div>
+                   <h3 className="text-3xl font-display text-text-main">Verticalização via IA</h3>
+                   <p className="text-text-sub max-w-sm text-lg font-medium">Transforme qualquer edital PDF em uma grade de estudos organizada automaticamente.</p>
+                </div>
+                <div className="absolute bottom-0 right-0 w-2/3 h-2/3 bg-primary/5 rounded-tl-[4rem] border-t border-l border-primary/10 overflow-hidden">
+                   <div className="p-8 space-y-4">
+                      <div className="h-6 w-full bg-primary/10 rounded-lg"></div>
+                      <div className="h-6 w-3/4 bg-primary/10 rounded-lg"></div>
+                      <div className="h-6 w-full bg-primary/10 rounded-lg"></div>
+                   </div>
+                </div>
+             </div>
+
+             {/* Feature 2 */}
+             <div className="md:col-span-3 lg:col-span-4 bg-secondary/5 border border-secondary/10 p-10 rounded-[3rem] flex flex-col justify-between hover:border-secondary/30 transition-all group">
+                <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary group-hover:rotate-12 transition-transform">
+                   <Calendar className="w-7 h-7" />
+                </div>
+                <div className="space-y-3">
+                   <h3 className="text-2xl font-display text-text-main">Cronograma Inteligente</h3>
+                   <p className="text-text-sub text-sm font-medium">Planos de estudo dinâmicos baseados na sua disponibilidade real.</p>
+                </div>
+             </div>
+
+             {/* Feature 3 */}
+             <div className="md:col-span-3 lg:col-span-4 bg-accent/5 border border-accent/10 p-10 rounded-[3rem] flex flex-col justify-between hover:border-accent/30 transition-all group">
+                <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                   <Target className="w-7 h-7" />
+                </div>
+                <div className="space-y-3">
+                   <h3 className="text-2xl font-display text-text-main">Microaprendizado</h3>
+                   <p className="text-text-sub text-sm font-medium">Flashcards e resumos gerados automaticamente a partir do conteúdo.</p>
+                </div>
+             </div>
+
+             {/* Feature 4: Long Bento */}
+             <div className="md:col-span-6 lg:col-span-8 bg-slate-900 dark:bg-slate-900 border border-slate-800 p-10 rounded-[3rem] flex flex-col md:flex-row items-center gap-10 hover:border-primary/50 transition-all group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
+                <div className="flex-1 space-y-4">
+                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-white">
+                      <Users className="w-7 h-7" />
+                   </div>
+                   <h3 className="text-3xl font-display text-white">Comunidade Global</h3>
+                   <p className="text-slate-400 text-lg font-medium">Conecte-se com milhares de aprovados e acesse editais compartilhados.</p>
+                   <button className="bg-white text-slate-900 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">Explorar agora</button>
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-3 relative z-10">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="aspect-square rounded-2xl bg-white/5 border border-white/10 p-4 transition-transform group-hover:scale-105" style={{ transitionDelay: `${i * 100}ms` }}>
+                        <div className="w-8 h-8 rounded-full bg-white/10 mb-2"></div>
+                        <div className="h-2 w-full bg-white/20 rounded-full"></div>
+                     </div>
+                   ))}
+                </div>
+             </div>
           </div>
         </div>
       </section>

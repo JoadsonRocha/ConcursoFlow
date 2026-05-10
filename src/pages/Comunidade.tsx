@@ -7,7 +7,7 @@ import { Users, Heart, Download, Search, Filter, Calendar, Award, Sparkles, User
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
-const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
+export default function Comunidade({ onImport }: { onImport: (contest: Contest) => void }) {
   const { user } = useAuth();
   const [sharedContests, setSharedContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,16 +48,14 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
   const handleClone = async (contest: Contest) => {
     if (!user) return;
     try {
-      // We pass it to the main App handler which saves it to the user's private collection
       const clonedContest = {
         ...contest,
         ownerId: user.uid,
-        isPublic: false, // Clone starts as private
+        isPublic: false,
         likesCount: 0,
-        createdAt: new Date().toISOString(), // Will be overwritten by serverTimestamp in handleImport
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      // Note: handleImportEdital in App.tsx handles the Firestore write
       onImport(clonedContest);
       alert(`${contest.role} adicionado aos seus estudos!`);
     } catch (err) {
@@ -74,31 +72,30 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-            <Users className="w-3.5 h-3.5" />
-            Galeria da Comunidade
-          </div>
-          <h2 className="text-3xl font-black text-text-main tracking-tight">Editais Verticalizados</h2>
-          <p className="text-sm font-medium text-text-sub">Explore planos de estudo compartilhados por outros candidatos.</p>
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em] leading-none mb-2">Ecossistema Compartilhado</div>
+          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+            Galeria da <span className="italic text-primary">Comunidade</span>.
+          </h1>
+          <p className="text-text-sub text-sm font-medium pt-2">Explore e favorite editais verticalizados criados pela inteligência coletiva.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub" />
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div className="relative group flex-1 sm:w-64">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
             <input 
               type="text"
               placeholder="Buscar cargo ou banca..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-white dark:bg-card-bg border border-border rounded-xl py-2 pl-10 pr-4 text-xs font-bold w-full sm:w-64 focus:ring-2 ring-primary/20 transition-all outline-none"
+              className="w-full bg-white dark:bg-slate-900 border border-border rounded-xl py-3 pl-11 pr-4 text-xs font-bold focus:ring-4 ring-primary/5 transition-all outline-none shadow-sm"
             />
           </div>
           <select 
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="bg-white dark:bg-card-bg border border-border rounded-xl py-2 px-4 text-xs font-bold outline-none cursor-pointer hover:border-primary/50 transition-all"
+            className="bg-white dark:bg-slate-900 border border-border rounded-xl py-3 px-6 text-[10px] font-black uppercase tracking-widest outline-none cursor-pointer hover:border-primary/50 transition-all shadow-sm appearance-none"
           >
             <option value="Todos">Todos os Cargos</option>
             <option value="Analista">Analista</option>
@@ -106,89 +103,87 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
             <option value="Auditor">Auditor</option>
           </select>
         </div>
-      </div>
+      </header>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[1,2,3].map(i => (
-            <div key={i} className="h-64 bg-gray-100 dark:bg-card-bg/50 rounded-[32px] animate-pulse border border-border"></div>
+            <div key={i} className="h-72 bg-slate-100 dark:bg-slate-900 rounded-[2.5rem] animate-pulse border border-border"></div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card-bg border border-border rounded-[40px] p-20 text-center space-y-6 shadow-sm">
-          <div className="w-20 h-20 bg-bg dark:bg-bg rounded-full flex items-center justify-center mx-auto">
-            <Users className="w-10 h-10 text-text-sub opacity-30" />
+        <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-20 text-center space-y-6 shadow-xl shadow-primary/[0.02] flex flex-col items-center">
+          <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-700 shadow-xl">
+            <Users className="w-10 h-10 text-text-sub opacity-20" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-text-main">Nenhum edital encontrado</h3>
-            <p className="text-sm text-text-sub max-w-xs mx-auto">Seja o primeiro a compartilhar seu cronograma verticalizado com a comunidade!</p>
+            <h3 className="text-2xl font-display text-text-main">Vazio por aqui</h3>
+            <p className="text-sm text-text-sub max-w-xs mx-auto font-medium leading-relaxed">Seja o arquiteto do primeiro edital desta categoria e compartilhe com o mundo!</p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AnimatePresence>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
+          <AnimatePresence mode="popLayout">
             {filtered.map((contest) => (
               <motion.div
                 key={contest.id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="group bg-white dark:bg-card-bg border border-border rounded-[32px] p-6 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all hover:border-primary/30 flex flex-col relative overflow-hidden"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="group relative bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 transition-all hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 flex flex-col"
               >
+                {/* Background Decor */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
                 
-                <div className="flex items-start justify-between mb-6 relative z-10">
-                  <div className="space-y-1">
-                    <div className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">{contest.name}</div>
-                    <h4 className="text-lg font-black text-text-main leading-tight tracking-tight">{contest.role}</h4>
+                <div className="flex items-start justify-between mb-8 relative z-10">
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none mb-1">{contest.name}</div>
+                    <h4 className="text-xl font-display text-text-main leading-tight tracking-tight max-w-[180px]">{contest.role}</h4>
                   </div>
                   <button 
                     onClick={(e) => handleLike(contest.id, e)}
-                    className="flex flex-col items-center gap-1 group/like p-2 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-colors"
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all active:scale-90",
+                      contest.likesCount > 0 ? "bg-red-50 text-red-500" : "bg-slate-50 text-text-sub hover:text-red-500"
+                    )}
                   >
-                    <Heart className={cn("w-5 h-5 transition-all", contest.likesCount > 0 ? "fill-red-500 text-red-500 scale-110" : "text-text-sub group-hover/like:text-red-500")} />
-                    <span className="text-[10px] font-black text-text-sub leading-none">{contest.likesCount || 0}</span>
+                    <Heart className={cn("w-5 h-5 transition-transform", contest.likesCount > 0 && "fill-red-500 scale-110")} />
+                    <span className="text-[10px] font-black leading-none">{contest.likesCount || 0}</span>
                   </button>
                 </div>
 
-                <div className="space-y-4 mb-8 mt-auto relative z-10">
-                  <div className="flex items-center gap-3 text-text-sub">
-                    <div className="w-8 h-8 bg-bg dark:bg-card-bg border border-border rounded-lg flex items-center justify-center text-text-sub">
-                      <Calendar className="w-4 h-4" />
+                <div className="grid grid-cols-2 gap-4 mb-8 pt-4 border-t border-slate-50 dark:border-slate-800 relative z-10">
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-black text-text-sub uppercase tracking-widest flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3" />
+                      Prova
                     </div>
-                    <div className="space-y-0.5">
-                      <div className="text-[9px] font-bold uppercase tracking-wider leading-none">Data da Prova</div>
-                      <div className="text-xs font-black text-text-main">{contest.examDate || 'A definir'}</div>
-                    </div>
+                    <div className="text-xs font-bold text-text-main truncate">{contest.examDate || 'A definir'}</div>
                   </div>
-                  <div className="flex items-center gap-3 text-text-sub">
-                    <div className="w-8 h-8 bg-bg dark:bg-card-bg border border-border rounded-lg flex items-center justify-center text-text-sub">
-                      <Award className="w-4 h-4" />
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-black text-text-sub uppercase tracking-widest flex items-center gap-1.5">
+                      <Award className="w-3 h-3" />
+                      Disciplinas
                     </div>
-                    <div className="space-y-0.5">
-                      <div className="text-[9px] font-bold uppercase tracking-wider leading-none">Matérias</div>
-                      <div className="text-xs font-black text-text-main">{contest.subjects?.length || 0} disciplinas</div>
-                    </div>
+                    <div className="text-xs font-bold text-text-main">{contest.subjects?.length || 0} matérias</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-border mt-auto relative z-10">
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setPreviewContest(contest)}
-                      className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Search className="w-3 h-3" />
-                      Ver Grade
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between mt-auto relative z-10 gap-4">
+                  <button 
+                    onClick={() => setPreviewContest(contest)}
+                    className="flex-1 py-4.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all bg-slate-50 dark:bg-slate-800 text-text-sub hover:bg-slate-100 hover:text-text-main flex items-center justify-center gap-2 group/btn"
+                  >
+                    <Search className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+                    Expandir
+                  </button>
                   <button 
                     onClick={() => handleClone(contest)}
-                    className="bg-primary text-white p-2.5 rounded-xl shadow-lg shadow-primary/20 hover:scale-110 transition-all active:scale-95 flex items-center gap-2 px-4"
+                    className="flex-1 bg-text-main text-bg py-4.5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-text-main/10 hover:scale-[1.05] active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
-                    <Download className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Favoritar</span>
+                    <Download className="w-3.5 h-3.5" />
+                    Estudar
                   </button>
                 </div>
               </motion.div>
@@ -200,51 +195,59 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
       {/* Preview Modal */}
       <AnimatePresence>
         {previewContest && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-card-bg border border-border w-full max-w-2xl rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+              className="bg-white dark:bg-slate-900 border border-border w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] relative"
             >
-              <div className="p-6 md:p-8 border-b border-border bg-bg/50 flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-lg md:text-xl font-black text-text-main">{previewContest.role}</h3>
-                  <p className="text-[10px] font-bold text-text-sub uppercase tracking-wider">{previewContest.name}</p>
+              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
+              
+              <div className="p-8 md:p-10 border-b border-border flex items-center justify-between relative z-10">
+                <div className="space-y-1.5">
+                  <h3 className="text-2xl md:text-3xl font-display text-text-main leading-none">{previewContest.role}</h3>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{previewContest.name}</p>
                 </div>
                 <button 
                   onClick={() => setPreviewContest(null)}
-                  className="p-2 hover:bg-bg rounded-full transition-colors text-text-sub"
+                  className="w-12 h-12 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all text-text-sub"
                 >
-                  <Search className="w-5 h-5 rotate-90" />
+                  <Search className="w-6 h-6 rotate-90" />
                 </button>
               </div>
 
-              <div className="p-6 md:p-8 overflow-y-auto space-y-6">
+              <div className="p-8 md:p-10 overflow-y-auto space-y-10 relative z-10 custom-scrollbar">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-bg dark:bg-bg/20 rounded-2xl p-4 border border-border">
-                    <div className="text-[9px] font-bold text-text-sub uppercase mb-1">Total de Matérias</div>
-                    <div className="text-lg md:text-xl font-black text-primary">{previewContest.subjects?.length || 0}</div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-border transition-colors hover:border-primary/20">
+                    <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-2">Disciplinas</div>
+                    <div className="text-3xl font-display text-primary leading-none">{previewContest.subjects?.length || 0}</div>
                   </div>
-                  <div className="bg-bg dark:bg-bg/20 rounded-2xl p-4 border border-border">
-                    <div className="text-[9px] font-bold text-text-sub uppercase mb-1">Data Prevista</div>
-                    <div className="text-lg md:text-xl font-black text-secondary">{previewContest.examDate || 'A definir'}</div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-border transition-colors hover:border-secondary/20">
+                    <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-2">Data Prova</div>
+                    <div className="text-3xl font-display text-secondary leading-none truncate">{previewContest.examDate || 'TBD'}</div>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-black text-text-sub uppercase tracking-widest">Matérias Incluídas</h4>
-                    <span className="text-[10px] font-bold text-primary">Estudo IA Pronto</span>
+                    <h4 className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Conteúdo Programático</h4>
+                    <div className="flex items-center gap-2 text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full">
+                      <Sparkles className="w-3 h-3" />
+                      IA Optimized
+                    </div>
                   </div>
-                  <div className="space-y-2 pb-4">
+                  <div className="grid grid-cols-1 gap-3">
                     {previewContest.subjects?.map((sub, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-bg dark:bg-bg/10 border border-border rounded-xl group/item">
-                        <div className="flex items-center gap-3">
-                           <div className="w-2 h-2 rounded-full bg-primary/40 group-hover/item:scale-125 transition-transform" />
-                           <span className="text-xs md:text-sm font-bold text-text-main">{sub.name}</span>
+                      <div key={i} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-border rounded-2xl group/item hover:border-primary/30 transition-all">
+                        <div className="flex items-center gap-4">
+                           <div className="w-2.5 h-2.5 rounded-full bg-primary/30 group-hover/item:scale-125 group-hover/item:bg-primary transition-all shadow-sm" />
+                           <span className="text-sm font-bold text-text-main group-hover/item:translate-x-1 transition-transform">{sub.name}</span>
                         </div>
-                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black uppercase">
+                        <span className={cn(
+                          "text-[9px] px-2.5 py-1 rounded-xl font-black uppercase tracking-tight",
+                          sub.incidence === 'Muito Alta' ? "bg-red-500 text-white" : "bg-slate-100 dark:bg-slate-700 text-text-sub"
+                        )}>
                           {sub.incidence}
                         </span>
                       </div>
@@ -253,22 +256,22 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
                 </div>
               </div>
 
-              <div className="p-6 bg-bg/30 border-t border-border flex gap-4">
+              <div className="p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-border flex flex-col sm:flex-row gap-4 relative z-10">
                 <button 
                   onClick={() => setPreviewContest(null)}
-                  className="flex-1 py-3 text-xs font-bold text-text-sub hover:bg-bg rounded-2xl transition-colors"
+                  className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-text-sub hover:bg-white dark:hover:bg-slate-900 rounded-2xl transition-all active:scale-95"
                 >
-                  Fechar
+                  Cancelar
                 </button>
                 <button 
                   onClick={() => {
                     handleClone(previewContest);
                     setPreviewContest(null);
                   }}
-                  className="flex-[2] bg-primary text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all"
+                  className="flex-[2] bg-text-main text-bg py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-text-main/20 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   <Download className="w-4 h-4" />
-                  Favoritar este Edital
+                  Clonar para Meus Estudos
                 </button>
               </div>
             </motion.div>
@@ -277,6 +280,4 @@ const Comunidade = ({ onImport }: { onImport: (contest: Contest) => void }) => {
       </AnimatePresence>
     </div>
   );
-};
-
-export default Comunidade;
+}

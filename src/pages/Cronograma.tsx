@@ -58,10 +58,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       }
 
       await setDoc(sharedRef, sharedData);
-      
-      // Update local contest state to mark as public
       onUpdate({ ...contest, isPublic: true });
-      
       alert("Cronograma compartilhado com sucesso na Comunidade! 🚀");
     } catch (error) {
       console.error("Erro ao compartilhar:", error);
@@ -105,7 +102,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       text += `QUESTÕES: ${d.questionGoal} | REVISÃO: ${d.revisionTask}\n`;
       text += `-----------------------------------\n\n`;
     });
-    
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -117,31 +113,37 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
   if (!schedule.length) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <header className="text-center space-y-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
-            <CalendarDays className="w-8 h-8" />
+      <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <header className="text-center space-y-6">
+          <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto text-primary shadow-inner">
+            <CalendarDays className="w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-black text-text-main">Criar Cronograma de Estudos</h1>
-          <p className="text-text-sub max-w-lg mx-auto">
-            A IA vai analisar todo o conteúdo programático do edital e distribuir as matérias em um ciclo de estudos inteligente.
-          </p>
+          <div className="space-y-2">
+            <div className="text-primary font-black text-[10px] uppercase tracking-[0.4em] leading-none mb-4">Arquitetura de Aprendizado</div>
+            <h1 className="text-4xl md:text-6xl font-display text-text-main tracking-tighter leading-[0.9]">
+              Criar seu <span className="italic text-primary">Plano de Guerra</span>.
+            </h1>
+            <p className="text-text-sub max-w-lg mx-auto text-lg font-medium pt-4">
+              A IA analisará seu edital para distribuir os tópicos de forma inteligente no tempo disponível.
+            </p>
+          </div>
         </header>
 
-        <section className="bg-white dark:bg-card-bg border border-border rounded-3xl p-8 shadow-sm space-y-6 text-center max-w-md mx-auto">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-sub uppercase tracking-widest">Duração do Cronograma</label>
-            <div className="flex items-center justify-center gap-4">
+        <section className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 shadow-xl shadow-primary/5 space-y-10 text-center max-w-lg mx-auto relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+          <div className="space-y-4 relative z-10">
+            <label className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Duração Estratégica</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                {[2, 4, 8, 12].map(w => (
                  <button 
                   key={w}
                   onClick={() => setWeeksCount(w)}
                   className={cn(
-                    "px-4 py-2 rounded-xl text-sm font-bold border transition-all",
-                    weeksCount === w ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-bg text-text-sub border-border hover:border-primary/50"
+                    "px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border transition-all",
+                    weeksCount === w ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" : "bg-slate-50 dark:bg-slate-800 text-text-sub border-border hover:border-primary/30"
                   )}
                  >
-                   {w} Semanas
+                   {w} Sem
                  </button>
                ))}
             </div>
@@ -150,14 +152,14 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full bg-primary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-xl shadow-primary/20"
+            className="w-full relative z-10 bg-text-main text-bg py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-text-main/20 group/btn"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-bg/20 border-t-bg rounded-full animate-spin"></div>
             ) : (
               <>
-                <Sparkles className="w-5 h-5" />
-                Gerar Cronograma IA
+                <Sparkles className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
+                Gerar com IA Pro
               </>
             )}
           </button>
@@ -169,21 +171,24 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const currentWeekDays = schedule.slice((activeWeek - 1) * 7, activeWeek * 7);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <header className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="text-center md:text-left">
-          <h1 className="text-2xl font-black text-text-main">Plano de Guerra: {contest.role}</h1>
-          <p className="text-text-sub text-sm">Cronograma personalizado gerado via IA.</p>
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em]">Cronograma Inteligente</div>
+          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+            Plano de <span className="italic text-primary">Ação</span>.
+          </h1>
+          <p className="text-text-sub text-sm font-medium pt-2">{contest.role} · Estratégia IA Ativa</p>
         </div>
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
            <button 
             onClick={handleShare}
             disabled={sharing || contest.isPublic}
             className={cn(
-              "px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border",
+              "flex-1 md:flex-none px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border",
               contest.isPublic 
                 ? "bg-accent/10 border-accent/20 text-accent opacity-70 cursor-default" 
-                : "bg-secondary text-white border-secondary hover:scale-105 active:scale-95 shadow-lg shadow-secondary/20"
+                : "bg-secondary text-white border-secondary hover:scale-[1.02] shadow-lg shadow-secondary/20"
             )}
            >
              {sharing ? (
@@ -191,104 +196,116 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
              ) : (
                <Share2 className="w-4 h-4" />
              )}
-             {contest.isPublic ? 'Já na Comunidade' : 'Publicar na Comunidade'}
+             {contest.isPublic ? 'Público' : 'Publicar'}
            </button>
 
            <button 
             onClick={exportText}
-            className="bg-white dark:bg-card-bg border border-border px-4 py-2 rounded-xl text-xs font-bold text-text-sub flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-bg transition-colors"
+            className="p-3.5 bg-white dark:bg-slate-900 border border-border rounded-xl text-text-sub hover:bg-slate-50 transition-all shadow-sm"
+            title="Exportar TXT"
            >
-             <Download className="w-4 h-4" />
-             Exportar TXT
+             <Download className="w-5 h-5" />
            </button>
            <button 
             onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: undefined }) }}
-            className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-red-500/20 transition-colors"
+            className="p-3.5 bg-red-50 dark:bg-red-500/5 text-red-500 border border-red-500/10 rounded-xl hover:bg-red-100 transition-all shadow-sm"
+            title="Resertar Plano"
            >
-             Novo Plano
+             <Clock className="w-5 h-5" />
            </button>
         </div>
       </header>
 
-      <nav className="flex justify-center flex-wrap gap-2">
+      {/* Week Selector - Responsive Scroll */}
+      <div className="flex overflow-x-auto pb-4 gap-3 no-scrollbar snap-x scroll-px-4">
         {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => (
           <button
             key={w}
             onClick={() => setActiveWeek(w)}
             className={cn(
-              "px-6 py-2 rounded-xl text-xs font-bold transition-all border",
-              activeWeek === w ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white dark:bg-card-bg border-border text-text-sub hover:border-primary/50"
+              "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shrink-0 snap-center",
+              activeWeek === w 
+                ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" 
+                : "bg-white dark:bg-slate-900 border-border text-text-sub hover:border-primary/30"
             )}
           >
             Semana {w}
           </button>
         ))}
-      </nav>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {currentWeekDays.map((d, index) => {
           const dayIdx = (activeWeek - 1) * 7 + index;
           return (
             <motion.div 
               key={dayIdx}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               className={cn(
-                "bg-card-bg border rounded-2xl p-6 transition-all relative group overflow-hidden",
-                d.completed ? "border-accent/40 shadow-inner" : "border-border hover:border-primary/40 shadow-sm"
+                "bg-white dark:bg-slate-900 border rounded-[2.5rem] p-8 transition-all relative group overflow-hidden flex flex-col justify-between",
+                d.completed ? "border-accent/30 shadow-inner bg-slate-50" : "border-border hover:border-primary/30 shadow-xl shadow-primary/[0.02]"
               )}
             >
               {d.completed && (
-                <div className="absolute top-4 right-4 text-accent animate-in zoom-in duration-300">
-                  <CheckCircle2 className="w-6 h-6 fill-accent/10" />
+                <div className="absolute top-6 right-6 text-accent animate-in zoom-in duration-500">
+                  <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
                 </div>
               )}
 
-              <div className="space-y-5">
-                <header>
-                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">Dia {d.dayNumber}</span>
+              <div className="space-y-6">
+                <header className="flex items-center gap-3">
+                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-display font-black">
+                      {d.dayNumber}
+                   </div>
+                   <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Dia de Batalha</span>
                 </header>
 
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-secondary uppercase tracking-tight">
-                       <ShieldCheck className="w-3.5 h-3.5" />
-                       Específicos
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+                       <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Específicos</span>
                     </div>
-                    <div className="text-sm font-bold text-text-main leading-tight">{d.specificTopic}</div>
+                    <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.specificTopic}</div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-tight">
-                       <BookOpen className="w-3.5 h-3.5" />
-                       Gerais
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
+                       <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Gerais</span>
                     </div>
-                    <div className="text-sm font-bold text-text-main leading-tight">{d.generalTopic}</div>
+                    <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.generalTopic}</div>
                   </div>
                 </div>
 
-                <footer className="pt-4 border-t border-border mt-2 grid grid-cols-2 gap-2">
-                   <div className="bg-bg rounded-lg p-2 text-center">
-                      <div className="text-[8px] font-bold text-text-sub uppercase">Questões</div>
-                      <div className="text-[10px] font-bold text-text-main">{d.questionGoal}</div>
+                <div className="pt-6 border-t border-border flex items-center justify-between">
+                   <div className="space-y-1">
+                      <div className="text-[8px] font-black text-text-sub uppercase tracking-widest mb-1">Questões</div>
+                      <div className="flex items-center gap-1">
+                         <PenTool className="w-3 h-3 text-primary/60" />
+                         <span className="text-xs font-black text-text-main">{d.questionGoal} itens</span>
+                      </div>
                    </div>
-                   <div className="bg-bg rounded-lg p-2 text-center">
-                      <div className="text-[8px] font-bold text-text-sub uppercase">Revisão</div>
-                      <div className="text-[10px] font-bold text-text-main line-clamp-1">{d.revisionTask}</div>
+                   <div className="text-right">
+                      <div className="text-[8px] font-black text-text-sub uppercase tracking-widest mb-1">Revisão</div>
+                      <div className="text-xs font-bold text-text-main line-clamp-1 max-w-[100px]">{d.revisionTask}</div>
                    </div>
-                </footer>
-
-                <button 
-                  onClick={() => toggleDay(dayIdx)}
-                  className={cn(
-                    "w-full py-2.5 rounded-xl text-xs font-bold transition-all mt-2",
-                    d.completed ? "bg-accent text-white" : "bg-bg text-text-sub hover:bg-primary/10 hover:text-primary border border-border group-hover:border-primary/30"
-                  )}
-                >
-                  {d.completed ? 'Dia Concluído!' : 'Marcar como Feito'}
-                </button>
+                </div>
               </div>
+
+              <button 
+                onClick={() => toggleDay(dayIdx)}
+                className={cn(
+                  "w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-8",
+                  d.completed ? "bg-accent text-white shadow-lg shadow-accent/20" : "bg-slate-50 dark:bg-slate-800 text-text-sub hover:bg-primary/10 hover:text-primary hover:scale-[1.02]"
+                )}
+              >
+                {d.completed ? 'Vencido' : 'Concluir Dia'}
+              </button>
             </motion.div>
           );
         })}
