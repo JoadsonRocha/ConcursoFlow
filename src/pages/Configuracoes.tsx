@@ -14,6 +14,8 @@ interface SettingsProps {
 
 export default function Settings({ onImport, onDelete, contests, currentContest }: SettingsProps) {
   const [rawText, setRawText] = useState('');
+  const [manualContestName, setManualContestName] = useState('');
+  const [manualRole, setManualRole] = useState('');
   const [dailyHours, setDailyHours] = useState<number | ''>(2);
   const [dailyQuestions, setDailyQuestions] = useState<number | ''>(20);
   const [examDate, setExamDate] = useState('2026-06-27');
@@ -43,6 +45,8 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
 
       const dynamicContest: Contest = {
         ...parsed as Contest,
+        name: manualContestName || (parsed as Contest).name || 'Novo Concurso',
+        role: manualRole || (parsed as Contest).role || 'Cargo não especificado',
         id: `dynamic-${Date.now()}`,
         examDate: examDate,
         dailyGoalHours: dailyHours,
@@ -53,6 +57,8 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
       onImport(dynamicContest);
       setSuccess(true);
       setRawText('');
+      setManualContestName('');
+      setManualRole('');
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar o edital.");
     } finally {
@@ -62,9 +68,12 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <header hover-scale="true">
-        <h1 className="text-2xl font-bold text-text-main">Configurações & Metas</h1>
-        <p className="text-text-sub text-sm">Defina seus objetivos diários e importe novos editais com IA.</p>
+      <header className="space-y-1.5 overflow-hidden">
+        <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em] leading-none mb-2">Engenharia de Aprovação</div>
+        <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+          Importar <span className="italic text-primary">Edital</span> com IA.
+        </h1>
+        <p className="text-text-sub text-sm font-medium pt-2">Transforme conteúdo bruto em um ecossistema de estudos de alta performance.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -147,12 +156,25 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         </div>
       </section>
 
-      <section className="bg-dark-panel p-6 rounded-2xl text-white flex flex-col justify-center">
-        <p className="text-sm opacity-80 leading-relaxed italic">
-          "O sucesso é a soma de pequenos esforços repetidos dia após dia."
-        </p>
-        <div className="mt-4 pt-4 border-t border-white/10 text-[10px] font-bold uppercase tracking-widest opacity-60">
-          Foco & Disciplina
+      <section className="bg-slate-900 dark:bg-slate-950 p-6 rounded-3xl text-white flex flex-col justify-between border border-white/5 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
+          <Sparkles className="w-32 h-32 text-primary" />
+        </div>
+        <div className="relative z-10">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4">Arquiteto de Estudos</div>
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-primary border border-white/10">
+                <BrainCircuit className="w-6 h-6" />
+             </div>
+             <div className="space-y-0.5">
+                <div className="text-lg font-display text-white">Pronto para a Nomeação?</div>
+                <div className="text-[10px] text-white/50 font-black uppercase tracking-widest italic">A disciplina é a base de tudo</div>
+             </div>
+          </div>
+        </div>
+        <div className="mt-8 pt-6 border-t border-white/10 flex justify-between items-center relative z-10">
+           <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Membro Premium Stratis</span>
+           <Sparkles className="w-4 h-4 text-primary animate-pulse" />
         </div>
       </section>
     </div>
@@ -169,13 +191,39 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           </div>
         </div>
 
-          <div className="space-y-4">
-            <textarea
-              className="w-full h-64 bg-gray-50 border border-border rounded-xl p-4 text-sm font-medium focus:ring-2 ring-primary/10 transition-all outline-none resize-none"
-              placeholder="Ex: CONCURSO PÚBLICO ESTADUAL... CONTEÚDO PROGRAMÁTICO: Português: Ortografia, Crase. Direito: Constituição..."
-              value={rawText}
-              onChange={(e) => setRawText(e.target.value)}
-            />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Instituição / Concurso</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-gray-50 border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 ring-primary/10 transition-all"
+                  value={manualContestName}
+                  onChange={(e) => setManualContestName(e.target.value)}
+                  placeholder="Ex: Polícia Federal, Receita Federal..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Cargo Desejado</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-gray-50 border border-border rounded-xl p-3 text-sm outline-none focus:ring-2 ring-primary/10 transition-all"
+                  value={manualRole}
+                  onChange={(e) => setManualRole(e.target.value)}
+                  placeholder="Ex: Agente, Auditor, Técnico..."
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Conteúdo Programático (Edital)</label>
+              <textarea
+                className="w-full h-64 bg-gray-50 border border-border rounded-xl p-4 text-sm font-medium focus:ring-2 ring-primary/10 transition-all outline-none resize-none"
+                placeholder="Cole aqui o texto do edital para que a IA identifique as matérias e organize seus estudos..."
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+              />
+            </div>
 
             {error && (
               <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm animate-in shake duration-300">

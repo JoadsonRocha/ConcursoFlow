@@ -392,6 +392,7 @@ export default function App() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [migrated, setMigrated] = useState(true);
   const location = useLocation();
 
@@ -659,16 +660,16 @@ export default function App() {
           <Link 
             to="/configuracoes"
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all mb-2 text-sm font-bold",
-              location.pathname === '/configuracoes' ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
+              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all mb-2 text-xs font-black uppercase tracking-widest",
+              location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
             )}
           >
-            <Settings className="w-4 h-4 shrink-0" />
-            {isSidebarOpen && <span>Configurações</span>}
+            <Sparkles className="w-4 h-4 shrink-0" />
+            {isSidebarOpen && <span>Importar Edital</span>}
           </Link>
           <button 
             onClick={() => logout()}
-            className="flex items-center gap-3 px-3 py-2.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-sm font-bold w-full"
+            className="flex items-center gap-3 px-3 py-2.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-xs font-black uppercase tracking-widest w-full"
           >
             <LogOut className="w-4 h-4 shrink-0" />
             {isSidebarOpen && <span>Sair</span>}
@@ -710,8 +711,8 @@ export default function App() {
           "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
           location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "text-slate-400"
         )}>
-          <Settings className="w-5 h-5" />
-          <span className="text-[8px] font-black uppercase tracking-widest">Ajustes</span>
+          <Sparkles className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Edital</span>
         </Link>
       </nav>
 
@@ -742,7 +743,7 @@ export default function App() {
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-3 md:gap-4 relative">
               <div className="flex flex-col items-end mr-2">
                 <div className="text-[9px] text-text-sub font-black uppercase tracking-[0.1em] leading-none mb-1">Status</div>
                 <div className="text-xs font-black text-primary leading-none flex items-center gap-1.5">
@@ -750,13 +751,56 @@ export default function App() {
                   Focado
                 </div>
               </div>
-              {user.photoURL ? (
-                <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm" referrerPolicy="no-referrer" alt="Profile" />
-              ) : (
-                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub">
-                  <UserIcon className="w-5 h-5" />
-                </div>
-              )}
+              <button 
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="relative group outline-none"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" alt="Profile" />
+                ) : (
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub group-hover:scale-105 transition-transform">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                )}
+                
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[90]" onClick={() => setIsUserMenuOpen(false)} />
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-3 w-64 bg-white dark:bg-slate-900 border border-border rounded-3xl shadow-2xl py-3 z-[100] overflow-hidden"
+                      >
+                        <div className="px-5 py-3 border-b border-border/50 mb-2">
+                          <div className="text-xs font-black text-text-main uppercase tracking-widest truncate">{user?.displayName || 'Concurseiro'}</div>
+                          <div className="text-[10px] text-text-sub truncate">{user?.email}</div>
+                        </div>
+                        <Link 
+                          to="/configuracoes" 
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-text-sub" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-text-main">Configurações Pessoais</span>
+                            <span className="text-[9px] text-text-sub uppercase tracking-tighter">Perfil e Metas</span>
+                          </div>
+                        </Link>
+                        <hr className="border-border/50 my-1 mx-4" />
+                        <button 
+                          onClick={() => { logout(); setIsUserMenuOpen(false); }}
+                          className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-500"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span className="text-xs font-black uppercase tracking-widest text-left">Encerrar Sessão</span>
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </button>
             </div>
           </div>
         </header>

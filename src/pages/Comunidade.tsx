@@ -140,6 +140,12 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                   <div className="space-y-1.5">
                     <div className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none mb-1">{contest.name}</div>
                     <h4 className="text-xl font-display text-text-main leading-tight tracking-tight max-w-[180px]">{contest.role}</h4>
+                    <div className="flex items-center gap-2 pt-2">
+                       <div className="w-5 h-5 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                          <UserIcon className="w-3 h-3 text-text-sub" />
+                       </div>
+                       <span className="text-[9px] font-bold text-text-sub truncate max-w-[120px]">Por {contest.ownerName || 'Estrategista'}</span>
+                    </div>
                   </div>
                   <button 
                     onClick={(e) => handleLike(contest.id, e)}
@@ -205,9 +211,12 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
               
               <div className="p-8 md:p-10 border-b border-border flex items-center justify-between relative z-10">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] leading-none">{previewContest.name}</p>
                   <h3 className="text-2xl md:text-3xl font-display text-text-main leading-none">{previewContest.role}</h3>
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{previewContest.name}</p>
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-[9px] font-black text-text-sub uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">Compartilhado por {previewContest.ownerName || 'Anônimo'}</span>
+                  </div>
                 </div>
                 <button 
                   onClick={() => setPreviewContest(null)}
