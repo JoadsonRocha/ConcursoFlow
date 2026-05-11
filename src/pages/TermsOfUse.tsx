@@ -1,64 +1,84 @@
 import React from 'react';
-import { ShieldCheck, ChevronLeft } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function TermsOfUse() {
   return (
-    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-text-sub uppercase tracking-widest hover:text-primary transition-colors">
-        <ChevronLeft className="w-4 h-4" />
-        Voltar ao Dashboard
+    <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 pt-10 px-6">
+      <Link to="/" className="inline-flex items-center gap-3 text-xs font-black text-slate-500 uppercase tracking-wider hover:text-primary transition-all group">
+        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary transition-all">
+          <ChevronLeft className="w-4 h-4" />
+        </div>
+        Retornar ao Centro de Controle
       </Link>
 
-      <header className="space-y-4 text-center">
-        <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto shadow-inner">
-          <ShieldCheck className="w-8 h-8" />
+      <header className="space-y-8 text-center pt-8">
+        <div className="w-24 h-24 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-primary/10 blur-2xl animate-pulse"></div>
+          <ShieldCheck className="w-10 h-10 relative z-10" />
         </div>
-        <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-          Termos de <span className="italic text-primary">Uso</span>.
-        </h1>
-        <p className="text-text-sub text-sm font-medium">Última atualização: 10 de maio de 2026</p>
+        <div className="space-y-3">
+          <h1 className="text-4xl md:text-7xl font-display leading-[0.9] text-white tracking-tighter font-black italic">
+            Termos de <span className="italic text-primary animate-pulse">Uso.</span>
+          </h1>
+          <p className="text-slate-500 text-xs font-black uppercase tracking-[0.5em] italic">Rise Protocol v2.5.0 — Última Modificação: Mai/2026</p>
+        </div>
       </header>
 
-      <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 md:p-16 space-y-10 shadow-xl shadow-primary/[0.02]">
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">1. Aceitação dos Termos</h2>
-          <p className="text-text-sub leading-relaxed">
-            Ao acessar e usar o Stratis, você concorda em cumprir e estar vinculado a estes Termos de Uso. Se você não concordar com qualquer parte destes termos, você não deve usar nossos serviços.
+      <div className="rise-card p-10 md:p-20 space-y-16 bg-gradient-to-br from-slate-950 to-transparent border-white/10">
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-primary uppercase tracking-wider">Seção 01</div>
+            <Sparkles className="w-4 h-4 text-primary opacity-50" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Aceitação dos Protocolos</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Ao acessar e utilizar a infraestrutura RiseMindr, você concorda em cumprir e estar vinculado a estes Protocolos de Uso. Se você não concordar com qualquer fragmento destes termos, a conexão deve ser interrompida imediatamente.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">2. Descrição do Serviço</h2>
-          <p className="text-text-sub leading-relaxed">
-            O Stratis é uma plataforma de organização de estudos que utiliza Inteligência Artificial para verticalizar editais e otimizar a preparação para concursos. Nossos serviços são fornecidos "como estão".
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-accent/20 group-hover:bg-accent transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-accent uppercase tracking-wider">Seção 02</div>
+            <Sparkles className="w-4 h-4 text-accent opacity-50" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Arquitetura de Serviço</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            RiseMindr é um ecossistema tático que mobiliza Inteligência Artificial para verticalizar editais e otimizar a progressão de disciplinas. Nossos serviços são fornecidos "como estão", sob licença de uso individual.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">3. Responsabilidades do Usuário</h2>
-          <p className="text-text-sub leading-relaxed">
-            Você é responsável por manter a confidencialidade de sua conta e senha. Você concorda em nos notificar imediatamente sobre qualquer uso não autorizado de sua conta.
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-slate-700 uppercase tracking-wider">Seção 03</div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Integridade da Conta</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            A segurança da credencial é de responsabilidade única do usuário. Qualquer anomalia ou acesso não autorizado deve ser transmitido imediatamente à nossa célula de suporte central.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">4. Propriedade Intelectual</h2>
-          <p className="text-text-sub leading-relaxed">
-            Todo o conteúdo presente no Stratis, incluindo textos, gráficos, logotipos e software, é de propriedade exclusiva ou licenciado para nós e está protegido por leis de direitos autorais.
-          </p>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">5. Limitação de Responsabilidade</h2>
-          <p className="text-text-sub leading-relaxed">
-            Em nenhuma circunstância o Stratis será responsável por quaisquer danos diretos, indiretos, incidentais ou consequentes resultantes do uso ou da incapacidade de usar nossos serviços.
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-primary uppercase tracking-wider">Seção 04</div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Propriedade Intelectual</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Todo o código, arquitetura, design e algoritmos de verticalização são propriedades exclusivas da RiseMindr Elite OS e protegidos por leis internacionais de propriedade intelectual.
           </p>
         </section>
       </div>
 
-      <footer className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-10">
-        Stratis © 2026 — Todos os direitos reservados.
+      <footer className="text-center py-20 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">RiseMindr Elite OS — 2026 Edition</span>
+        </div>
+        <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Todos os direitos reservados à célula de desenvolvimento.</p>
       </footer>
     </div>
   );

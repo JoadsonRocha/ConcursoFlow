@@ -45,356 +45,26 @@ import Auth from './pages/Auth';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
-// Dashboard Component
-const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest: Contest) => void }) => {
-  const { user } = useAuth();
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [showLogModal, setShowLogModal] = useState(false);
-  const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
-
-  useEffect(() => {
-    const updateTimer = () => {
-      if (!contest?.examDate) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      const target = new Date(contest.examDate).getTime();
-      const now = Date.now();
-      const difference = target - now;
-
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        });
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-
-    updateTimer();
-    const timer = setInterval(updateTimer, 1000);
-    return () => clearInterval(timer);
-  }, [contest?.examDate]);
-
-  const prioritySubjects = [...(contest?.subjects || [])].sort((a, b) => {
-    const weights = { 'Muito Alta': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
-    return weights[b.incidence] - weights[a.incidence];
-  }).slice(0, 4);
-
-  const calculateProgress = (subs: Subject[]) => {
-    const total = subs.reduce((acc, s) => acc + s.totalTopics, 0);
-    const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
-    const revisions = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.revision).length || 0), 0);
-    const questions = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.questions).length || 0), 0);
-    return { 
-      total, 
-      completed, 
-      revisions,
-      questions,
-      percent: total > 0 ? Math.round((completed / total) * 100) : 0,
-    };
-  };
-
-  const todayTask = contest?.schedule?.find(day => !day.completed);
-  const isDefaultContest = !contest || !contest.ownerId;
-  const globalProgress = calculateProgress(contest?.subjects || []);
-  const streak = (contest?.schedule || []).filter(d => d.completed).length;
-
-  const handleSavePerformance = () => {
-    if (!todayTask || !contest) return;
-    const newSchedule = contest.schedule?.map(day => {
-      if (day.id === todayTask.id) {
-        return {
-          ...day,
-          completed: true,
-          actualHours: logForm.hours,
-          actualQuestions: logForm.questions
-        };
-      }
-      return day;
-    });
-    onUpdate({ ...contest, schedule: newSchedule });
-    setShowLogModal(false);
-    setLogForm({ hours: '', questions: '' });
-  };
-
-  return (
-    <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 relative pb-6 md:pb-8 border-b border-border/60">
-        <div className="space-y-2 overflow-hidden w-full">
-          <div className="flex items-center gap-2 text-primary font-black text-[9px] md:text-xs uppercase tracking-[0.2em] mb-2 opacity-80">
-            <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="truncate">Painel de Alta Performance</span>
-          </div>
-          <h1 className="text-2xl md:text-5xl font-display leading-[1.1] text-text-main tracking-tighter break-words">
-            Olá, <span className="italic text-primary font-light">{user?.displayName?.split(' ')[0] || 'Guerreiro'}</span>.
-          </h1>
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mt-5">
-            <p className="text-text-sub text-xs md:text-sm font-medium max-w-sm leading-relaxed border-l-2 border-primary/20 pl-4">
-              Sua jornada até a nomeação exige consistência. <span className="text-text-main font-bold text-sm md:text-base block mt-0.5 opacity-90">O que vamos conquistar hoje?</span>
-            </p>
-          </div>
-        </div>
-        {!isDefaultContest && (
-          <button 
-            onClick={() => setShowLogModal(true)}
-            className="w-full md:w-auto h-12 md:h-14 bg-text-main text-bg px-6 md:px-10 md:py-5 rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 md:gap-3 group shrink-0"
-          >
-            <span className="hidden md:inline">Registrar</span>
-            <span className="md:hidden">Registrar</span>
-            <TrendingUp className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-y-[-2px] transition-transform" />
-          </button>
-        )}
-      </header>
-
-      {!isDefaultContest && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
-          {/* Main Hero Stat - Global Progress */}
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-border rounded-2xl md:rounded-[3rem] p-4 md:p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group shadow-sm hover:shadow-xl transition-all">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
-              <Sparkles className="w-40 h-40 text-primary" />
-            </div>
-            
-            <div className="relative w-32 h-32 md:w-48 md:h-48 mb-4 md:mb-8">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800 md:hidden" />
-                <circle cx="96" cy="96" r="86" stroke="currentColor" strokeWidth="14" fill="transparent" className="text-slate-100 dark:text-slate-800 hidden md:block" />
-                
-                {/* Mobile version */}
-                <circle 
-                  cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" 
-                  strokeDasharray={452}
-                  strokeDashoffset={452 - (452 * globalProgress.percent) / 100}
-                  strokeLinecap="round"
-                  className="text-primary transition-all duration-1000 ease-out md:hidden" 
-                />
-                {/* Desktop version */}
-                <circle 
-                  cx="96" cy="96" r="86" stroke="currentColor" strokeWidth="14" fill="transparent" 
-                  strokeDasharray={540.3}
-                  strokeDashoffset={540.3 - (540.3 * globalProgress.percent) / 100}
-                  strokeLinecap="round"
-                  className="text-primary transition-all duration-1000 ease-out hidden md:block" 
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl md:text-5xl font-display text-text-main leading-none">{globalProgress.percent}%</span>
-                <span className="text-[10px] md:text-[9px] font-black text-text-sub uppercase tracking-[0.2em] mt-2">Progresso</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 w-full border-t border-border mt-3 pt-4">
-              <div className="space-y-0.5">
-                <div className="text-base md:text-xl font-display text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
-                <div className="text-[8px] md:text-[9px] text-text-sub font-black uppercase tracking-widest leading-none">Tópicos</div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-lg md:text-xl font-display text-accent">{streak}d</div>
-                <div className="text-[10px] md:text-[9px] text-text-sub font-black uppercase tracking-widest leading-none">Sequência</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Info & Next Subject */}
-          <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 h-full">
-                {/* Today's Target */}
-                <div className="bg-white dark:bg-slate-900 border border-border rounded-2xl md:rounded-[2rem] p-4 md:p-8 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
-                   <div className="space-y-3 md:space-y-5">
-                      <div className="flex items-center justify-between">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg md:rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                           <Target className="w-4 h-4 md:w-6 md:h-6" />
-                        </div>
-                        <div className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Foco Total</div>
-                      </div>
-                      <div className="space-y-1">
-                         <h3 className="text-[10px] md:text-[9px] font-black text-text-sub uppercase tracking-[0.1em] mb-1">Meta de Questões</h3>
-                         <div className="text-3xl md:text-4xl font-display text-text-main">{todayTask ? todayTask.questionGoal : contest.dailyGoalQuestions || 20} <span className="text-sm font-sans font-medium text-text-sub lowercase tracking-normal">itens</span></div>
-                      </div>
-                   </div>
-                   <div className="space-y-2 md:space-y-3 mt-4 md:mt-6">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Esforço estimado</span>
-                        <span className="text-xs font-bold text-text-main">{~~((todayTask?.questionGoal || 20) * 1.5)} min</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                         <div className="bg-primary h-full transition-all duration-500" style={{ width: '0%' }} />
-                      </div>
-                   </div>
-                </div>
-
-                {/* Exam Countdown */}
-                <div className="bg-slate-950 dark:bg-slate-950 rounded-2xl md:rounded-[2rem] p-4 md:p-8 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-                      <Clock className="w-16 h-16 md:w-24 md:h-24" />
-                   </div>
-                   <div className="space-y-1 md:space-y-2 relative z-10">
-                      <div className="text-[8px] md:text-[8px] font-black uppercase tracking-[0.2em] text-white/50">Próxima Batalha</div>
-                      <h3 className="text-base md:text-2xl font-display leading-tight truncate">{contest.name || 'Edital'}</h3>
-                      <div className="text-[10px] font-black text-secondary uppercase tracking-[0.1em] mt-1">D-Day: {contest.examDate ? new Date(contest.examDate).toLocaleDateString('pt-BR') : '--/--/--'}</div>
-                   </div>
-                   <div className="flex gap-4 md:gap-8 mt-4 md:mt-6 relative z-10 border-t border-white/10 pt-4 md:pt-6">
-                      <div className="space-y-0.5 flex-1">
-                         <div className="text-2xl md:text-4xl font-display">{timeLeft.days}</div>
-                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 leading-none">Dias</div>
-                      </div>
-                      <div className="space-y-0.5">
-                         <div className="text-3xl md:text-4xl font-display">{timeLeft.hours}</div>
-                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 leading-none">Hs</div>
-                      </div>
-                      <div className="space-y-0.5">
-                         <div className="text-3xl md:text-4xl font-display">{timeLeft.minutes}</div>
-                         <div className="text-[9px] font-black uppercase tracking-widest text-white/40 leading-none">Min</div>
-                      </div>
-                   </div>
-                </div>
-             </div>
-
-             {/* Study Tip Card */}
-             <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-2xl md:rounded-[3rem] p-4 md:p-10 flex flex-col md:flex-row items-center gap-4 md:gap-8 group hover:border-primary/30 transition-all">
-                <div className="w-14 h-14 md:w-20 md:h-20 bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
-                   <BrainCircuit className="w-6 h-6 md:w-10 md:h-10" />
-                </div>
-                <div className="flex-1 space-y-1 md:space-y-2 text-center md:text-left">
-                   <h4 className="text-[9px] md:text-[11px] font-black text-text-main uppercase tracking-[0.2em]">IA Strategy Engine</h4>
-                   <p className="text-text-sub text-xs md:text-lg font-medium leading-tight">"A constância vence o talento. Foque nos <span className="text-primary font-bold italic">20% que geram 80%</span>."</p>
-                </div>
-                <Link to="/microaprendizado" className="w-full md:w-auto h-12 md:h-auto bg-primary text-white px-6 md:px-8 py-3 md:py-4 rounded-lg md:rounded-2xl text-[9px] md:text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all text-center flex items-center justify-center">
-                   IA Power-Up
-                </Link>
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Mission Section */}
-      {todayTask && !isDefaultContest && (
-        <section className="space-y-4 md:space-y-6">
-           <div className="flex items-center justify-between px-2 gap-2">
-              <h2 className="text-lg md:text-2xl font-display text-text-main">Missão de Hoje</h2>
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-tight whitespace-nowrap">Dia {todayTask.dayNumber}</span>
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
-              <div className="bg-white dark:bg-slate-900 border border-border rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 space-y-4 md:space-y-6 hover:shadow-xl transition-all group overflow-hidden relative">
-                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-32 h-32" />
-                 </div>
-                 <div className="space-y-2 md:space-y-4">
-                    <div className="text-[9px] md:text-[11px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Gerais</div>
-                    <div className="text-base md:text-xl font-display text-text-main leading-tight border-l-2 border-primary pl-3 md:pl-4">
-                       {todayTask.generalTopic || "Revisão Geral"}
-                    </div>
-                 </div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 border border-border rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 space-y-4 md:space-y-6 hover:shadow-xl transition-all group overflow-hidden relative">
-                 <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
-                    <ShieldCheck className="w-32 h-32" />
-                 </div>
-                 <div className="space-y-3 md:space-y-4">
-                    <div className="text-[11px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Específicos</div>
-                    <div className="text-lg md:text-xl font-display text-text-main leading-tight border-l-2 border-secondary pl-4">
-                       {todayTask.specificTopic || "Aprofundamento Técnico"}
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </section>
-      )}
-
-      {isDefaultContest && (
-        <section className="glass rounded-[2rem] md:rounded-[4rem] p-10 md:p-20 text-center space-y-8 shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
-          <div className="w-24 h-24 bg-primary rounded-[2rem] flex items-center justify-center mx-auto text-white shadow-2xl shadow-primary/30 relative z-10 group-hover:scale-110 transition-transform">
-            <Sparkles className="w-12 h-12" />
-          </div>
-          <div className="space-y-4 relative z-10">
-            <h2 className="text-4xl md:text-6xl font-display text-text-main tracking-tighter mix-blend-multiply dark:mix-blend-normal">
-               Inicie sua <span className="italic text-primary">Jornada</span>.
-            </h2>
-            <p className="text-text-sub max-w-lg mx-auto text-lg font-medium leading-relaxed">
-              Importe seu primeiro edital para que nossa Inteligência Artificial organize toda sua preparação verticalizada.
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-6 relative z-10">
-            <Link to="/configuracoes" className="bg-primary text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-              Importar Novo Edital
-            </Link>
-            <Link to="/comunidade" className="bg-white dark:bg-card-bg border border-border text-text-main px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all">
-              Ver Comunidade
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Daily Log Modal */}
-      <AnimatePresence>
-        {showLogModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="bg-white dark:bg-slate-950 border border-border w-full max-w-md rounded-[3rem] p-10 space-y-8 shadow-2xl">
-              <div className="space-y-2">
-                 <h3 className="text-3xl font-display text-text-main leading-none">Relatório de Batalha.</h3>
-                 <p className="text-sm text-text-sub font-medium">Como foi seu desempenho nos estudos hoje?</p>
-              </div>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] ml-1">Horas Estudadas</label>
-                  <input 
-                    type="number" 
-                    inputMode="decimal"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-primary/20 outline-none transition-all" 
-                    value={logForm.hours} 
-                    onChange={(e) => setLogForm({...logForm, hours: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    placeholder="Ex: 4.5"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] ml-1">Questões Resolvidas</label>
-                  <input 
-                    type="number" 
-                    inputMode="numeric"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-border rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 ring-primary/20 outline-none transition-all" 
-                    value={logForm.questions} 
-                    onChange={(e) => setLogForm({...logForm, questions: e.target.value === '' ? '' : Number(e.target.value)})} 
-                    placeholder="Ex: 50"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4 pt-4">
-                  <button onClick={() => setShowLogModal(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-text-sub hover:bg-slate-50 dark:hover:bg-slate-900 rounded-2xl transition-colors">Cancelar</button>
-                  <button 
-                    onClick={handleSavePerformance}
-                    className="flex-1 bg-primary text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
-                  >
-                    Salvar
-                  </button>
-                </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+import Dashboard from './pages/Dashboard';
 
 const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean }) => (
   <Link 
     to={to} 
     className={cn(
-      "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative text-xs font-black uppercase tracking-widest",
-      active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-text-main"
+      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-sm font-semibold uppercase tracking-wider",
+      active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 dark:hover:bg-white/5 hover:text-text-main",
+      collapsed ? "justify-center px-0" : "px-4"
     )}
+    title={collapsed ? label : undefined}
   >
-    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-white" : "text-text-sub group-hover:text-text-main")} />
+    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "text-text-sub/50 group-hover:text-text-main")} />
     {!collapsed && <span>{label}</span>}
     {active && !collapsed && (
       <motion.div 
-        layoutId="active-nav"
-        className="absolute left-0 w-1 h-4 bg-white rounded-full opacity-50"
+        layoutId="active-nav-bg"
+        className="absolute inset-y-2 left-0 w-1 bg-primary rounded-full shadow-[0_0_10px_var(--color-primary)] opacity-80"
         initial={false}
       />
     )}
@@ -404,10 +74,10 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
 // App Component
 export default function App() {
   const { user, profile, loading: authLoading, logout } = useAuth();
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark' || false);
   const [contests, setContests] = useState<Contest[]>([]);
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [migrated, setMigrated] = useState(true);
   const location = useLocation();
@@ -440,15 +110,43 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Restore currentContest from profile
+  // Update currentContest when profile or contests change
   useEffect(() => {
-    if (profile?.currentContestId && contests.length > 0) {
+    if (contests.length === 0) {
+      if (currentContest) setCurrentContest(null);
+      return;
+    }
+
+    // Try to find the contest indicated by the profile
+    if (profile?.currentContestId) {
       const saved = contests.find(c => c.id === profile.currentContestId);
       if (saved) {
         setCurrentContest(saved);
+      } else {
+        setCurrentContest(contests[0]);
+        if (user) {
+          const userRef = doc(db, 'users', user.uid);
+          updateDoc(userRef, { 
+            currentContestId: contests[0].id,
+            updatedAt: serverTimestamp()
+          }).catch(console.error);
+        }
+      }
+    } else {
+      // If no profile currentContestId, just pick the first one 
+      // but only set if it's fundamentally different to avoid loop
+      const target = contests[0];
+      setCurrentContest(target);
+      if (user && profile) {
+        const userRef = doc(db, 'users', user.uid);
+        updateDoc(userRef, { 
+          currentContestId: target.id,
+          updatedAt: serverTimestamp()
+        }).catch(console.error);
       }
     }
-  }, [profile, contests]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, contests, user]);
 
   // Firestore Sync & Migration
   useEffect(() => {
@@ -469,28 +167,9 @@ export default function App() {
           schedule: data.schedule || []
         } as Contest;
       });
-      const allContests = dbContests;
-      
-      setContests(allContests);
-      
-      // Auto-set current contest if not set or if current one was updated
-      if (currentContest) {
-        const updated = allContests.find(c => c.id === currentContest.id);
-        if (updated) {
-          setCurrentContest(updated);
-        } else {
-          // Current contest was deleted, switch to first available or null
-          const next = allContests.length > 0 ? allContests[0] : null;
-          setCurrentContest(next);
-          if (user) {
-            const userRef = doc(db, 'users', user.uid);
-            updateDoc(userRef, { currentContestId: next?.id || null }).catch(console.error);
-          }
-        }
-      } else if (allContests.length > 0) {
-        // No current contest set but we have contests, set the first one
-        setCurrentContest(allContests[0]);
-      }
+      setContests(dbContests);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'users/' + user.uid + '/contests');
     });
 
     return () => unsubscribe();
@@ -524,9 +203,13 @@ export default function App() {
       
       // Update profile with last selected contest
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { currentContestId: contestId });
-    } catch (err) {
+      await updateDoc(userRef, { 
+        currentContestId: contestId,
+        updatedAt: serverTimestamp() 
+      });
+    } catch (err: any) {
       console.error("Erro ao salvar edital:", err);
+      alert("Falha de segurança ao salvar no Firestore: " + err.message);
     }
   };
 
@@ -542,18 +225,38 @@ export default function App() {
         updatedAt: serverTimestamp(),
       };
 
+      // Only set createdAt if we are absolutely sure this is a new document, 
+      // otherwise Firestore merge will just ignore it and leave existing alone.
       if (!updatedContest.createdAt) {
-        payload.createdAt = serverTimestamp();
+        // Do not use serverTimestamp() during an update if it might overwrite conditionally.
+        // But since we use merge: true, if we just omit it, it won't be overwritten.
+        // Wait, if it doesn't exist at all, we NEED it for 'create' rule.
+        // Let's rely on handleImportEdital to set createdAt initially.
+        // If this is an update, we SHOULD NOT SEND createdAt to avoid breaking the immutable rule!
+      }
+      
+      // Remove createdAt from payload if it's already there to prevent updates from failing due to timestamp mismatch
+      if (payload.createdAt) {
+          delete payload.createdAt;
       }
 
+      console.log('Sending payload:', payload);
       await setDoc(docRef, payload, { merge: true });
+    } catch (err: any) {
+      console.error("Erro ao atualizar progresso (CONTEST):", err);
+      alert("Erro de segurança (Contest): " + err.message);
+    }
 
+    try {
       // Ensure profile knows this is the current one
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { currentContestId: updatedContest.id });
-
-    } catch (err) {
-      console.error("Erro ao atualizar progresso:", err);
+      await updateDoc(userRef, { 
+        currentContestId: updatedContest.id,
+        updatedAt: serverTimestamp()
+      });
+    } catch (err: any) {
+      console.error("Erro ao atualizar progresso (USER_PROFILE):", err);
+      alert("Erro de segurança (User): " + err.message);
     }
   };
 
@@ -580,7 +283,7 @@ export default function App() {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg dark:bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <div className="text-[10px] font-black text-text-sub uppercase tracking-widest animate-pulse">Sincronizando com a Nuvem...</div>
+        <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">Sincronizando com a Nuvem...</div>
       </div>
     );
   }
@@ -600,40 +303,37 @@ export default function App() {
   return (
     <div className="flex min-h-screen bg-bg font-sans overflow-hidden relative">
       {/* Mobile Backdrop */}
-      <AnimatePresence>
-        {isSidebarOpen && window.innerWidth <= 768 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/50 z-[45] md:hidden backdrop-blur-sm"
-          />
-        )}
-      </AnimatePresence>
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[45] md:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      {/* Sidebar - Desktop */}
+      {/* Sidebar - Desktop & Mobile Drawer */}
       <aside className={cn(
-        "bg-white dark:bg-slate-950 border-r border-border transition-all duration-300 z-50",
-        "fixed md:relative h-full flex flex-col shrink-0 hidden md:flex",
-        isSidebarOpen ? "w-72 px-8 py-10" : "w-20 px-4 py-10 translate-x-0"
+        "bg-white dark:bg-slate-900 border-r border-border transition-all duration-300 z-50",
+        "fixed inset-y-0 left-0 md:relative flex flex-col shrink-0 h-full",
+        isSidebarOpen 
+          ? "translate-x-0 w-72 md:w-[280px] px-6 py-8 shadow-2xl md:shadow-none" 
+          : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-8"
       )}>
-        <div className="mb-16 flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black shadow-2xl shadow-primary/30 shrink-0 rotate-3 group-hover:rotate-0 transition-transform">
-            <Sparkles className="w-7 h-7" />
+        <div className="mb-14 flex items-center gap-3">
+          <div className="w-10 h-10 primary-button rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg">
+            <Sparkles className="w-5 h-5" />
           </div>
           {isSidebarOpen && (
             <div className="flex flex-col">
-              <span className="text-text-main font-display text-2xl tracking-tighter leading-none">STRATIS</span>
-              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em] mt-1">Intelligence</span>
+              <span className="text-text-main font-display text-lg tracking-tight leading-none font-bold uppercase">Stratis</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-60">Inteligência</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-8 flex-grow">
+        <div className="space-y-8 flex-grow overflow-y-auto no-scrollbar">
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mb-4 ml-2">Main</span>}
-            <nav className="space-y-1.5">
+            {isSidebarOpen && <span className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-4 ml-3">Estratégia</span>}
+            <nav className="space-y-1">
               <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/materias" icon={BookOpen} label="Matérias" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
@@ -643,34 +343,36 @@ export default function App() {
           </div>
 
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-black text-text-sub uppercase tracking-[0.2em] mb-4 ml-2">Editais</span>}
-            <div className="space-y-1.5">
+            {isSidebarOpen && <span className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-4 ml-3">Meus Concursos</span>}
+            <div className="space-y-1">
               {contests.length === 0 ? (
-                isSidebarOpen && <div className="px-3 py-4 text-[10px] text-text-sub font-bold italic border-2 border-dashed border-border rounded-2xl">Vazio</div>
+                isSidebarOpen && <div className="px-5 py-4 text-xs text-text-sub font-medium uppercase tracking-wider italic border border-dashed border-border rounded-xl">Nenhum salvo</div>
               ) : (
-                contests.slice(0, 5).map(c => (
+                contests.slice(0, 4).map(c => (
                   <div key={c.id} className="group relative flex items-center gap-2">
                     <button 
                       onClick={() => setCurrentContest(c)}
                       className={cn(
-                        "flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left overflow-hidden",
+                        "flex-1 flex items-center gap-4 py-3 rounded-xl transition-all text-left overflow-hidden border",
                         currentContest?.id === c.id 
-                          ? "bg-primary/10 text-primary border border-primary/20" 
-                          : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                          ? "bg-primary/5 text-primary border-primary/20" 
+                          : "bg-transparent border-transparent text-text-sub hover:bg-slate-50 dark:hover:bg-white/5",
+                        isSidebarOpen ? "px-4" : "justify-center px-0"
                       )}
+                      title={!isSidebarOpen ? c.role : undefined}
                     >
-                      <Award className={cn("w-4 h-4 shrink-0", currentContest?.id === c.id ? "text-primary" : "text-text-sub")} />
+                      <Target className={cn("w-4 h-4 shrink-0", currentContest?.id === c.id ? "text-primary" : "text-text-sub opacity-50")} />
                       {isSidebarOpen && (
                         <div className="overflow-hidden">
-                          <div className="text-xs font-bold truncate leading-none">{c.role}</div>
-                          <div className="text-[9px] opacity-60 font-medium truncate mt-1">{c.name}</div>
+                          <div className="text-xs font-bold uppercase tracking-tight truncate leading-none text-text-main">{c.role}</div>
+                          <div className="text-xs opacity-40 font-medium uppercase tracking-wide truncate mt-1">{c.name}</div>
                         </div>
                       )}
                     </button>
                     {isSidebarOpen && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDeleteContest(c.id); }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all absolute right-1"
+                        className="opacity-0 group-hover:opacity-100 p-2 text-text-sub hover:text-red-500 rounded-lg transition-all absolute right-2"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -686,16 +388,22 @@ export default function App() {
           <Link 
             to="/configuracoes"
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all mb-2 text-xs font-black uppercase tracking-widest",
-              location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-sub hover:bg-slate-100 dark:hover:bg-slate-800/50"
+              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-xs font-semibold uppercase tracking-wider",
+              location.pathname === '/configuracoes' ? "bg-slate-100 dark:bg-white/10 text-text-main" : "text-text-sub hover:bg-slate-50 dark:hover:bg-white/5",
+              isSidebarOpen ? "px-4" : "justify-center px-0"
             )}
+            title={!isSidebarOpen ? "Importar Edital" : undefined}
           >
-            <Sparkles className="w-4 h-4 shrink-0" />
+            <Settings className="w-4 h-4 shrink-0" />
             {isSidebarOpen && <span>Importar Edital</span>}
           </Link>
           <button 
             onClick={() => logout()}
-            className="flex items-center gap-3 px-3 py-2.5 text-text-sub hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all text-xs font-black uppercase tracking-widest w-full"
+            className={cn(
+              "flex items-center gap-4 py-3.5 text-text-sub hover:text-red-500 rounded-xl transition-all text-xs font-semibold uppercase tracking-wider w-full",
+              isSidebarOpen ? "px-4" : "justify-center px-0"
+            )}
+            title={!isSidebarOpen ? "Sair" : undefined}
           >
             <LogOut className="w-4 h-4 shrink-0" />
             {isSidebarOpen && <span>Sair</span>}
@@ -704,70 +412,66 @@ export default function App() {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 z-[100] bg-slate-900 border border-white/10 px-2 py-2 flex items-center justify-between rounded-[2.5rem] shadow-2xl">
-        <Link to="/" className={cn(
-          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
-          location.pathname === '/' ? "bg-primary text-white shadow-lg shadow-primary/40" : "text-slate-300"
-        )}>
-          <LayoutDashboard className="w-5 h-5" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Início</span>
-        </Link>
-        <Link to="/materias" className={cn(
-          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
-          location.pathname === '/materias' ? "bg-primary text-white shadow-lg shadow-primary/40" : "text-slate-300"
-        )}>
-          <BookOpen className="w-5 h-5" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Edital</span>
-        </Link>
-        <Link to="/cronograma" className={cn(
-          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
-          location.pathname === '/cronograma' ? "bg-primary text-white shadow-lg shadow-primary/40" : "text-slate-300"
-        )}>
-          <Calendar className="w-5 h-5" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Plano</span>
-        </Link>
-        <Link to="/configuracoes" className={cn(
-          "flex-1 flex flex-col items-center gap-1 p-3 rounded-[2rem] transition-all", 
-          location.pathname === '/configuracoes' ? "bg-primary text-white shadow-lg shadow-primary/40" : "text-slate-300"
-        )}>
-          <Settings className="w-5 h-5" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none">Ajustes</span>
-        </Link>
+      <nav className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-1.5 flex items-center justify-around w-[95%] max-w-[400px] border border-border shadow-lg rounded-2xl fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+        {[
+          { to: '/', icon: LayoutDashboard, label: 'Início' },
+          { to: '/materias', icon: BookOpen, label: 'Edital' },
+          { to: '/cronograma', icon: Calendar, label: 'Plano' },
+          { to: '/perfil', icon: UserIcon, label: 'Perfil' }
+        ].map((item) => (
+          <Link 
+            key={item.to}
+            to={item.to} 
+            className={cn(
+              "flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-300 relative group w-16", 
+              location.pathname === item.to ? "text-primary" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            {location.pathname === item.to && (
+              <motion.div 
+                layoutId="mobile-nav-pill"
+                className="absolute inset-0 bg-primary/10 rounded-xl"
+              />
+            )}
+            <item.icon className={cn("w-5 h-5 relative z-10 transition-transform", location.pathname === item.to && "scale-105")} />
+            <span className="text-xs font-bold uppercase tracking-wider leading-none relative z-10">{item.label}</span>
+          </Link>
+        ))}
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-32">
-        <header className="sticky top-0 z-40 glass px-4 md:px-10 py-5 flex items-center justify-between border-b border-border/50">
+      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-20 scroll-smooth">
+        <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="hidden md:flex p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-text-sub"
+              className={cn("p-2 bg-white border border-border hover:bg-slate-50 rounded-lg transition-all text-text-sub md:hidden")}
             >
-              {isSidebarOpen ? <X className="w-5 h-5 text-primary" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5 transition-transform" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm md:hidden">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <h2 className="text-lg font-display text-text-main tracking-tight leading-none md:hidden">
-                STRATIS
+              <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase">
+                Stratis
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-6">
+          <div className="flex items-center gap-5">
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-xl transition-colors text-text-sub"
+              className="p-2.5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl transition-all text-text-sub"
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-3 md:gap-4 relative">
-              <div className="flex flex-col items-end mr-2">
-                <div className="text-[11px] text-text-sub font-black uppercase tracking-[0.1em] leading-none mb-1">Status</div>
-                <div className="text-xs font-black text-primary leading-none flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                  Focado
+            
+            <div className="h-6 w-px bg-white/5 hidden md:block" />
+
+            <div className="flex items-center gap-4 relative">
+              <div className="hidden sm:flex flex-col items-end">
+                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-none mb-1.5 opacity-50 italic">Sincronia</div>
+                <div className="text-xs font-black text-primary leading-none flex items-center gap-2 uppercase tracking-wider">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--color-primary)]"></div>
+                  Operacional
                 </div>
               </div>
               <div className="relative">
@@ -775,13 +479,15 @@ export default function App() {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="group outline-none block"
                 >
-                  {user.photoURL ? (
-                    <img src={user.photoURL} className="w-10 h-10 rounded-2xl border border-border shadow-sm group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" alt="Profile" />
-                  ) : (
-                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-text-sub group-hover:scale-105 transition-transform">
-                      <UserIcon className="w-5 h-5" />
-                    </div>
-                  )}
+                  <div className="w-12 h-12 bg-white/5 rounded-2xl border-2 border-white/5 overflow-hidden group-hover:border-primary/50 transition-all shadow-xl p-1 backdrop-blur-md">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" alt="Profile" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-white/5 rounded-xl">
+                        <UserIcon className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
                 </button>
                 
                 <AnimatePresence>
@@ -792,30 +498,34 @@ export default function App() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-3 w-64 bg-white dark:bg-slate-900 border border-border rounded-3xl shadow-2xl py-3 z-[100] overflow-hidden"
+                        className="absolute right-0 mt-5 w-64 bg-slate-950/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-6 z-[100] overflow-hidden"
                       >
-                        <div className="px-5 py-3 border-b border-border/50 mb-2">
-                          <div className="text-xs font-black text-text-main uppercase tracking-widest truncate">{user?.displayName || 'Concurseiro'}</div>
-                          <div className="text-[11px] text-text-sub truncate">{user?.email}</div>
+                        <div className="px-6 py-4 border-b border-white/5 mb-2">
+                          <div className="text-xs font-black text-white uppercase tracking-wider truncate">{user?.displayName || 'Concurseiro'}</div>
+                          <div className="text-xs text-slate-500 font-medium truncate opacity-60 italic">{user?.email}</div>
                         </div>
                         <Link 
                           to="/perfil" 
                           onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                          className="flex items-center gap-4 px-6 py-4 hover:bg-white/5 transition-all group"
                         >
-                          <UserIcon className="w-4 h-4 text-text-sub" />
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <UserIcon className="w-4 h-4" />
+                          </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-text-main">Configurações Pessoais</span>
-                            <span className="text-[10px] text-text-sub uppercase tracking-tighter">Perfil e Segurança</span>
+                            <span className="text-xs font-black text-white uppercase tracking-tight">Parametros</span>
+                            <span className="text-xs text-slate-500 uppercase tracking-wider italic">Acessar Bio-Perfil</span>
                           </div>
                         </Link>
-                        <hr className="border-border/50 my-1 mx-4" />
+                        <hr className="border-white/5 my-2 mx-6" />
                         <button 
                           onClick={() => { logout(); setIsUserMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-5 py-4 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-500"
+                          className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-500/10 transition-all text-red-400 group"
                         >
-                          <LogOut className="w-4 h-4" />
-                          <span className="text-xs font-black uppercase tracking-widest text-left">Encerrar Sessão</span>
+                          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <LogOut className="w-4 h-4" />
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-wider text-left">Desconectar Sistema</span>
                         </button>
                       </motion.div>
                     </>
@@ -830,11 +540,11 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />
-              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
               <Route path="/perfil" element={<Perfil />} />
-              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-widest">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />

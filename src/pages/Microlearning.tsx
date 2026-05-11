@@ -59,54 +59,80 @@ export default function Microlearning({ contest }: { contest: Contest }) {
 
   if (activeTab === 'selection') {
     return (
-      <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <header className="space-y-1.5">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em] leading-none mb-2">Treinamento Cognitivo</div>
-          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-            Estudo <span className="italic text-primary">Avançado</span> IA.
+      <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+        <header className="space-y-4">
+          <div className="flex items-center gap-3 text-primary/80 font-bold text-xs uppercase tracking-wider">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(168,85,247,0.8)]"></div>
+            Treinamento Tático
+          </div>
+          <h1 className="text-3xl md:text-6xl font-display text-white tracking-tight font-bold italic">
+            Fixação <span className="text-primary italic animate-pulse">Ativa.</span>
           </h1>
-          <p className="text-text-sub text-sm font-medium pt-2">Ferramentas de fixação e recuperação ativa de conteúdo.</p>
+          <p className="text-slate-500 text-sm md:text-lg max-w-2xl border-l-2 border-primary/30 pl-6 leading-relaxed font-medium">
+            Ferramentas avançadas para consolidar padrões de prova e acelerar sua retenção.
+          </p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-white dark:bg-slate-900 border border-border p-8 rounded-[3rem] space-y-8 shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
-            <div className="bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center text-primary shadow-inner">
-              <BrainCircuit className="w-8 h-8" />
+          <div className="rise-card p-10 md:p-14 group relative overflow-hidden flex flex-col justify-between min-h-[460px] bg-gradient-to-br from-white/5 to-transparent border-none">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
+               <BrainCircuit className="w-32 h-32" />
             </div>
-            <div className="space-y-2 relative z-10">
-              <h3 className="text-2xl font-display text-text-main">Simulador Dinâmico</h3>
-              <p className="text-text-sub text-sm leading-relaxed font-medium">A IA gera questões inéditas focadas estrategicamente nos temas de maior incidência.</p>
+            
+            <div className="space-y-10 relative z-10">
+              <div className="bg-primary/10 border border-primary/20 w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-primary shadow-2xl">
+                <BrainCircuit className="w-8 h-8" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-3xl font-display text-white italic font-bold">Prática de Tópicos</h3>
+                <p className="text-slate-500 text-sm leading-relaxed font-medium italic pr-12">Avalie seus reflexos em tópicos isolados com desafios focados no edital.</p>
+              </div>
             </div>
-            <div className="space-y-3 relative z-10 pt-4">
-              <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-4">Selecione uma disciplina</div>
+
+            <div className="space-y-4 relative z-10 pt-10">
+              <div className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 border-b border-white/5 pb-3">Selecione um Setor</div>
               {contest.subjects.slice(0, 4).map(sub => (
                 <button 
                   key={sub.id}
                   onClick={() => startQuiz(sub.name)}
-                  className="w-full text-left p-4.5 bg-slate-50 dark:bg-slate-800 hover:bg-primary hover:text-white border border-border dark:border-slate-700 rounded-2xl transition-all flex justify-between items-center group/item shadow-sm"
+                  className="w-full text-left p-5 bg-white/5 hover:bg-primary border border-white/5 rounded-2xl transition-all flex justify-between items-center group/item shadow-xl"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">{sub.name}</span>
-                  <Play className="w-4 h-4 opacity-50 group-hover/item:opacity-100 group-hover/item:translate-x-1 transition-all" />
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 group-hover/item:text-white truncate pr-6">{sub.name}</span>
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/item:bg-white group-hover/item:border-white transition-all shadow-lg">
+                    <Play className="w-4 h-4 text-slate-700 group-hover/item:text-primary transition-all fill-current" />
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-border p-8 rounded-[3rem] space-y-8 shadow-sm hover:shadow-2xl hover:shadow-secondary/5 transition-all relative overflow-hidden group flex flex-col justify-between">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl group-hover:bg-secondary/10 transition-colors"></div>
-            <div className="space-y-8 relative z-10">
-              <div className="bg-secondary/10 w-16 h-16 rounded-2xl flex items-center justify-center text-secondary shadow-inner">
+          <div className="rise-card p-10 md:p-14 group relative overflow-hidden flex flex-col justify-between min-h-[460px] bg-gradient-to-br from-white/5 to-transparent border-none">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
+               <Lightbulb className="w-32 h-32 text-accent" />
+            </div>
+            
+            <div className="space-y-10 relative z-10">
+              <div className="bg-accent/10 border border-accent/20 w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-accent shadow-2xl">
                 <Lightbulb className="w-8 h-8" />
               </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-display text-text-main">Flashcards Ativos</h3>
-                <p className="text-text-sub text-sm leading-relaxed font-medium">Maximize o efeito da "Recuperação Ativa" com cartões inteligentes de conceitos fundamentais.</p>
+              <div className="space-y-3">
+                <h3 className="text-3xl font-display text-white italic font-bold">Flashcards</h3>
+                <p className="text-slate-500 text-sm leading-relaxed font-medium italic pr-12">Estruture sua memória de longo prazo com o protocolo de repetição espaçada.</p>
               </div>
             </div>
-            <button className="relative z-10 w-full bg-text-main text-bg py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-text-main/10 mt-10">
-              Iniciar Sessão IA
-            </button>
+
+            <div className="space-y-6 pt-10 relative z-10">
+               <div className="p-6 bg-accent/5 border border-accent/20 rounded-[2rem] shadow-inner">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Award className="w-5 h-5 text-accent" />
+                    <span className="text-xs font-black text-accent uppercase tracking-wider">Carga de Revisão</span>
+                  </div>
+                  <p className="text-sm text-slate-400 font-medium">Você possui <span className="text-white font-black italic">14 cartões</span> para o protocolo de hoje.</p>
+               </div>
+               <button className="w-full bg-accent text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-accent/30 border-2 border-accent">
+                Iniciar Protocolo
+               </button>
+            </div>
           </div>
         </div>
       </div>
@@ -115,44 +141,58 @@ export default function Microlearning({ contest }: { contest: Contest }) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col items-center justify-center py-40 space-y-12 animate-in fade-in duration-1000">
         <div className="relative">
-          <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+          <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <BrainCircuit className="w-8 h-8 text-primary animate-pulse" />
+            <BrainCircuit className="w-10 h-10 text-primary animate-pulse" />
           </div>
         </div>
-        <div className="text-center space-y-2">
-            <h2 className="text-2xl font-display text-text-main tracking-tight">Construindo Desafios...</h2>
-            <p className="text-text-sub text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Integrando Base de Dados da Banca</p>
+        <div className="text-center space-y-4">
+            <h2 className="text-3xl font-display text-white tracking-wider uppercase italic font-black">Codificando Desafios...</h2>
+            <p className="text-slate-600 text-xs font-black uppercase tracking-[0.5em] animate-pulse">Sincronizando bancos de dados recentes</p>
         </div>
       </div>
     );
   }
 
   if (showResult) {
+    const percentage = Math.round((score/quizData.length)*100);
     return (
-      <div className="flex flex-col items-center justify-center py-10 animate-in zoom-in-95 duration-500">
-        <div className="bg-white dark:bg-slate-900 border border-border p-12 rounded-[3rem] text-center space-y-10 shadow-2xl w-full max-w-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-primary/5 to-transparent"></div>
-          
-          <div className="space-y-4 relative z-10">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+      <div className="flex flex-col items-center justify-center py-16 animate-in zoom-in-95 duration-700">
+        <div className="rise-card p-14 md:p-20 text-center space-y-12 w-full max-w-xl border-primary/20 bg-gradient-to-br from-slate-950 to-transparent">
+          <div className="space-y-8 relative z-10">
+            <div className="w-24 h-24 bg-primary/10 border border-primary/20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl">
               <Award className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-3xl font-display text-text-main">Resultados da Sessão</h2>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-primary text-7xl font-display leading-none">{score}</span>
-              <span className="text-text-sub text-3xl font-display opacity-30 mt-4">/ {quizData.length}</span>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-display text-white italic font-black tracking-tight">Sessão Finalizada.</h2>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Progresso transmitido com sucesso. Cadência mantida.</p>
             </div>
-            <p className="text-text-sub text-sm font-medium pt-2">Aproveitamento Cirúrgico: <span className="text-text-main font-bold">{Math.round((score/quizData.length)*100)}%</span></p>
+
+            <div className="flex items-center justify-center gap-10 py-6">
+              <div className="flex flex-col items-center">
+                <span className="text-primary text-7xl md:text-8xl font-display leading-none italic font-black">{score}</span>
+                <span className="text-xs font-black text-slate-600 uppercase tracking-wider mt-4">Acertos</span>
+              </div>
+              <div className="h-16 w-px bg-white/10"></div>
+              <div className="flex flex-col items-center">
+                <span className="text-white text-7xl md:text-8xl font-display leading-none italic font-black">{quizData.length}</span>
+                <span className="text-xs font-black text-slate-600 uppercase tracking-wider mt-4">Total</span>
+              </div>
+            </div>
+
+            <div className="bg-white/5 border border-white/5 py-6 px-12 rounded-2xl inline-block shadow-inner backdrop-blur-md">
+               <span className="text-xs font-black text-slate-700 uppercase tracking-wider mr-4">Performance Tática</span>
+               <span className="text-2xl font-display text-white italic font-black">{percentage}%</span>
+            </div>
           </div>
 
           <button 
             onClick={() => setActiveTab('selection')}
-            className="w-full bg-primary text-white py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 relative z-10"
+            className="w-full bg-white text-slate-950 py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider hover:scale-105 transition-all shadow-2xl active:scale-95 border-2 border-white"
           >
-            Finalizar Treinamento
+            Sincronizar e Sair
           </button>
         </div>
       </div>
@@ -160,26 +200,26 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in slide-in-from-right-4 duration-700 pb-20">
-        <header className="flex justify-between items-center px-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-display font-black">
+    <div className="max-w-3xl mx-auto space-y-12 animate-in slide-in-from-right-8 duration-700 pb-20">
+        <header className="flex justify-between items-center px-8 border-b border-white/5 pb-8">
+            <div className="flex items-center gap-6">
+              <div className="w-14 h-14 bg-white text-slate-950 border border-white/10 rounded-2xl flex items-center justify-center font-display text-2xl italic font-black shadow-2xl">
                 {currentQuestion + 1}
               </div>
-              <div className="space-y-0.5">
-                <div className="text-[10px] font-black text-text-sub uppercase tracking-widest leading-none">Questão Atual</div>
-                <div className="text-xs font-bold text-text-main">Meta: {quizData.length} itens</div>
+              <div className="space-y-1">
+                <div className="text-xs font-black text-slate-600 uppercase tracking-wider">Célula Atual</div>
+                <div className="text-xs font-black text-white uppercase tracking-wider">{quizData.length} MÓDULOS TOTAIS</div>
               </div>
             </div>
-            <div className="text-[10px] font-black text-primary uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-full leading-none">Banca IA Monitor</div>
+            <div className="text-xs font-black text-primary uppercase tracking-wider bg-primary/10 border border-primary/20 px-6 py-3 rounded-full shadow-2xl animate-pulse">Monitoramento Ativo</div>
         </header>
 
-        <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-8 md:p-12 space-y-10 shadow-xl shadow-primary/[0.02]">
-            <h2 className="text-xl md:text-2xl font-display leading-[1.3] text-text-main">
+        <div className="rise-card p-10 md:p-16 space-y-14 border-white/10 bg-gradient-to-br from-slate-950 to-transparent">
+            <h2 className="text-xl md:text-3xl font-display leading-[1.4] text-white italic font-bold tracking-tight">
                 {quizData[currentQuestion]?.question}
             </h2>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-5">
                 {quizData[currentQuestion]?.options.map((opt: string, idx: number) => {
                     const isCorrect = selectedOption !== null && idx === quizData[currentQuestion].correctAnswerIndex;
                     const isWrong = selectedOption === idx && idx !== quizData[currentQuestion].correctAnswerIndex;
@@ -190,21 +230,25 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                             disabled={selectedOption !== null}
                             onClick={() => handleAnswer(idx)}
                             className={cn(
-                                "w-full text-left p-6 rounded-[2rem] border-2 transition-all flex justify-between items-center group relative overflow-hidden",
+                                "w-full text-left p-7 md:p-10 rounded-[2rem] border-2 transition-all flex justify-between items-center group relative overflow-hidden",
                                 selectedOption === null 
-                                  ? "bg-white dark:bg-slate-900 border-border hover:border-primary/50 hover:bg-slate-50 text-text-main" 
+                                  ? "bg-white/5 border-white/5 hover:border-primary/50 hover:bg-white/10 text-slate-400" 
                                   : isCorrect 
-                                    ? "bg-accent/10 border-accent text-accent font-bold shadow-lg shadow-accent/5" 
+                                    ? "bg-accent/10 border-accent text-white shadow-[0_0_30px_rgba(34,197,94,0.3)] scale-105 z-10" 
                                     : isWrong 
-                                      ? "bg-red-50 border-red-500 text-red-500 font-bold" 
-                                      : "bg-slate-50 border-transparent opacity-30 grayscale"
+                                      ? "bg-red-500/10 border-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)] scale-105 z-10" 
+                                      : "bg-slate-950/40 border-transparent opacity-20"
                             )}
                         >
-                            <span className="text-base font-medium pr-8">{opt}</span>
+                            <span className="text-base font-bold pr-10 leading-relaxed italic">{opt}</span>
                             <div className="shrink-0">
-                              {isCorrect && <CheckCircle2 className="w-6 h-6 animate-in zoom-in duration-300" />}
-                              {isWrong && <XCircle className="w-6 h-6 animate-in zoom-in duration-300" />}
-                              {!selectedOption && <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-primary" />}
+                              {isCorrect && <CheckCircle2 className="w-8 h-8 text-accent animate-in zoom-in duration-500" />}
+                              {isWrong && <XCircle className="w-8 h-8 text-red-500 animate-in zoom-in duration-500" />}
+                              {!selectedOption && (
+                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary group-hover:bg-primary transition-all shadow-lg">
+                                  <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-white" />
+                                </div>
+                              )}
                             </div>
                         </button>
                     );
@@ -216,13 +260,16 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-border"
+                        className="bg-primary/5 p-10 rounded-2xl border-2 border-primary/20 relative overflow-hidden shadow-inner"
                     >
-                        <div className="flex items-center gap-2 mb-4">
-                          <BrainCircuit className="w-5 h-5 text-primary" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-text-sub">Fundamentação Estratégica</span>
+                        <BrainCircuit className="absolute -right-6 -bottom-6 w-32 h-32 text-primary/5 rotate-12" />
+                        <div className="flex items-center gap-4 mb-6 relative z-10">
+                          <div className="bg-primary/20 p-2.5 rounded-xl text-primary">
+                             <BrainCircuit className="w-6 h-6" />
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-wider text-primary">Análise Médica/Técnica</span>
                         </div>
-                        <p className="text-sm text-text-main leading-relaxed font-medium italic opacity-80">{quizData[currentQuestion]?.explanation}</p>
+                        <p className="text-base text-slate-400 leading-relaxed italic relative z-10 font-medium">"{quizData[currentQuestion]?.explanation}"</p>
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -1,64 +1,83 @@
 import React from 'react';
-import { Lock, ChevronLeft } from 'lucide-react';
+import { Lock, ChevronLeft, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-text-sub uppercase tracking-widest hover:text-primary transition-colors">
-        <ChevronLeft className="w-4 h-4" />
-        Voltar ao Dashboard
+    <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 pt-10 px-6">
+      <Link to="/" className="inline-flex items-center gap-3 text-xs font-black text-slate-500 uppercase tracking-wider hover:text-accent transition-all group">
+        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-accent transition-all">
+          <ChevronLeft className="w-4 h-4" />
+        </div>
+        Retornar ao Centro de Controle
       </Link>
 
-      <header className="space-y-4 text-center">
-        <div className="w-16 h-16 bg-accent/10 rounded-3xl flex items-center justify-center text-accent mx-auto shadow-inner">
-          <Lock className="w-8 h-8" />
+      <header className="space-y-8 text-center pt-8">
+        <div className="w-24 h-24 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center text-accent mx-auto shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-accent/10 blur-2xl animate-pulse"></div>
+          <Lock className="w-10 h-10 relative z-10" />
         </div>
-        <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-          Política de <span className="italic text-accent">Privacidade</span>.
-        </h1>
-        <p className="text-text-sub text-sm font-medium">Última atualização: 10 de maio de 2026</p>
+        <div className="space-y-3">
+          <h1 className="text-4xl md:text-7xl font-display leading-[0.9] text-white tracking-tighter font-black italic">
+            Política de <span className="italic text-accent animate-pulse">Privacidade.</span>
+          </h1>
+          <p className="text-slate-500 text-xs font-black uppercase tracking-[0.5em] italic">Rise Protocol v2.5.0 — Proteção de Dados: Mai/2026</p>
+        </div>
       </header>
 
-      <div className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 md:p-16 space-y-10 shadow-xl shadow-accent/[0.02]">
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">1. Coleta de Dados</h2>
-          <p className="text-text-sub leading-relaxed">
-            Coletamos informações que você fornece diretamente ao criar uma conta, como seu nome e endereço de e-mail. Também coletamos dados sobre seu progresso nos estudos para personalizar sua experiência.
+      <div className="rise-card p-10 md:p-20 space-y-16 bg-gradient-to-br from-slate-950 to-transparent border-white/10 shadow-2xl">
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-accent/20 group-hover:bg-accent transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-accent uppercase tracking-wider">Protocolo 01</div>
+            <Sparkles className="w-4 h-4 text-accent opacity-50" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Criptografia de Dados</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Coletamos informações que você fornece diretamente ao integrar seu perfil, como nome e credenciais de acesso autenticadas via Google. Seus dados de progresso são utilizados estritamente para a calibração do seu algoritmo de estudos.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">2. Uso das Informações</h2>
-          <p className="text-text-sub leading-relaxed">
-            Utilizamos suas informações para fornecer, manter e melhorar nossos serviços, além de processar o desenvolvimento de novas ferramentas de IA baseadas no seu feedback de estudo.
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-primary uppercase tracking-wider">Protocolo 02</div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Processamento de Inteligência</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Utilizamos suas métricas operacionais para manter e evoluir nossos modelos de IA, garantindo que as sugestões de cronogramas e flashcards sejam calibradas de acordo com sua curva de esquecimento real.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">3. Compartilhamento de Dados</h2>
-          <p className="text-text-sub leading-relaxed">
-            Não vendemos nem alugamos suas informações pessoais a terceiros. Podemos compartilhar dados anonimizados para fins estatísticos e de pesquisa sobre performance em concursos.
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-slate-700 uppercase tracking-wider">Protocolo 03</div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Isolamento de Informações</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Não comercializamos conjuntos de dados para terceiros. A RiseMindr opera em um ecossistema fechado onde a privacidade do estrategista é tratada como ativo de segurança máxima.
           </p>
         </section>
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">4. Segurança</h2>
-          <p className="text-text-sub leading-relaxed">
-            Implementamos medidas de segurança técnicas e organizacionais para proteger suas informações contra acesso não autorizado ou perda acidental.
-          </p>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-2xl font-display text-text-main">5. Seus Direitos</h2>
-          <p className="text-text-sub leading-relaxed">
-            Você tem o direito de acessar, corrigir ou excluir suas informações pessoais a qualquer momento através das configurações da sua conta ou entrando em contato conosco.
+        <section className="space-y-6 relative group">
+          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-accent/20 group-hover:bg-accent transition-colors"></div>
+          <div className="flex items-center gap-4 mb-2">
+            <div className="text-xs font-black text-accent uppercase tracking-wider">Protocolo 04</div>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Direito ao Esquecimento</h2>
+          <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
+            Você possui total autonomia para exportar ou deletar permanentemente seus dados do nosso cluster via painel de configurações. Uma vez deletados, os dados são irrecuperáveis por design de segurança.
           </p>
         </section>
       </div>
 
-      <footer className="text-center text-[10px] font-black text-text-sub uppercase tracking-widest pt-10">
-        Stratis © 2026 — Segurança e Transparência.
+      <footer className="text-center py-20 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">RiseMindr Security — 2026 Edition</span>
+        </div>
+        <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Sistemas operando sob protocolos de criptografia de ponta a ponta.</p>
       </footer>
     </div>
   );

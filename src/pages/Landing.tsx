@@ -80,8 +80,8 @@ const Landing = () => {
   const features = [
     {
       icon: BrainCircuit,
-      title: "Verticalização via IA",
-      description: "Transforme qualquer edital PDF em uma grade de estudos organizada automaticamente pela nossa inteligência artificial.",
+      title: "Organização do Conteúdo",
+      description: "Transforme qualquer edital em uma grade de estudos organizada automaticamente por nossa plataforma.",
       color: "bg-primary/10 text-primary"
     },
     {
@@ -105,62 +105,72 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg selection:bg-primary/30">
+    <div className="min-h-screen bg-bg selection:bg-primary/20 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl -z-10">
+        <div className="absolute top-[10%] left-[5%] w-[40%] h-[40%] bg-primary/5 dark:bg-primary/20 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="absolute bottom-[10%] right-[5%] w-[40%] h-[40%] bg-secondary/5 dark:bg-accent/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
       {/* Header/Nav */}
       <nav className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4",
-        isScrolled ? "bg-white/80 dark:bg-card-bg/80 backdrop-blur-xl border-b border-border" : "bg-transparent"
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6",
+        isScrolled ? "bg-white/80 dark:bg-[#070b14]/80 backdrop-blur-xl border-b border-border shadow-sm py-4" : "bg-transparent py-6"
       )}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-              <Sparkles className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 primary-button rounded-xl flex items-center justify-center text-white shadow-lg">
+              <Sparkles className="w-5 h-5" />
             </div>
-            <span className="text-2xl font-black text-text-main tracking-tighter">
-              Stratis
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xl font-display font-bold text-text-main tracking-tight leading-none uppercase">RiseMindr</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-0.5 opacity-60">Elite Edition</span>
+            </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-bold text-text-sub hover:text-primary transition-colors">Recursos</a>
-            <a href="#community" className="text-sm font-bold text-text-sub hover:text-primary transition-colors">Comunidade</a>
+          <div className="hidden md:flex items-center gap-10">
+            {['Recursos', 'Estratégia', 'Comunidade'].map((item) => (
+              <a 
+                key={item} 
+                href={`#${item.toLowerCase()}`} 
+                className="text-xs font-bold text-text-sub hover:text-primary uppercase tracking-wider transition-colors"
+              >
+                {item}
+              </a>
+            ))}
             <Link 
               to="/auth"
-              className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
+              className="bg-primary text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
             >
-              Entrar agora
+              Entrar
             </Link>
           </div>
+
+          <button className="md:hidden text-text-main">
+            <ChevronDown className="w-6 h-6" />
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-40 overflow-hidden px-6">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-primary/10 via-transparent to-transparent -z-10 blur-[120px]"></div>
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-secondary/5 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-        
-        <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-12">
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6">
+        <div className="max-w-4xl mx-auto flex flex-col items-center text-center space-y-10">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-6 max-w-4xl"
+            className="space-y-6"
           >
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm shadow-primary/5">
-              <Zap className="w-4 h-4 fill-primary" />
-              Gestão de Estudos com IA
+            <div className="inline-flex items-center gap-3 bg-white dark:bg-white/5 border border-border px-5 py-2 rounded-full text-xs font-bold text-text-sub uppercase tracking-wider shadow-sm">
+              <Zap className="w-3 h-3 text-primary" />
+              Sincronia Estratégica para Aprovados
             </div>
-            <h1 className="text-5xl md:text-8xl lg:text-9xl font-display text-text-main leading-[0.85] tracking-tighter mix-blend-multiply dark:mix-blend-normal">
-              Sua aprovação com <br />
-              <span className="text-primary italic relative inline-block">
-                Stratis
-                <svg className="absolute -bottom-2 left-0 w-full h-4 text-secondary/30 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
-                  <path d="M0 5 Q 25 0 50 5 T 100 5" fill="none" stroke="currentColor" strokeWidth="4" />
-                </svg>
-              </span>.
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display text-text-main leading-[1.1] tracking-tight font-bold">
+              Domine seu edital com <br />
+              <span className="text-primary italic">precisão cirúrgica</span>.
             </h1>
-            <p className="text-lg md:text-2xl text-text-sub font-medium leading-relaxed max-w-2xl mx-auto pt-4">
-              A ferramenta definitiva para concurseiros de elite. Organize editais, crie cronogramas e memorize com IA.
+            <p className="text-base md:text-lg text-text-sub font-medium leading-relaxed max-w-2xl mx-auto pt-2">
+              A arquitetura definitiva para estudantes de alto desempenho. Organize editais complexos, gere cronogramas inteligentes e domine cada tópico com tecnologia de ponta.
             </p>
           </motion.div>
 
@@ -168,165 +178,152 @@ const Landing = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-6 w-full max-w-md"
+            className="flex flex-col sm:flex-row gap-4 w-full max-w-md"
           >
             <Link 
                to="/auth"
-               className="flex-1 bg-text-main text-bg px-8 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-text-main/10 flex items-center justify-center gap-3 group"
+               className="flex-1 primary-button py-4 text-xs tracking-wider uppercase shadow-xl"
             >
               Começar Agora
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <button 
-               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-               className="flex-1 bg-white dark:bg-card-bg border border-border text-text-main px-8 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-bg transition-all"
+               onClick={() => document.getElementById('recursos')?.scrollIntoView({ behavior: 'smooth' })}
+               className="flex-1 bg-white dark:bg-white/5 border border-border text-text-main px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm"
             >
-              Ver Recursos
+              Recursos
             </button>
           </motion.div>
 
+          {/* App Preview Wrapper */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="w-full pt-12"
+            transition={{ duration: 1.2, delay: 0.4 }}
+            className="w-full pt-12 relative"
           >
-            <div className="relative mx-auto max-w-5xl">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-secondary/20 to-primary/20 rounded-[3rem] blur-2xl -z-10 opacity-50"></div>
-              <div className="glass-card rounded-[2.5rem] overflow-hidden p-3 shadow-2xl">
-                <div className="bg-bg/50 dark:bg-slate-900/50 rounded-[2rem] border border-border/50 overflow-hidden">
-                   <div className="h-10 bg-white/50 dark:bg-slate-800/50 border-b border-border/50 flex items-center justify-between px-6">
-                      <div className="flex gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                        <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                        <div className="w-3 h-3 rounded-full bg-slate-100 dark:bg-slate-700"></div>
-                      </div>
-                      <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                      <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                   </div>
-                   <div className="h-[400px] md:h-[500px] flex">
-                      <div className="w-64 border-r border-border/50 hidden md:block p-6 space-y-6">
-                        <div className="h-4 w-24 bg-primary/20 rounded-full"></div>
-                        <div className="space-y-3">
-                          {[1,2,3,4,5].map(i => <div key={i} className="h-8 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>)}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-3/4 h-3/4 bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+            <div className="relative mx-auto max-w-5xl rounded-3xl p-1.5 bg-white dark:bg-zinc-900 border border-border shadow-2xl overflow-hidden backdrop-blur-sm">
+               <div className="bg-slate-50 dark:bg-zinc-950 rounded-[1.25rem] border border-border overflow-hidden">
+                  <div className="h-10 bg-white dark:bg-zinc-900 border-b border-border flex items-center justify-between px-6">
+                     <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-white/10"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-white/10"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-white/10"></div>
+                     </div>
+                     <div className="h-4 w-32 bg-slate-100 dark:bg-white/5 rounded-full"></div>
+                     <div className="flex gap-3">
+                        <div className="w-3.5 h-3.5 bg-slate-100 dark:bg-white/5 rounded-full"></div>
+                        <div className="w-3.5 h-3.5 bg-slate-100 dark:bg-white/5 rounded-full"></div>
+                     </div>
+                  </div>
+                  <div className="h-[350px] md:h-[480px] flex">
+                     <div className="w-56 border-r border-border hidden md:block p-6 space-y-6 bg-white dark:bg-zinc-900/50">
+                       <div className="h-3 w-24 bg-primary/10 rounded-full"></div>
+                       <div className="space-y-3">
+                         {[1,2,3,4,5].map(i => <div key={i} className="h-8 w-full bg-slate-50 dark:bg-white/5 rounded-lg border border-border"></div>)}
+                       </div>
+                     </div>
+                     <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 dark:bg-zinc-950">
+                        <div className="space-y-6">
+                           <div className="h-36 w-full bg-white dark:bg-zinc-900 rounded-2xl border border-border relative p-6">
+                              <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                 <div className="h-full w-2/3 bg-primary"></div>
+                              </div>
+                              <div className="mt-4 space-y-2">
+                                 <div className="h-2 w-1/3 bg-slate-100 dark:bg-white/5 rounded-full"></div>
+                                 <div className="h-2 w-1/2 bg-slate-100 dark:bg-white/5 rounded-full"></div>
+                              </div>
+                           </div>
+                           <div className="h-28 w-full bg-white dark:bg-zinc-900 rounded-2xl border border-border"></div>
                         </div>
-                      </div>
-                      <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                         <div className="space-y-6">
-                            <div className="h-40 w-full bg-indigo-50 dark:bg-indigo-900/20 rounded-[2rem] border border-indigo-100 dark:border-indigo-800/30"></div>
-                            <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/30 rounded-[2rem]"></div>
-                         </div>
-                         <div className="space-y-6">
-                            <div className="h-24 w-full bg-slate-50 dark:bg-slate-800/30 rounded-[2rem]"></div>
-                            <div className="h-40 w-full bg-emerald-50 dark:bg-emerald-900/20 rounded-[2rem] border border-emerald-100 dark:border-emerald-800/30"></div>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-              </div>
+                        <div className="space-y-6">
+                           <div className="h-28 w-full bg-white dark:bg-zinc-900 rounded-2xl border border-border"></div>
+                           <div className="h-36 w-full bg-white dark:bg-zinc-900 rounded-2xl border border-border p-6 flex flex-col justify-end">
+                              <div className="flex gap-2">
+                                 {[1,2,3].map(i => <div key={i} className="h-8 flex-1 bg-slate-50 dark:bg-white/5 rounded-lg"></div>)}
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section with Technical Grid */}
-      <section className="py-24 border-y border-border overflow-hidden bg-white/50 dark:bg-slate-900/30">
-         <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 relative">
-            <div className="absolute inset-y-0 left-1/4 w-[1px] bg-border hidden md:block"></div>
-            <div className="absolute inset-y-0 left-2/4 w-[1px] bg-border hidden md:block"></div>
-            <div className="absolute inset-y-0 left-3/4 w-[1px] bg-border hidden md:block"></div>
-            
-            <div className="p-8 space-y-2 group">
-               <div className="text-5xl font-display text-text-main group-hover:text-primary transition-colors">100%</div>
-               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Automatizado</div>
-            </div>
-            <div className="p-8 space-y-2 group border-l md:border-l-0 border-border">
-               <div className="text-5xl font-display text-primary">+200</div>
-               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Editais Ativos</div>
-            </div>
-            <div className="p-8 space-y-2 group border-t md:border-t-0 border-border">
-               <div className="text-5xl font-display text-text-main group-hover:text-secondary transition-colors">24/7</div>
-               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Mentoria IA</div>
-            </div>
-            <div className="p-8 space-y-2 group border-t border-l md:border-t-0 border-border">
-               <div className="text-5xl font-display text-accent">5x</div>
-               <div className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Foco & Retenção</div>
-            </div>
-         </div>
-      </section>
-
       {/* Features Bento Grid */}
-      <section id="features" className="py-40 px-6 bg-slate-50/50 dark:bg-slate-900/20">
-        <div className="max-w-7xl mx-auto space-y-24">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-             <div className="space-y-4 max-w-xl">
-                <div className="text-primary font-black text-[10px] uppercase tracking-[0.3em]">Recursos de Ponta</div>
-                <h2 className="text-5xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-                   Toda a tecnologia a favor da sua <span className="italic text-secondary">aprovação</span>.
+      <section id="recursos" className="py-32 px-6 bg-slate-50 dark:bg-[#070b14] relative">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+             <div className="space-y-3 max-w-xl">
+                <div className="text-primary font-bold text-xs uppercase tracking-wider">Engenharia de Aprovação</div>
+                <h2 className="text-3xl md:text-5xl font-display leading-tight text-text-main tracking-tight font-bold">
+                   Arquitetura de <span className="text-primary italic">Alta Performance</span>.
                 </h2>
              </div>
-             <p className="text-text-sub font-medium max-w-sm text-lg leading-relaxed">
-                Desenvolvemos ferramentas exclusivas que transformam a maneira como você estuda para concursos.
+             <p className="text-text-sub font-medium max-w-sm text-sm leading-relaxed border-l border-border pl-8">
+                Desenvolvemos um sistema inteligente que organiza sua rotina para que seu único foco seja a execução.
              </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-8">
-             {/* Feature 1: Large Bento */}
-             <div className="md:col-span-6 lg:col-span-8 bg-white dark:bg-slate-900 border border-border p-10 rounded-[3rem] shadow-sm hover:shadow-xl hover:border-primary/20 transition-all flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
-                <div className="relative z-10 space-y-4">
-                   <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                      <BrainCircuit className="w-8 h-8" />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+             {/* Feature 1: Main */}
+             <div className="md:col-span-8 bg-white dark:bg-slate-900/40 border border-border p-10 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative min-h-[400px]">
+                <div className="relative z-10 space-y-5">
+                   <div className="w-12 h-12 bg-primary/5 dark:bg-primary/10 border border-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <BrainCircuit className="w-6 h-6" />
                    </div>
-                   <h3 className="text-3xl font-display text-text-main">Verticalização via IA</h3>
-                   <p className="text-text-sub max-w-sm text-lg font-medium">Transforme qualquer edital PDF em uma grade de estudos organizada automaticamente.</p>
+               <h3 className="text-2xl font-display text-text-main font-bold">Processamento de Editais</h3>
+                   <p className="text-text-sub max-w-sm text-sm font-medium">Capture disciplinas e tópicos de PDFs extensos instantaneamente. Nossa tecnologia processa as informações estruturando seu guia de estudos.</p>
                 </div>
-                <div className="absolute bottom-0 right-0 w-2/3 h-2/3 bg-primary/5 rounded-tl-[4rem] border-t border-l border-primary/10 overflow-hidden">
-                   <div className="p-8 space-y-4">
-                      <div className="h-6 w-full bg-primary/10 rounded-lg"></div>
-                      <div className="h-6 w-3/4 bg-primary/10 rounded-lg"></div>
-                      <div className="h-6 w-full bg-primary/10 rounded-lg"></div>
-                   </div>
+                <div className="relative z-10 mt-8">
+                   <button className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider group/btn">
+                      Explorar Tecnologia <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                   </button>
                 </div>
              </div>
 
-             {/* Feature 2 */}
-             <div className="md:col-span-3 lg:col-span-4 bg-secondary/5 border border-secondary/10 p-10 rounded-[3rem] flex flex-col justify-between hover:border-secondary/30 transition-all group">
-                <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary group-hover:rotate-12 transition-transform">
-                   <Calendar className="w-7 h-7" />
+             {/* Feature 2: Small */}
+             <div className="md:col-span-4 bg-white dark:bg-accent/5 border border-border p-8 rounded-2xl flex flex-col justify-between hover:shadow-md transition-all group">
+                <div className="w-10 h-10 bg-secondary/5 dark:bg-secondary/10 border border-secondary/10 rounded-xl flex items-center justify-center text-secondary">
+                   <Calendar className="w-5 h-5" />
                 </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl font-display text-text-main">Cronograma Inteligente</h3>
-                   <p className="text-text-sub text-sm font-medium">Planos de estudo dinâmicos baseados na sua disponibilidade real.</p>
-                </div>
-             </div>
-
-             {/* Feature 3 */}
-             <div className="md:col-span-3 lg:col-span-4 bg-accent/5 border border-accent/10 p-10 rounded-[3rem] flex flex-col justify-between hover:border-accent/30 transition-all group">
-                <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
-                   <Target className="w-7 h-7" />
-                </div>
-                <div className="space-y-3">
-                   <h3 className="text-2xl font-display text-text-main">Microaprendizado</h3>
-                   <p className="text-text-sub text-sm font-medium">Flashcards e resumos gerados automaticamente a partir do conteúdo.</p>
+                <div className="space-y-3 pt-8">
+                   <h3 className="text-xl font-display text-text-main font-bold">Cronograma Ágil</h3>
+                   <p className="text-text-sub text-xs font-medium leading-relaxed">Algoritmos que adaptam seu tempo conforme o peso estatístico de cada matéria.</p>
                 </div>
              </div>
 
-             {/* Feature 4: Long Bento */}
-             <div className="md:col-span-6 lg:col-span-8 bg-slate-900 dark:bg-slate-900 border border-slate-800 p-10 rounded-[3rem] flex flex-col md:flex-row items-center gap-10 hover:border-primary/50 transition-all group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
-                <div className="flex-1 space-y-4">
-                   <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-white">
-                      <Users className="w-7 h-7" />
+             {/* Feature 3: Small */}
+             <div className="md:col-span-4 bg-white dark:bg-white/5 border border-border p-8 rounded-2xl flex flex-col justify-between hover:shadow-md transition-all group">
+                <div className="w-10 h-10 bg-accent/5 border border-accent/10 rounded-xl flex items-center justify-center text-accent">
+                   <Target className="w-5 h-5" />
+                </div>
+                <div className="space-y-3 pt-8">
+                   <h3 className="text-xl font-display text-text-main font-bold">Flashcards Elite</h3>
+                   <p className="text-text-sub text-xs font-medium leading-relaxed">Memorização ativa baseada em repetição espaçada, automatizada para seus tópicos.</p>
+                </div>
+             </div>
+
+             {/* Feature 4: Wide */}
+             <div className="md:col-span-8 bg-white dark:bg-gradient-to-br border border-border p-10 rounded-2xl flex flex-col md:flex-row items-center gap-10 hover:shadow-md transition-all group relative overflow-hidden">
+                <div className="flex-1 space-y-5 relative z-10">
+                   <div className="w-12 h-12 bg-slate-50 dark:bg-white/5 border border-border rounded-xl flex items-center justify-center text-text-main">
+                      <Users className="w-6 h-6" />
                    </div>
-                   <h3 className="text-3xl font-display text-white">Comunidade Global</h3>
-                   <p className="text-slate-400 text-lg font-medium">Conecte-se com milhares de aprovados e acesse editais compartilhados.</p>
-                   <button className="bg-white text-slate-900 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-transform">Explorar agora</button>
+                   <h3 className="text-2xl font-display text-text-main font-bold">Repositório Elite</h3>
+                   <p className="text-text-sub text-sm font-medium leading-relaxed">Acesse planejamentos de aprovados para as maiores carreiras do país. Não estude do zero.</p>
+                   <Link to="/comunidade" className="inline-flex items-center gap-2 bg-text-main text-bg dark:bg-white dark:text-slate-950 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-sm">
+                      Ver ranking
+                   </Link>
                 </div>
-                <div className="flex-1 grid grid-cols-2 gap-3 relative z-10">
-                   {[1,2,3,4].map(i => (
-                     <div key={i} className="aspect-square rounded-2xl bg-white/5 border border-white/10 p-4 transition-transform group-hover:scale-105" style={{ transitionDelay: `${i * 100}ms` }}>
-                        <div className="w-8 h-8 rounded-full bg-white/10 mb-2"></div>
-                        <div className="h-2 w-full bg-white/20 rounded-full"></div>
+                <div className="flex-1 grid grid-cols-2 gap-3 relative z-10 w-full md:w-auto">
+                   {[1,2].map(i => (
+                     <div key={i} className="aspect-square rounded-2xl bg-slate-50 dark:bg-white/5 border border-border p-4 transition-transform group-hover:scale-105 duration-500 flex flex-col justify-end">
+                        <div className="h-1 w-1/2 bg-primary/30 rounded-full mb-1.5"></div>
+                        <div className="h-1 w-full bg-slate-200 dark:bg-white/10 rounded-full"></div>
                      </div>
                    ))}
                 </div>
@@ -335,128 +332,71 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Community Preview */}
-      <section id="community" className="py-32 bg-bg overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
-        
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-           <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-indigo-500/10 text-indigo-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">
-                <Users className="w-4 h-4" />
-                Inteligência Coletiva
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-text-main leading-tight tracking-tighter">
-                O maior repositório de <span className="text-indigo-500 italic">editais</span> do Brasil.
-              </h2>
-              <p className="text-lg text-text-sub font-medium leading-relaxed">
-                Não comece do zero. Acesse grades verticalizadas por aprovados para tribunais, carreiras policiais, TI e muito mais.
-              </p>
-              <div className="space-y-4">
-                 {[
-                   "Grades avaliadas pela comunidade",
-                   "Favoritos sincronizados na nuvem",
-                   "Estatísticas de incidência atualizadas"
-                 ].map((t, i) => (
-                   <div key={i} className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-green-500/10 text-green-500 rounded-lg flex items-center justify-center">
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-sm font-bold text-text-main">{t}</span>
-                   </div>
-                 ))}
-              </div>
-           </div>
-
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 rotate-2 lg:rotate-6">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="bg-white dark:bg-card-bg border border-border p-6 rounded-[32px] shadow-xl space-y-4">
-                   <div className="h-3 w-20 bg-primary/20 rounded"></div>
-                   <div className="h-4 w-32 bg-text-main/10 rounded"></div>
-                   <div className="pt-4 border-t border-border flex justify-between items-center">
-                      <div className="flex -space-x-2">
-                        {[1,2,3].map(j => <div key={j} className="w-6 h-6 rounded-full border border-white bg-bg"></div>)}
-                      </div>
-                      <div className="text-[10px] font-bold text-text-sub">82 aprovados</div>
-                   </div>
-                </div>
-              ))}
-           </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="py-40 px-6 bg-slate-900 overflow-hidden relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/10 opacity-30"></div>
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+      <section className="py-32 px-6 bg-white dark:bg-[#0c121e] relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl -z-10">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-primary/5 blur-[150px] rounded-full animate-pulse"></div>
+        </div>
         
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-12">
-           <div className="w-20 h-20 bg-white/10 rounded-[2rem] border border-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8">
-              <Sparkles className="w-10 h-10 text-white" />
+        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-10">
+           <div className="w-16 h-16 bg-primary/5 rounded-2xl border border-primary/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-sm">
+              <Sparkles className="w-8 h-8 text-primary shadow-sm" />
            </div>
-           <h2 className="text-5xl md:text-8xl font-display text-white leading-none tracking-tighter">
-             O próximo <span className="text-primary italic">aprovado</span><br />
-             pode ser <span className="italic">você</span>.
+           <h2 className="text-3xl md:text-5xl font-display text-text-main leading-[1.1] tracking-tight font-bold">
+             Dê o passo definitivo rumo ao seu <br />
+             nome no <span className="text-primary italic">Diário Oficial</span>.
            </h2>
-           <p className="text-slate-400 text-xl md:text-2xl font-medium max-w-2xl mx-auto">
-             Não perca mais tempo com planilhas manuais. Deixe a IA organizar seu sucesso.
+           <p className="text-text-sub text-lg md:text-xl font-medium max-w-2xl mx-auto">
+             Junte-se à elite dos estudantes que utilizam engenharia de dados para vencer editais.
            </p>
-           <div className="flex flex-col sm:flex-row gap-6 justify-center">
+           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
               <Link 
                 to="/auth"
-                className="bg-white text-slate-900 px-12 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                className="w-full sm:w-auto primary-button px-10 py-4 text-xs tracking-wider uppercase shadow-xl"
               >
-                Criar Minha Conta Grátis
-              </Link>
-              <Link 
-                to="/comunidade"
-                className="bg-transparent border border-white/20 text-white px-12 py-5 rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-white/5 transition-all"
-              >
-                Explorar Comunidade
+                Ativar Minha Conta Elite
               </Link>
            </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-20 border-t border-border bg-bg/50 px-6">
+      <footer className="py-16 border-t border-border bg-white dark:bg-[#070b14] px-6 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
            <div className="col-span-1 md:col-span-2 space-y-6">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                  <Sparkles className="w-5 h-5" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
+                  <Sparkles className="w-4 h-4" />
                 </div>
-                <span className="text-xl font-black text-text-main tracking-tighter">
-                  Stratis
-                </span>
+                <span className="text-lg font-display font-bold text-text-main tracking-tight uppercase">RiseMindr</span>
               </div>
-              <p className="text-sm text-text-sub max-w-sm font-medium">
-                Sua jornada até a nomeação começa aqui. Automatize seu estudo, melhore sua retenção e conquiste sua vaga.
+              <p className="text-text-sub max-w-sm text-sm font-medium leading-relaxed">
+                RiseMindr Elite OS. Tecnologia de alto desempenho para concurseiros estrategistas.
               </p>
            </div>
-           <div className="grid grid-cols-2 gap-8 col-span-2">
+           <div className="grid grid-cols-2 gap-12 col-span-2">
               <div className="space-y-4">
-                 <h4 className="text-[10px] font-black text-text-main uppercase tracking-widest">Produto</h4>
-                 <ul className="space-y-2 text-sm font-bold text-text-sub">
-                    <li>Recursos</li>
-                    <li>Comunidade</li>
-                    <li>Preços</li>
+                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Ecossistema</h4>
+                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
+                    <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Dashboards</li>
+                    <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Cronogramas</li>
+                    <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Comunidade</li>
                  </ul>
               </div>
               <div className="space-y-4">
-                 <h4 className="text-[10px] font-black text-text-main uppercase tracking-widest">Legal</h4>
-                 <ul className="space-y-2 text-sm font-bold text-text-sub">
-                    <li><Link to="/termos" className="hover:text-primary transition-colors">Termos de Uso</Link></li>
-                    <li><Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link></li>
-                    <li>Cookies</li>
+                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Compliance</h4>
+                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
+                    <li><Link to="/termos" className="hover:text-primary transition-colors uppercase tracking-wider">Termos</Link></li>
+                    <li><Link to="/privacidade" className="hover:text-primary transition-colors uppercase tracking-wider">Privacidade</Link></li>
                  </ul>
               </div>
            </div>
         </div>
-        <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-           <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">© 2026 Stratis. All rights reserved.</span>
-           <div className="flex gap-6">
-              <Smartphone className="w-4 h-4 text-text-sub" />
-              <Database className="w-4 h-4 text-text-sub" />
+        <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6">
+           <span className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-40">RiseMindr 2026 — Elite Edition</span>
+           <div className="flex gap-2 items-center bg-slate-50 dark:bg-white/5 px-4 py-1.5 rounded-full border border-border">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm"></div>
+              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Systems Nominal</span>
            </div>
         </div>
       </footer>

@@ -39,6 +39,7 @@ export interface Contest {
   dailyGoalHours?: number;
   dailyGoalQuestions?: number;
   schedule?: ScheduleDay[];
+  dailyHistory?: { date: string, hours: number, questions: number }[];
   ownerId?: string;
   ownerName?: string;
   likesCount?: number;

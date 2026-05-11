@@ -12,8 +12,20 @@ export default function Perfil() {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   if (!user) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoURL(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,22 +59,27 @@ export default function Perfil() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header className="space-y-1.5">
-        <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em] leading-none mb-2">Sua Conta</div>
-        <h1 className="text-4xl md:text-5xl font-display leading-tight text-text-main tracking-tighter">
-          Configurações <span className="italic text-primary">Pessoais</span>
+    <div className="max-w-2xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+      <header className="space-y-4">
+        <div className="flex items-center gap-3 text-primary/80 font-bold text-xs uppercase tracking-wider">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+          Configurações de Perfil
+        </div>
+        <h1 className="text-3xl md:text-5xl font-display text-white tracking-tight">
+          Sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Identidade</span>
         </h1>
-        <p className="text-text-sub text-sm font-medium pt-1">Gerencie sua identidade e segurança na plataforma.</p>
+        <p className="text-slate-400 text-sm md:text-base border-l-2 border-primary/30 pl-4">
+          Gerencie sua conta e mantenha seu progresso sincronizado entre dispositivos.
+        </p>
       </header>
 
       {message && (
         <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           className={cn(
-            "p-4 rounded-2xl flex items-center gap-3 border text-sm font-medium",
-            message.type === 'success' ? "bg-green-50 border-green-100 text-green-700 dark:bg-green-900/10 dark:border-green-500/20" : "bg-red-50 border-red-100 text-red-700 dark:bg-red-900/10 dark:border-red-500/20"
+            "p-5 rounded-2xl flex items-center gap-4 border text-sm font-medium",
+            message.type === 'success' ? "bg-accent/10 border-accent/20 text-accent" : "bg-red-500/10 border-red-500/20 text-red-400"
           )}
         >
           {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
@@ -70,104 +87,111 @@ export default function Perfil() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Profile Info */}
-        <section className="bg-white dark:bg-slate-900 border border-border rounded-3xl overflow-hidden shadow-sm">
-          <div className="p-8 border-b border-border/50 bg-slate-50/50 dark:bg-slate-800/30 flex items-center gap-6">
-            <div className="relative group">
-              {photoURL ? (
-                <img src={photoURL} className="w-24 h-24 rounded-[2rem] object-cover border-4 border-white dark:border-slate-800 shadow-xl" alt="Avatar" />
-              ) : (
-                <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary border-4 border-white dark:border-slate-800 shadow-xl">
-                  <User size={40} />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/40 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                <Camera className="text-white w-6 h-6" />
-              </div>
+      <div className="space-y-8">
+        <section className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-8 md:p-10 border-b border-border bg-slate-50/50 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <User size={120} className="text-slate-900" />
             </div>
-            <div>
-              <h3 className="text-xl font-display text-text-main">{displayName || 'Concurseiro'}</h3>
-              <p className="text-sm text-text-sub flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" />
+            
+            <div className="relative group">
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden bg-slate-100 border border-border shadow-inner transition-transform group-hover:scale-[1.02] duration-500">
+                {photoURL ? (
+                  <img src={photoURL} className="w-full h-full object-cover" alt="Avatar" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <User size={48} />
+                  </div>
+                )}
+              </div>
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-2 -right-2 bg-primary text-white p-2.5 rounded-xl border border-white shadow-md group-hover:scale-110 transition-all cursor-pointer"
+                title="Mudar Foto de Perfil"
+              >
+                <Camera size={14} />
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                className="hidden" 
+              />
+            </div>
+            
+            <div className="text-center md:text-left space-y-2 relative z-10">
+              <h3 className="text-2xl font-display text-text-main">{displayName || 'Estudante Rise'}</h3>
+              <div className="flex items-center justify-center md:justify-start gap-2 text-text-sub text-sm">
+                <Mail className="w-3.5 h-3.5 text-primary" />
                 {user.email}
-              </p>
-              <div className="mt-2 text-[9px] font-black uppercase tracking-widest bg-primary/10 text-primary px-2 py-1 rounded-full inline-flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" />
-                Conta Ativa
+              </div>
+              <div className="mt-3 inline-flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Acesso Premium Ativo
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-text-sub uppercase tracking-widest ml-1">Nome de Exibição</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub/50" />
-                  <input 
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 ring-primary/10 transition-all"
-                    placeholder="Seu nome ou apelido"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-text-sub uppercase tracking-widest ml-1">URL da Foto (Avatar)</label>
-                <div className="relative">
-                  <Camera className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub/50" />
-                  <input 
-                    type="text"
-                    value={photoURL}
-                    onChange={(e) => setPhotoURL(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 ring-primary/10 transition-all"
-                    placeholder="https://exemplo.com/foto.jpg"
-                  />
-                </div>
+          <form onSubmit={handleUpdateProfile} className="p-8 md:p-10 space-y-8">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Nome Completo</label>
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+                <input 
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                  placeholder="Seu nome"
+                />
               </div>
             </div>
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white font-black uppercase tracking-[0.2em] text-[10px] py-4 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-text-main text-white font-bold uppercase tracking-wider text-sm py-4 rounded-2xl shadow-sm hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar Alterações'}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Salvar Alterações
+                </>
+              )}
             </button>
           </form>
         </section>
 
-        {/* Security */}
-        <section className="bg-white dark:bg-slate-900 border border-border rounded-3xl p-8 shadow-sm">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-red-50 dark:bg-red-900/10 rounded-2xl flex items-center justify-center text-red-500">
-               <ShieldCheck className="w-6 h-6" />
+        <section className="bg-slate-900/20 backdrop-blur-md border border-white/5 p-8 md:p-10 rounded-2xl space-y-8 shadow-2xl relative overflow-hidden transition-all hover:border-red-500/20">
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 shadow-lg shadow-red-500/5">
+               <ShieldCheck className="w-8 h-8" />
             </div>
-            <div>
-               <h3 className="text-lg font-display text-text-main leading-tight">Segurança</h3>
-               <p className="text-xs text-text-sub">Mantenha sua conta protegida e atualizada.</p>
+            <div className="space-y-1">
+               <h3 className="text-2xl font-display text-white">Privacidade e Segurança</h3>
+               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Protocolos de proteção da sua conta.</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-border">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white/[0.02] rounded-2xl border border-white/5">
             <div className="space-y-1 text-center sm:text-left">
-              <div className="text-sm font-bold text-text-main">Redefinir Senha</div>
-              <div className="text-xs text-text-sub max-w-xs">Enviaremos um link seguro para o seu e-mail cadastrado.</div>
+              <div className="text-base font-bold text-slate-200">Redefinição de Senha</div>
+              <div className="text-xs text-slate-400">Enviaremos um link de recuperação para o seu e-mail.</div>
             </div>
             <button 
               onClick={handlePasswordReset}
               disabled={resetLoading}
-              className="whitespace-nowrap px-6 py-3 bg-white dark:bg-slate-900 text-text-main border border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
+              className="whitespace-nowrap px-8 py-4 bg-white/5 text-slate-300 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider hover:border-red-500/50 hover:text-red-400 transition-all active:scale-[0.98]"
             >
-              {resetLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Enviar Link'}
+              {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redefinir Agora'}
             </button>
           </div>
         </section>
 
-        <div className="text-center pt-4">
-          <p className="text-[10px] font-black text-text-sub uppercase tracking-[0.3em]">Stratis Engenharia de Aprovação © 2026</p>
+        <div className="text-center pt-8 opacity-20">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">RiseMindr Protocol v2.5.0</p>
         </div>
       </div>
     </div>

@@ -35,27 +35,25 @@ service cloud.firestore {
       return isSignedIn();
     }
 
-    function isValidUser(data) {
-      return data.keys().hasAll(['email', 'createdAt', 'updatedAt']) &&
-             data.keys().size() >= 3 && data.keys().size() <= 12 &&
-             data.email == request.auth.token.email &&
+    function isValidUser(data, isCreate) {
+      return (!isCreate || (data.keys().hasAll(['email', 'createdAt', 'updatedAt']) && data.keys().size() >= 3)) &&
+             (request.auth.token.email == null || data.get('email', 'not_provided') == request.auth.token.email) &&
              isVerified() &&
-             data.email is string && data.email.size() <= 256 &&
-             data.createdAt is timestamp &&
-             data.updatedAt is timestamp &&
+             (data.get('email', '') is string && data.get('email', '').size() <= 256) &&
+             (data.get('createdAt', request.time) is timestamp) &&
+             (data.get('updatedAt', request.time) is timestamp) &&
              (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100)) &&
              (data.get('photoURL', null) == null || (data.photoURL is string && data.photoURL.size() <= 1000)) &&
              (data.get('currentContestId', null) == null || (data.currentContestId is string && data.currentContestId.size() <= 128));
     }
 
-    function isValidContest(data) {
-      return data.keys().hasAll(['name', 'role', 'ownerId', 'createdAt', 'updatedAt']) &&
-             data.keys().size() >= 5 && data.keys().size() <= 18 &&
-             data.ownerId == request.auth.uid &&
-             data.name is string && data.name.size() <= 200 &&
-             data.role is string && data.role.size() <= 200 &&
-             data.createdAt is timestamp &&
-             data.updatedAt is timestamp &&
+    function isValidContest(data, isCreate) {
+      return (!isCreate || (data.keys().hasAll(['name', 'role', 'ownerId', 'createdAt', 'updatedAt']) && data.keys().size() >= 5)) &&
+             (data.get('ownerId', '') == request.auth.uid) &&
+             (data.get('name', '') is string && data.get('name', '').size() <= 200) &&
+             (data.get('role', '') is string && data.get('role', '').size() <= 200) &&
+             (data.get('createdAt', request.time) is timestamp) &&
+             (data.get('updatedAt', request.time) is timestamp) &&
              (data.get('ownerName', '') is string && data.get('ownerName', '').size() <= 100) &&
              (data.get('isPublic', false) is bool) &&
              (data.get('likesCount', 0) is number) &&
@@ -64,45 +62,39 @@ service cloud.firestore {
              (data.get('dailyGoalQuestions', 0) is number || data.get('dailyGoalQuestions', 0) == '') &&
              (data.get('subjects', []) is list) &&
              (data.get('schedule', []) is list) &&
+             (data.get('dailyHistory', []) is list) &&
              (data.get('id', '') is string);
     }
 
     // User Profile
     match /users/{userId} {
       allow get: if isSignedIn() && isOwner(userId);
-      allow create: if isVerified() && isOwner(userId) && isValidUser(incoming()) && request.resource.data.createdAt == request.time;
-      allow update: if isVerified() && isOwner(userId) && isValidUser(incoming()) && 
+      allow create: if isVerified() && isOwner(userId) && isValidUser(incoming(), true) && request.resource.data.createdAt == request.time;
+      allow update: if isVerified() && isOwner(userId) && isValidUser(incoming(), false) && 
                     (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currentContestId', 'updatedAt'])) &&
                     incoming().email == existing().email &&
-                    incoming().createdAt == existing().createdAt &&
+                    (existing().get('createdAt', null) == null || incoming().createdAt == existing().createdAt) &&
                     incoming().updatedAt == request.time;
       allow delete: if false;
 
       // Contests (Private)
-      match /contests/{contestId} {
-        allow read: if isSignedIn() && isOwner(userId);
-        allow create: if isVerified() && isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
-        allow update: if isVerified() && isOwner(userId) && isValidContest(incoming()) && 
-                      (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'dailyGoalHours', 'dailyGoalQuestions', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName', 'id'])) &&
-                      incoming().ownerId == existing().ownerId &&
-                      incoming().createdAt == existing().createdAt &&
-                      incoming().updatedAt == request.time;
-        allow delete: if isVerified() && isOwner(userId);
+      match /contests/{allContestIds=**} {
+        allow read, write: if isSignedIn() && isOwner(userId);
       }
     }
 
     // Shared Contests (Community)
     match /shared_contests/{sharedId} {
-      allow list: if isSignedIn(); // Any signed-in user can see the gallery
-      allow get: if isSignedIn();
-      allow create: if isVerified() && isValidContest(incoming()) && 
+      allow list: if isSignedIn(); // Allow listing; get() restricts read access to public documents
+      allow get: if isSignedIn() && (resource.data.isPublic == true || resource.data.ownerId == request.auth.uid);
+      allow create: if isVerified() && isValidContest(incoming(), true) && 
                     incoming().ownerId == request.auth.uid &&
                     incoming().isPublic == true &&
                     incoming().createdAt == request.time;
       allow update: if isVerified() && (
         // Action: Own Update
-        (existing().ownerId == request.auth.uid && isValidContest(incoming()) &&
-         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'subjects', 'schedule', 'updatedAt', 'isPublic', 'ownerName', 'id'])) ||
+        (existing().ownerId == request.auth.uid && isValidContest(incoming(), false) &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'examDate', 'dailyGoalHours', 'dailyGoalQuestions', 'subjects', 'schedule', 'dailyHistory', 'updatedAt', 'isPublic', 'ownerName', 'id', 'ownerId', 'createdAt', 'likesCount'])) ||
         // Action: Like (Atomic Increment)
         (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']) && incoming().likesCount == existing().likesCount + 1)
       );

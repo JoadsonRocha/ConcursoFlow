@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as pdfjs from 'pdfjs-dist';
 
 // Configure worker - Use a more stable CDN link
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+const PDFJS_VERSION = '5.7.284';
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
 
 interface SettingsProps {
   onImport: (contest: Contest) => void;
@@ -178,105 +179,110 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      <header className="space-y-1.5 overflow-hidden text-center md:text-left">
-        <div className="flex items-center justify-center md:justify-start gap-2 text-primary font-black text-xs uppercase tracking-[0.3em] leading-none mb-2">Engenharia de Aprovação</div>
-        <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-          Configurar meu <span className="italic text-primary">Plano</span>.
+    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500 pb-20">
+      <header className="space-y-4 text-center md:text-left">
+        <div className="flex items-center justify-center md:justify-start gap-3 text-primary/80 font-bold text-xs uppercase tracking-wider">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+          Arquitetura de Estudos
+        </div>
+        <h1 className="text-3xl md:text-5xl font-display text-white tracking-tight">
+          Configurar <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Manual</span> ou <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">IA</span>
         </h1>
-        <p className="text-text-sub text-sm font-medium pt-2">Escolha entre a automação total da IA ou o controle cirúrgico manual.</p>
+        <p className="text-slate-400 text-sm md:text-base border-l-2 border-primary/30 pl-4 max-w-2xl mx-auto md:mx-0">
+          Personalize sua jornada de estudos. Use nossa IA para extrair informações do edital ou configure cada detalhe manualmente.
+        </p>
       </header>
 
       {/* Mode Switcher */}
-      <div className="flex bg-slate-100 dark:bg-slate-900 border border-border p-1.5 rounded-[2rem] shadow-inner mb-6">
+      <div className="flex bg-slate-900/40 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-xl">
         <button
           onClick={() => setActiveTab('ai')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all",
-            activeTab === 'ai' ? "bg-white dark:bg-slate-800 text-primary shadow-lg" : "text-text-sub hover:text-text-main"
+            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all",
+            activeTab === 'ai' ? "bg-white text-slate-950 shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <Sparkles className="w-4 h-4" />
-          Extrator IA
+          <Sparkles className="w-4 h-4 cursor-default" />
+          Extração por IA
         </button>
         <button
           onClick={() => setActiveTab('manual')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all",
-            activeTab === 'manual' ? "bg-white dark:bg-slate-800 text-primary shadow-lg" : "text-text-sub hover:text-text-main"
+            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all",
+            activeTab === 'manual' ? "bg-white text-slate-950 shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <Wand2 className="w-4 h-4" />
-          Cadastro Manual
+          <Wand2 className="w-4 h-4 cursor-default" />
+          Configuração Manual
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
-        {/* Meta Section - Common to both modes */}
-        <section className="bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 space-y-6 shadow-sm">
-          <h2 className="text-xs font-black text-text-sub uppercase tracking-[0.2em] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            Metas & Cronograma
-          </h2>
+      <div className="space-y-8">
+        {/* Meta Section */}
+        <section className="bg-white border border-border p-8 md:p-10 rounded-2xl space-y-8 shadow-sm transition-all hover:border-primary/20">
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-primary" />
+            <h2 className="text-sm font-bold text-text-sub uppercase tracking-wider">Metas e Cronograma</h2>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-text-sub mb-2 uppercase tracking-widest leading-none">Horas / Dia</label>
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Horas por Dia</label>
               <input 
                 type="number" 
                 inputMode="decimal"
-                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm outline-none focus:ring-2 ring-primary/10 transition-all font-bold"
+                className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                 value={dailyHours}
                 onChange={(e) => setDailyHours(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-text-sub mb-2 uppercase tracking-widest leading-none">Questões / Dia</label>
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Questões por Dia</label>
               <input 
                 type="number" 
                 inputMode="numeric"
-                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm outline-none focus:ring-2 ring-primary/10 transition-all font-bold"
+                className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                 value={dailyQuestions}
                 onChange={(e) => setDailyQuestions(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0"
               />
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-text-sub mb-2 uppercase tracking-widest leading-none">Data da Prova</label>
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Data da Prova</label>
               <input 
                 type="date" 
-                className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm outline-none focus:ring-2 ring-primary/10 transition-all font-bold"
+                className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                 value={examDate}
                 onChange={(e) => setExamDate(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <label className="flex items-center gap-3 cursor-pointer group">
+          <div className="pt-6 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <label className="flex items-center gap-4 cursor-pointer group">
               <div className={cn(
-                "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
-                autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-gray-50 dark:bg-slate-800"
+                "w-6 h-6 rounded-lg border transition-all flex items-center justify-center",
+                autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-slate-50"
               )}>
                 {autoSchedule && <CheckCircle2 className="w-4 h-4" />}
               </div>
               <input type="checkbox" className="hidden" checked={autoSchedule} onChange={(e) => setAutoSchedule(e.target.checked)} />
               <div>
-                <span className="block text-xs font-black text-text-main group-hover:text-primary transition-colors uppercase tracking-widest">Auto-Cronograma IA</span>
-                <span className="block text-[10px] text-text-sub font-medium">Distribuir matérias no tempo disponível</span>
+                <span className="block text-xs font-bold text-text-main group-hover:text-primary transition-colors uppercase tracking-wider">Gerar Cronograma Automático</span>
               </div>
             </label>
 
             {autoSchedule && (
-              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-2xl border border-border">
+              <div className="flex bg-slate-100 p-1 rounded-xl border border-border">
                 {[2, 4, 8, 12].map((w) => (
                   <button
                     key={w}
                     onClick={() => setScheduleWeeks(w)}
                     className={cn(
-                      "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                      "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
                       scheduleWeeks === w 
-                        ? "bg-white dark:bg-slate-700 text-primary shadow-sm" 
+                        ? "bg-white text-text-main shadow-sm" 
                         : "text-text-sub hover:text-text-main"
                     )}
                   >
@@ -289,127 +295,126 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         </section>
 
         {activeTab === 'ai' ? (
-          /* AI EXTRACTOR TAB */
-          <section className="bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 space-y-6 shadow-sm animate-in slide-in-from-right-4 duration-500">
+          <section className="bg-white border border-border p-8 md:p-10 rounded-2xl space-y-10 animate-in slide-in-from-bottom-5 duration-500 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-bold">
+                <div className="w-14 h-14 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-sm">
                   <Sparkles className="w-7 h-7" />
                  </div>
-                <div className="space-y-1">
-                  <h2 className="text-xl font-display text-text-main leading-none">Extrator Estratégico</h2>
-                  <p className="text-text-sub text-sm font-medium">A IA lê o edital e organiza tudo.</p>
+                <div className="space-y-0.5">
+                  <h2 className="text-2xl font-display text-text-main tracking-tight">Análise de Edital</h2>
+                  <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Processamento automático do seu documento</p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={extractingPdf}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-3 px-8 py-4 bg-slate-50 dark:bg-slate-800 border border-border rounded-2xl text-xs font-black uppercase tracking-widest hover:border-primary/50 transition-all font-bold"
-                >
-                  {extractingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                  Importar PDF
-                </button>
-              </div>
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={extractingPdf}
+                className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-sm font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
+              >
+                {extractingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                Importar Edital (PDF)
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Instituição</label>
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Instituição do Concurso</label>
                 <input 
                   type="text" 
-                  className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 ring-primary/10 transition-all"
+                  className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
                   value={manualContestName}
                   onChange={(e) => setManualContestName(e.target.value)}
-                  placeholder="Ex: Concurso Nacional Unificado"
+                  placeholder="Ex: Tribunal de Justiça"
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Cargo</label>
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Cargo Desejado</label>
                 <input 
                   type="text" 
-                  className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 ring-primary/10 transition-all"
+                  className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
                   value={manualRole}
                   onChange={(e) => setManualRole(e.target.value)}
-                  placeholder="Ex: Auditor Fiscal"
+                  placeholder="Ex: Técnico Judiciário"
                 />
               </div>
             </div>
 
-            <div className="space-y-2 relative">
-              <div className="flex justify-between items-end mb-2">
-                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest">Conteúdo do Edital</label>
+            <div className="space-y-3 relative">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Conteúdo Programático</label>
                 {rawText && (
-                  <button onClick={() => setRawText('')} className="text-red-500 text-[10px] font-black uppercase tracking-widest hover:underline">limpar</button>
+                  <button onClick={() => setRawText('')} className="text-red-500 text-xs font-bold uppercase tracking-wider hover:brightness-125 transition-all">Limpar Tudo</button>
                 )}
               </div>
               <textarea
-                className="w-full h-80 bg-gray-50 dark:bg-slate-800/50 border border-border rounded-2xl p-6 text-sm font-medium focus:ring-2 ring-primary/10 transition-all outline-none resize-none"
-                placeholder="Cole o texto do conteúdo programático aqui..."
+                className="w-full h-80 bg-slate-50 border border-border rounded-[2rem] p-6 text-sm text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
+                placeholder="Cole o texto do conteúdo programático aqui ou importe um PDF para extração automática..."
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
               />
               <AnimatePresence>
                 {extractingPdf && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-4">
-                    <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                    <p className="text-xs font-black text-text-main uppercase tracking-widest text-center px-10">Processando Inteligência Artificial no Documento...</p>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center gap-6 z-20">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-white uppercase tracking-wider">Processando Documento</p>
+                      <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">Extraindo metadados e disciplinas...</p>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </section>
         ) : (
-          /* MANUAL ENTRY TAB */
-          <section className="bg-white dark:bg-slate-900 border border-border rounded-[2.5rem] p-8 space-y-8 shadow-sm animate-in slide-in-from-left-4 duration-500">
+          <section className="bg-white border border-border p-8 md:p-10 rounded-2xl space-y-12 animate-in slide-in-from-bottom-5 duration-500 shadow-sm transition-all hover:border-primary/20">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary">
+              <div className="w-14 h-14 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center text-accent shadow-sm">
                 <Wand2 className="w-7 h-7" />
                </div>
-              <div className="space-y-1">
-                <h2 className="text-xl font-display text-text-main leading-none">Cadastro Verticalizado Manual</h2>
-                <p className="text-text-sub text-sm font-medium">Controle total sobre cada matéria e tópico.</p>
+              <div className="space-y-0.5">
+                <h2 className="text-2xl font-display text-text-main tracking-tight">Organização do Edital</h2>
+                <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Controle total sobre as disciplinas</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest leading-none">Instituição / Concurso</label>
-                <input type="text" className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 ring-primary/10 transition-all" value={manualContestName} onChange={(e) => setManualContestName(e.target.value)} placeholder="Ex: Polícia Federal" />
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Concurso</label>
+                <input type="text" className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400" value={manualContestName} onChange={(e) => setManualContestName(e.target.value)} placeholder="Ex: Receita Federal" />
               </div>
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-text-sub uppercase tracking-widest leading-none">Cargo Desejado</label>
-                <input type="text" className="w-full bg-gray-50 dark:bg-slate-800/50 border border-border rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 ring-primary/10 transition-all" value={manualRole} onChange={(e) => setManualRole(e.target.value)} placeholder="Ex: Agente" />
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Cargo</label>
+                <input type="text" className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400" value={manualRole} onChange={(e) => setManualRole(e.target.value)} placeholder="Ex: Auditor" />
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               {manualSubjects.map((sub, sIdx) => (
-                <div key={sub.id} className="p-6 border border-border rounded-[2rem] bg-slate-50 dark:bg-slate-800/30 space-y-6 relative group">
+                <div key={sub.id} className="p-8 border border-border rounded-3xl bg-slate-50/50 space-y-8 relative group hover:border-primary/20 transition-all shadow-sm">
                   <button 
                     onClick={() => removeManualSubject(sub.id)}
-                    className="absolute top-4 right-4 p-2 text-text-sub hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute top-6 right-6 p-2.5 text-text-sub hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-text-sub uppercase tracking-widest leading-none">Materia</label>
+                      <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Matéria</label>
                       <input 
                         type="text" 
-                        className="w-full bg-white dark:bg-slate-800 border border-border rounded-xl p-3 text-sm font-bold outline-none focus:border-primary/50"
+                        className="w-full bg-white border border-border rounded-xl p-4 text-xs font-bold text-text-main outline-none focus:border-primary/50"
                         value={sub.name}
                         onChange={(e) => updateManualSubject(sub.id, { name: e.target.value })}
-                        placeholder="Ex: Português"
+                        placeholder="Ex: Direito Administrativo"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-text-sub uppercase tracking-widest leading-none">Categoria</label>
+                      <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Categoria</label>
                       <select 
-                        className="w-full bg-white dark:bg-slate-800 border border-border rounded-xl p-3 text-sm font-bold outline-none cursor-pointer"
+                        className="w-full bg-white border border-border rounded-xl p-4 text-xs font-bold text-text-main outline-none cursor-pointer focus:border-primary/50 appearance-none"
                         value={sub.category}
                         onChange={(e) => updateManualSubject(sub.id, { category: e.target.value as any })}
                       >
@@ -418,9 +423,9 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-text-sub uppercase tracking-widest leading-none">Incidência</label>
+                      <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Incidência</label>
                       <select 
-                        className="w-full bg-white dark:bg-slate-800 border border-border rounded-xl p-3 text-sm font-bold outline-none cursor-pointer"
+                        className="w-full bg-white border border-border rounded-xl p-4 text-xs font-bold text-text-main outline-none cursor-pointer focus:border-primary/50 appearance-none"
                         value={sub.incidence}
                         onChange={(e) => updateManualSubject(sub.id, { incidence: e.target.value as any })}
                       >
@@ -432,25 +437,25 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="text-xs font-black text-text-sub uppercase tracking-widest flex items-center justify-between">
-                      Tópicos do Edital
-                      <button onClick={() => addManualTopic(sub.id)} className="text-primary hover:underline flex items-center gap-1 font-bold">
-                        <Plus className="w-3 h-3" /> Adicionar Tópico
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-border pb-3">
+                      <h4 className="text-xs font-bold text-text-sub uppercase tracking-wider">Tópicos do Edital</h4>
+                      <button onClick={() => addManualTopic(sub.id)} className="text-primary text-xs font-bold hover:scale-105 flex items-center gap-2 transition-all">
+                        <Plus className="w-3 h-3" /> ADICIONAR TÓPICO
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {sub.topics?.map((topic) => (
-                        <div key={topic.id} className="flex gap-2 items-center">
+                        <div key={topic.id} className="flex gap-2 items-center group/topic">
                           <input 
                             type="text" 
-                            className="flex-1 bg-white dark:bg-slate-800 border border-border rounded-xl px-4 py-2 text-xs font-medium outline-none focus:border-primary/50 transition-all font-bold"
+                            className="flex-1 bg-white border border-border rounded-xl px-4 py-3 text-sm text-text-main outline-none focus:border-primary/50 transition-all placeholder:text-slate-400 font-medium"
                             value={topic.name}
                             onChange={(e) => updateManualTopic(sub.id, topic.id, e.target.value)}
-                            placeholder="Ex: Concordância Nominal"
+                            placeholder="Ex: Atos Administrativos"
                           />
-                          <button onClick={() => removeManualTopic(sub.id, topic.id)} className="p-2 text-text-sub hover:text-red-500">
-                            <Trash2 className="w-3.5 h-3.5" />
+                          <button onClick={() => removeManualTopic(sub.id, topic.id)} className="p-2.5 text-text-sub hover:text-red-500 opacity-60 group-hover/topic:opacity-100 transition-all">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
@@ -461,30 +466,28 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
 
               <button 
                 onClick={addManualSubject}
-                className="w-full py-6 border-2 border-dashed border-border rounded-[2rem] text-text-sub font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:border-primary/50 hover:text-primary transition-all group"
+                className="w-full py-8 border-2 border-dashed border-border rounded-3xl text-text-sub font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-4 hover:border-primary/50 hover:text-primary hover:bg-white transition-all group"
               >
-                <div className="w-8 h-8 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="w-4 h-4" />
-                </div>
-                Adicionar Nova Matéria
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                Nova Disciplina
               </button>
             </div>
           </section>
         )}
 
         {/* Global Action Buttons */}
-        <div className="space-y-6">
+        <div className="space-y-6 pt-4">
           {error && (
-            <div className="flex items-center gap-3 p-5 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-xs font-bold animate-in shake duration-300">
+            <div className="flex items-center gap-3 p-5 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-bold uppercase tracking-wider animate-in shake duration-300">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
-            <div className="flex items-center gap-3 p-5 bg-green-50 border border-green-100 text-green-600 rounded-2xl text-xs font-bold animate-in zoom-in duration-300">
+            <div className="flex items-center gap-3 p-5 bg-accent/10 border border-accent/20 text-accent rounded-2xl text-sm font-bold uppercase tracking-wider animate-in zoom-in duration-300">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span>Plano configurado com sucesso! Redirecionando para o painel...</span>
+              <span>Plano configurado com sucesso! Redirecionando...</span>
             </div>
           )}
 
@@ -492,10 +495,10 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
             onClick={handleImport}
             disabled={loading || (activeTab === 'ai' && !rawText.trim()) || (activeTab === 'manual' && !manualContestName)}
             className={cn(
-              "w-full py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-4 transition-all shadow-2xl transition-all",
+              "w-full py-6 rounded-2xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-4 transition-all shadow-sm relative overflow-hidden group",
               loading || (activeTab === 'ai' && !rawText.trim()) || (activeTab === 'manual' && !manualContestName)
-                ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
-                : "bg-primary text-white hover:scale-[1.02] active:scale-95 shadow-primary/30"
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                : "bg-text-main text-white hover:scale-[1.01] active:scale-[0.99] hover:shadow-md"
             )}
           >
             {loading ? (
@@ -503,7 +506,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
             ) : (
               <>
                 <Save className="w-5 h-5" />
-                {activeTab === 'ai' ? 'Finalizar Importação IA' : 'Salvar Plano Manual'}
+                {activeTab === 'ai' ? 'Ativar Análise' : 'Ativar Planejamento Manual'}
               </>
             )}
           </button>

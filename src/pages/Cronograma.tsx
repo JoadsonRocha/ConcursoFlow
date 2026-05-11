@@ -13,7 +13,9 @@ import {
   BookOpen,
   Share2,
   Users,
-  PenTool
+  PenTool,
+  Loader2,
+  Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
@@ -125,59 +127,63 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     URL.revokeObjectURL(url);
   };
 
-  if (!schedule.length) {
+  if (schedule.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
-        <header className="text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto text-primary shadow-inner">
-            <CalendarDays className="w-10 h-10" />
+      <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 py-10">
+      <header className="text-center space-y-6">
+        <div className="w-16 h-16 bg-primary/5 border border-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary shadow-sm">
+          <CalendarDays className="w-8 h-8" />
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
+            Planejamento Inteligente
           </div>
-          <div className="space-y-2">
-            <div className="text-primary font-black text-[10px] uppercase tracking-[0.4em] leading-none mb-4">Arquitetura de Aprendizado</div>
-            <h1 className="text-4xl md:text-6xl font-display text-text-main tracking-tighter leading-[0.9]">
-              Criar seu <span className="italic text-primary">Plano de Guerra</span>.
-            </h1>
-            <p className="text-text-sub max-w-lg mx-auto text-lg font-medium pt-4">
-              A IA analisará seu edital para distribuir os tópicos de forma inteligente no tempo disponível.
-            </p>
-          </div>
-        </header>
+          <h1 className="text-3xl md:text-4xl font-display text-text-main tracking-tight font-bold">
+            Seu Cronograma <span className="text-primary italic">Estratégico</span>
+          </h1>
+          <p className="text-text-sub max-w-lg mx-auto text-sm md:text-base font-medium leading-relaxed">
+            Estruturamos sua jornada de estudos de forma otimizada para o seu ritmo e objetivos.
+          </p>
+        </div>
+      </header>
 
-        <section className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 shadow-xl shadow-primary/5 space-y-10 text-center max-w-lg mx-auto relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
-          <div className="space-y-4 relative z-10">
-            <label className="text-xs font-black text-text-sub uppercase tracking-[0.2em]">Duração Estratégica</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-               {[2, 4, 8, 12].map(w => (
-                 <button 
-                  key={w}
-                  onClick={() => setWeeksCount(w)}
-                  className={cn(
-                    "px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border transition-all",
-                    weeksCount === w ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" : "bg-slate-50 dark:bg-slate-800 text-text-sub border-border hover:border-primary/30"
-                  )}
-                 >
-                   {w} Sem
-                 </button>
-               ))}
-            </div>
+      <section className="rise-card p-8 md:p-12 space-y-10 text-center max-w-lg mx-auto border border-border bg-white shadow-sm">
+        <div className="space-y-6">
+          <label className="text-xs font-bold text-text-sub uppercase tracking-wider">Alcance do Plano (Semanas)</label>
+          <div className="grid grid-cols-2 gap-3">
+             {[2, 4, 8, 12].map(w => (
+               <button 
+                key={w}
+                onClick={() => setWeeksCount(w)}
+                className={cn(
+                  "px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border",
+                  weeksCount === w 
+                    ? "bg-primary border-primary text-white shadow-sm scale-105" 
+                    : "bg-slate-50 border-border text-text-sub hover:border-primary/30"
+                )}
+               >
+                 {w} Semanas
+               </button>
+             ))}
           </div>
+        </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="w-full relative z-10 bg-text-main text-bg py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-text-main/20 group/btn"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-bg/20 border-t-bg rounded-full animate-spin"></div>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
-                Gerar com IA Pro
-              </>
-            )}
-          </button>
-        </section>
+        <button
+          onClick={handleGenerate}
+          disabled={loading}
+          className="w-full bg-primary text-white py-4.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Gerar Cronograma
+            </>
+          )}
+        </button>
+      </section>
       </div>
     );
   }
@@ -185,62 +191,66 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const currentWeekDays = schedule.slice((activeWeek - 1) * 7, activeWeek * 7);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-[0.3em]">Cronograma Inteligente</div>
-          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
-            Plano de <span className="italic text-primary">Ação</span>.
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-8">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-primary font-bold text-xs uppercase tracking-wider">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
+            Mapa de Execução
+          </div>
+          <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold">
+            Plano de <span className="text-primary italic">Estudos</span>
           </h1>
-          <p className="text-text-sub text-sm font-medium pt-2">{contest.role} · Estratégia IA Ativa</p>
+          <div className="flex items-center gap-3">
+            <span className="text-text-sub text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full border border-border">{contest.role}</span>
+          </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
            <button 
             onClick={handleShare}
             disabled={sharing || contest.isPublic}
             className={cn(
-              "flex-1 md:flex-none px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border",
+              "flex-1 md:flex-none px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm",
               contest.isPublic 
-                ? "bg-accent/10 border-accent/20 text-accent opacity-70 cursor-default" 
-                : "bg-secondary text-white border-secondary hover:scale-[1.02] shadow-lg shadow-secondary/20"
+                ? "bg-slate-100 text-text-sub border border-border opacity-50 cursor-default" 
+                : "bg-primary text-white hover:brightness-110"
             )}
            >
-             {sharing ? (
-               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-             ) : (
-               <Share2 className="w-4 h-4" />
-             )}
-             {contest.isPublic ? 'Público' : 'Publicar'}
+             {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+             {contest.isPublic ? 'Publicado' : 'Compartilhar na Comunidade'}
            </button>
 
-           <button 
-            onClick={exportText}
-            className="p-3.5 bg-white dark:bg-slate-900 border border-border rounded-xl text-text-sub hover:bg-slate-50 transition-all shadow-sm"
-            title="Exportar TXT"
-           >
-             <Download className="w-5 h-5" />
-           </button>
-           <button 
-            onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: undefined }) }}
-            className="p-3.5 bg-red-50 dark:bg-red-500/5 text-red-500 border border-red-500/10 rounded-xl hover:bg-red-100 transition-all shadow-sm"
-            title="Resertar Plano"
-           >
-             <Clock className="w-5 h-5" />
-           </button>
+           <div className="flex gap-2">
+             <button 
+              onClick={exportText}
+              className="p-3.5 bg-white border border-border rounded-xl text-text-sub hover:text-primary transition-all shadow-sm"
+              title="Baixar Backup"
+             >
+               <Download className="w-5 h-5" />
+             </button>
+             <button 
+              onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: undefined }) }}
+              className="p-3.5 bg-red-500/5 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
+              title="Reiniciar Cronograma"
+             >
+               <Clock className="w-5 h-5" />
+             </button>
+           </div>
         </div>
       </header>
 
-      {/* Week Selector - Responsive Scroll */}
-      <div className="flex overflow-x-auto pb-4 gap-3 no-scrollbar snap-x scroll-px-4">
+      {/* Week Selector */}
+      <div className="flex bg-slate-100 border border-border p-1.5 rounded-2xl gap-2 overflow-x-auto no-scrollbar shadow-inner">
         {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => (
           <button
             key={w}
             onClick={() => setActiveWeek(w)}
             className={cn(
-              "px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border shrink-0 snap-center",
+              "px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0",
               activeWeek === w 
-                ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" 
-                : "bg-white dark:bg-slate-900 border-border text-text-sub hover:border-primary/30"
+                ? "bg-white text-text-main shadow-sm border border-border" 
+                : "text-text-sub hover:text-text-main"
             )}
           >
             Semana {w}
@@ -248,78 +258,78 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {currentWeekDays.map((d, index) => {
           const dayIdx = (activeWeek - 1) * 7 + index;
           return (
             <motion.div 
               key={dayIdx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               className={cn(
-                "bg-white dark:bg-slate-900 border rounded-[2.5rem] p-8 transition-all relative group overflow-hidden flex flex-col justify-between",
-                d.completed ? "border-accent/30 shadow-inner bg-slate-50" : "border-border hover:border-primary/30 shadow-xl shadow-primary/[0.02]"
-              )}
-            >
-              {d.completed && (
-                <div className="absolute top-6 right-6 text-accent animate-in zoom-in duration-500">
-                  <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6" />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-6">
-                <header className="flex items-center gap-3">
-                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-display font-black">
-                      {d.dayNumber}
+                "rise-card p-0 border border-border transition-all duration-500 relative flex flex-col justify-between h-auto min-h-[350px] group overflow-hidden",
+                d.completed 
+                  ? "bg-slate-50 opacity-60" 
+                  : "bg-white hover:border-primary/30"
+              )} >
+                 <div className="p-6 md:p-8 space-y-8 flex flex-col flex-1">
+                <header className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-display text-base font-bold shadow-sm transition-colors duration-500 italic">
+                        {d.dayNumber}
+                    </div>
+                   <span className="text-xs font-bold text-text-sub uppercase tracking-wider">DIA DE ESTUDO</span>
                    </div>
-                   <span className="text-xs font-black text-text-sub uppercase tracking-[0.2em]">Dia de Batalha</span>
+                   {d.completed && <CheckCircle2 className="w-6 h-6 text-accent" />}
                 </header>
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
+                <div className="space-y-6 flex-1">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-                       <span className="text-xs font-black text-text-sub uppercase tracking-widest">Específicos</span>
+                       <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                       <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Prioridades</span>
                     </div>
-                    <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.specificTopic}</div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
-                       <span className="text-xs font-black text-text-sub uppercase tracking-widest">Gerais</span>
+                    <div className="space-y-2">
+                       <div className="p-4 bg-slate-50 rounded-xl border border-border">
+                        <span className="text-xs text-text-sub font-bold uppercase tracking-wider block mb-1">Específicos</span>
+                        <div className="text-xs font-semibold text-text-main leading-relaxed italic line-clamp-3">{d.specificTopic}</div>
+                      </div>
+                      <div className="p-4 bg-slate-50 rounded-xl border border-border">
+                        <span className="text-xs text-text-sub font-bold uppercase tracking-wider block mb-1">Gerais</span>
+                        <div className="text-xs font-semibold text-text-sub leading-relaxed italic line-clamp-3">{d.generalTopic}</div>
+                      </div>
                     </div>
-                    <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.generalTopic}</div>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-border flex items-center justify-between">
+                <div className="pt-6 border-t border-border grid grid-cols-2 gap-4 items-end">
                    <div className="space-y-1">
-                      <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-1">Questões</div>
-                      <div className="flex items-center gap-1">
-                         <PenTool className="w-3 h-3 text-primary/60" />
-                         <span className="text-xs font-black text-text-main">{d.questionGoal} itens</span>
+                      <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Cadência</div>
+                      <div className="flex items-center gap-1.5 text-text-main">
+                         <Target className="w-3.5 h-3.5 text-primary" />
+                         <span className="text-xs font-bold">{d.questionGoal} itens</span>
                       </div>
                    </div>
-                   <div className="text-right">
-                      <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-1">Revisão</div>
-                      <div className="text-xs font-bold text-text-main line-clamp-1 max-w-[100px]">{d.revisionTask}</div>
+                   <div className="text-right space-y-1">
+                      <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Retenção</div>
+                      <div className="text-xs font-semibold text-text-sub italic line-clamp-1 truncate">{d.revisionTask}</div>
                    </div>
                 </div>
               </div>
-
-              <button 
-                onClick={() => toggleDay(dayIdx)}
-                className={cn(
-                  "w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all mt-8",
-                  d.completed ? "bg-accent text-white shadow-lg shadow-accent/20" : "bg-slate-50 dark:bg-slate-800 text-text-sub hover:bg-primary/10 hover:text-primary hover:scale-[1.02]"
-                )}
-              >
-                {d.completed ? 'Vencido' : 'Concluir Dia'}
-              </button>
+              <div className="p-4 pt-0">
+                <button 
+                  onClick={() => toggleDay(dayIdx)}
+                  className={cn(
+                    "w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border shadow-sm",
+                    d.completed 
+                      ? "bg-accent/5 text-accent border-accent/20 hover:bg-accent hover:text-white" 
+                      : "bg-white dark:bg-zinc-800 text-text-main border-border hover:bg-primary hover:text-white hover:border-primary active:scale-95"
+                  )}
+                >
+                  {d.completed ? 'Revisitar Dia' : 'Finalizar Metas'}
+                </button>
+              </div>
             </motion.div>
           );
         })}

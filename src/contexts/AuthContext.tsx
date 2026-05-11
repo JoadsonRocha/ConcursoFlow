@@ -25,9 +25,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       if (user) {
         try {
-          // Fetch or create profile
+          // Fetch or create profile with a timeout to prevent infinite loading loop
           const userRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userRef);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout ao conectar com Firestore")), 15000)
+          );
+          
+          const userDoc = await Promise.race([
+            getDoc(userRef),
+            timeoutPromise
+          ]) as any;
           
           if (!userDoc.exists()) {
             const newProfile: any = {
