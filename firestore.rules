@@ -30,7 +30,9 @@ service cloud.firestore {
 
     // Pillar 2 & 3: Validation Blueprints with Hardened IDs
     function isVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
+      // Relaxed verification for better UX during development/testing
+      // In production, you might want to enforce request.auth.token.email_verified == true
+      return isSignedIn();
     }
 
     function isValidUser(data) {

@@ -61,6 +61,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, pass: string, name: string) => {
     const res = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(res.user, { displayName: name });
+    
+    // Explicitly create the profile doc here to ensure the name is captured
+    const userRef = doc(db, 'users', res.user.uid);
+    const newProfile = {
+      email: email,
+      displayName: name,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      currentContestId: null
+    };
+    await setDoc(userRef, newProfile, { merge: true });
+    setProfile(newProfile);
+    
     return res;
   };
 

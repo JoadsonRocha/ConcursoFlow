@@ -65,8 +65,8 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em]">Gestão de Conteúdo</div>
-          <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
+          <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-[0.3em]">Gestão de Conteúdo</div>
+          <h1 className="text-3xl md:text-5xl font-display leading-[0.9] text-text-main tracking-tighter">
             Edital <span className="italic text-primary">Verticalizado</span>.
           </h1>
           <p className="text-text-sub text-sm font-medium pt-2">Acompanhe seu progresso cirurgicamente por cada tópico.</p>
@@ -117,10 +117,10 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   <div className="space-y-1.5">
                     <h3 className="text-xl font-display text-text-main leading-none">{sub.name}</h3>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-text-sub font-black uppercase tracking-[0.1em]">{sub.category}</span>
+                      <span className="text-xs text-text-sub font-black uppercase tracking-[0.1em]">{sub.category}</span>
                       <div className="w-1 h-1 rounded-full bg-border"></div>
                       <span className={cn(
-                        "text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-tight text-white",
+                        "text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-tight text-white",
                         sub.incidence === 'Muito Alta' ? "bg-red-500" : 
                         sub.incidence === 'Alta' ? "bg-orange-500" :
                         "bg-accent"
@@ -135,7 +135,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   <div className="hidden md:flex items-center gap-4">
                      <div className="text-right">
                         <div className="text-2xl font-display text-text-main leading-none">{percent}%</div>
-                        <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mt-1">{completedCount}/{totalCount}</div>
+                        <div className="text-xs font-black text-text-sub uppercase tracking-widest mt-1">{completedCount}/{totalCount}</div>
                      </div>
                      <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div className="h-full bg-primary transition-all duration-700 ease-out" style={{ width: `${percent}%` }}></div>
@@ -162,7 +162,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                             <BrainCircuit className="w-5 h-5" />
                           </div>
                           <p className="text-sm text-text-main font-medium leading-relaxed">
-                            <span className="font-black text-primary uppercase text-[10px] block mb-1 tracking-widest">Estratégia IA:</span>
+                            <span className="font-black text-primary uppercase text-xs block mb-1 tracking-widest">Estratégia IA:</span>
                             {sub.briefing}
                           </p>
                         </div>
@@ -191,7 +191,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                </div>
 
                                <div className="flex items-center gap-6 ml-13 md:ml-0">
-                                  <div className="flex items-center gap-4 text-[10px] font-black text-text-sub uppercase tracking-widest">
+                                  <div className="flex items-center gap-4 text-xs font-black text-text-sub uppercase tracking-widest">
                                     <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-all">
                                       <div className={cn(
                                         "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
@@ -239,7 +239,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                              {topic.errorNote && activeErrorNote?.topicId !== topic.id && (
                                <div className="px-18 pb-6">
                                  <div className="bg-red-50/50 dark:bg-red-500/5 p-4 rounded-2xl border-l-4 border-red-500">
-                                   <div className="text-[10px] font-black text-red-500 uppercase mb-1 tracking-widest leading-none">Caderno de Erros</div>
+                                   <div className="text-xs font-black text-red-500 uppercase mb-1 tracking-widest leading-none">Caderno de Erros</div>
                                    <p className="text-xs text-red-700/80 font-medium leading-relaxed italic">{topic.errorNote}</p>
                                  </div>
                                </div>

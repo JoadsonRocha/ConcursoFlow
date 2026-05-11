@@ -146,7 +146,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
         <section className="bg-white dark:bg-slate-900 border border-border rounded-[3rem] p-10 shadow-xl shadow-primary/5 space-y-10 text-center max-w-lg mx-auto relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
           <div className="space-y-4 relative z-10">
-            <label className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Duração Estratégica</label>
+            <label className="text-xs font-black text-text-sub uppercase tracking-[0.2em]">Duração Estratégica</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                {[2, 4, 8, 12].map(w => (
                  <button 
@@ -188,7 +188,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.3em]">Cronograma Inteligente</div>
+          <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-[0.3em]">Cronograma Inteligente</div>
           <h1 className="text-4xl md:text-6xl font-display leading-[0.9] text-text-main tracking-tighter">
             Plano de <span className="italic text-primary">Ação</span>.
           </h1>
@@ -199,7 +199,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             onClick={handleShare}
             disabled={sharing || contest.isPublic}
             className={cn(
-              "flex-1 md:flex-none px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border",
+              "flex-1 md:flex-none px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all border",
               contest.isPublic 
                 ? "bg-accent/10 border-accent/20 text-accent opacity-70 cursor-default" 
                 : "bg-secondary text-white border-secondary hover:scale-[1.02] shadow-lg shadow-secondary/20"
@@ -237,7 +237,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             key={w}
             onClick={() => setActiveWeek(w)}
             className={cn(
-              "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shrink-0 snap-center",
+              "px-8 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border shrink-0 snap-center",
               activeWeek === w 
                 ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105" 
                 : "bg-white dark:bg-slate-900 border-border text-text-sub hover:border-primary/30"
@@ -275,14 +275,14 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-display font-black">
                       {d.dayNumber}
                    </div>
-                   <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Dia de Batalha</span>
+                   <span className="text-xs font-black text-text-sub uppercase tracking-[0.2em]">Dia de Batalha</span>
                 </header>
 
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                        <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-                       <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Específicos</span>
+                       <span className="text-xs font-black text-text-sub uppercase tracking-widest">Específicos</span>
                     </div>
                     <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.specificTopic}</div>
                   </div>
@@ -290,7 +290,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                        <div className="w-1.5 h-1.5 rounded-full bg-primary/60"></div>
-                       <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Gerais</span>
+                       <span className="text-xs font-black text-text-sub uppercase tracking-widest">Gerais</span>
                     </div>
                     <div className="text-base font-bold text-text-main leading-tight line-clamp-2">{d.generalTopic}</div>
                   </div>
@@ -298,14 +298,14 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
                 <div className="pt-6 border-t border-border flex items-center justify-between">
                    <div className="space-y-1">
-                      <div className="text-[8px] font-black text-text-sub uppercase tracking-widest mb-1">Questões</div>
+                      <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-1">Questões</div>
                       <div className="flex items-center gap-1">
                          <PenTool className="w-3 h-3 text-primary/60" />
                          <span className="text-xs font-black text-text-main">{d.questionGoal} itens</span>
                       </div>
                    </div>
                    <div className="text-right">
-                      <div className="text-[8px] font-black text-text-sub uppercase tracking-widest mb-1">Revisão</div>
+                      <div className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-1">Revisão</div>
                       <div className="text-xs font-bold text-text-main line-clamp-1 max-w-[100px]">{d.revisionTask}</div>
                    </div>
                 </div>
@@ -314,7 +314,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
               <button 
                 onClick={() => toggleDay(dayIdx)}
                 className={cn(
-                  "w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-8",
+                  "w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all mt-8",
                   d.completed ? "bg-accent text-white shadow-lg shadow-accent/20" : "bg-slate-50 dark:bg-slate-800 text-text-sub hover:bg-primary/10 hover:text-primary hover:scale-[1.02]"
                 )}
               >

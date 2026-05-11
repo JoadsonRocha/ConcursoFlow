@@ -6,10 +6,10 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-outfit: "Outfit", sans-serif;
   
-  --color-primary: #6366F1;
-  --color-primary-dark: #4F46E5;
-  --color-secondary: #EC4899;
-  --color-accent: #10B981;
+  --color-primary: #4F46E5;
+  --color-primary-dark: #3730A3;
+  --color-secondary: #DB2777;
+  --color-accent: #059669;
   --color-brand: #4F46E5;
   
   --color-bg: #F8FAFC;
@@ -17,8 +17,8 @@
   --color-card-bg: #FFFFFF;
   --color-border: #E2E8F0;
   --color-text-main: #0F172A;
-  --color-text-sub: #64748B;
-  --color-accent-bg: #EEF2FF;
+  --color-text-sub: #475569;
+  --color-accent-bg: #F1F5F9;
   --color-dark-panel: #0F172A;
 
   --radius-xl: 1rem;
@@ -30,7 +30,7 @@
 .dark {
   --color-bg: #020617;
   --color-sidebar: #0F172A;
-  --color-card-bg: #1E293B;
+  --color-card-bg: #0F172A;
   --color-border: #1E293B;
   --color-text-main: #F8FAFC;
   --color-text-sub: #94A3B8;
