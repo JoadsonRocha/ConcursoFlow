@@ -123,14 +123,14 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 relative pb-8 border-b border-border/60">
+    <div className="space-y-6 md:space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6 relative pb-6 md:pb-8 border-b border-border/60">
         <div className="space-y-2 overflow-hidden w-full">
-          <div className="flex items-center gap-2 text-primary font-black text-[10px] md:text-xs uppercase tracking-[0.2em] mb-2 opacity-80">
-            <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span>Painel de Alta Performance</span>
+          <div className="flex items-center gap-2 text-primary font-black text-[9px] md:text-xs uppercase tracking-[0.2em] mb-2 opacity-80">
+            <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="truncate">Painel de Alta Performance</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-display leading-[1.1] text-text-main tracking-tighter">
+          <h1 className="text-2xl md:text-5xl font-display leading-[1.1] text-text-main tracking-tighter break-words">
             Olá, <span className="italic text-primary font-light">{user?.displayName?.split(' ')[0] || 'Guerreiro'}</span>.
           </h1>
           <div className="flex flex-col md:flex-row md:items-center gap-4 mt-5">
@@ -142,23 +142,24 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
         {!isDefaultContest && (
           <button 
             onClick={() => setShowLogModal(true)}
-            className="w-full md:w-auto bg-text-main text-bg px-8 py-4 md:px-10 md:py-5 rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 group shrink-0"
+            className="w-full md:w-auto h-12 md:h-14 bg-text-main text-bg px-6 md:px-10 md:py-5 rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-[0.15em] shadow-xl shadow-text-main/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 md:gap-3 group shrink-0"
           >
-            Registrar Desempenho
-            <TrendingUp className="w-5 h-5 group-hover:translate-y-[-2px] transition-transform" />
+            <span className="hidden md:inline">Registrar</span>
+            <span className="md:hidden">Registrar</span>
+            <TrendingUp className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-y-[-2px] transition-transform" />
           </button>
         )}
       </header>
 
       {!isDefaultContest && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 lg:gap-8">
           {/* Main Hero Stat - Global Progress */}
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-border rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group shadow-sm hover:shadow-xl transition-all">
+          <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-border rounded-2xl md:rounded-[3rem] p-4 md:p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group shadow-sm hover:shadow-xl transition-all">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
               <Sparkles className="w-40 h-40 text-primary" />
             </div>
             
-            <div className="relative w-40 h-40 md:w-48 md:h-48 mb-6 md:mb-8">
+            <div className="relative w-32 h-32 md:w-48 md:h-48 mb-4 md:mb-8">
               <svg className="w-full h-full transform -rotate-90">
                 <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800 md:hidden" />
                 <circle cx="96" cy="96" r="86" stroke="currentColor" strokeWidth="14" fill="transparent" className="text-slate-100 dark:text-slate-800 hidden md:block" />
@@ -186,10 +187,10 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 w-full border-t border-border mt-4 pt-6">
+            <div className="grid grid-cols-2 gap-3 w-full border-t border-border mt-3 pt-4">
               <div className="space-y-0.5">
-                <div className="text-lg md:text-xl font-display text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
-                <div className="text-[10px] md:text-[9px] text-text-sub font-black uppercase tracking-widest leading-none">Tópicos</div>
+                <div className="text-base md:text-xl font-display text-text-main">{globalProgress.completed}/{globalProgress.total}</div>
+                <div className="text-[8px] md:text-[9px] text-text-sub font-black uppercase tracking-widest leading-none">Tópicos</div>
               </div>
               <div className="space-y-0.5">
                 <div className="text-lg md:text-xl font-display text-accent">{streak}d</div>
@@ -200,13 +201,13 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
 
           {/* Quick Info & Next Subject */}
           <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 h-full">
                 {/* Today's Target */}
-                <div className="bg-white dark:bg-slate-900 border border-border rounded-[2rem] p-6 md:p-8 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
-                   <div className="space-y-5">
+                <div className="bg-white dark:bg-slate-900 border border-border rounded-2xl md:rounded-[2rem] p-4 md:p-8 flex flex-col justify-between hover:border-primary/30 transition-all shadow-sm">
+                   <div className="space-y-3 md:space-y-5">
                       <div className="flex items-center justify-between">
-                        <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                           <Target className="w-5 h-5 md:w-6 md:h-6" />
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg md:rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                           <Target className="w-4 h-4 md:w-6 md:h-6" />
                         </div>
                         <div className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Foco Total</div>
                       </div>
@@ -215,7 +216,7 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
                          <div className="text-3xl md:text-4xl font-display text-text-main">{todayTask ? todayTask.questionGoal : contest.dailyGoalQuestions || 20} <span className="text-sm font-sans font-medium text-text-sub lowercase tracking-normal">itens</span></div>
                       </div>
                    </div>
-                   <div className="space-y-3 mt-6">
+                   <div className="space-y-2 md:space-y-3 mt-4 md:mt-6">
                       <div className="flex justify-between items-end">
                         <span className="text-[10px] font-black text-text-sub uppercase tracking-widest">Esforço estimado</span>
                         <span className="text-xs font-bold text-text-main">{~~((todayTask?.questionGoal || 20) * 1.5)} min</span>
@@ -227,18 +228,18 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
                 </div>
 
                 {/* Exam Countdown */}
-                <div className="bg-slate-950 dark:bg-slate-950 rounded-[2rem] p-6 md:p-8 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
-                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:rotate-12 transition-transform">
-                      <Clock className="w-20 h-20 md:w-24 md:h-24" />
+                <div className="bg-slate-950 dark:bg-slate-950 rounded-2xl md:rounded-[2rem] p-4 md:p-8 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                      <Clock className="w-16 h-16 md:w-24 md:h-24" />
                    </div>
-                   <div className="space-y-2 relative z-10">
-                      <div className="text-[9px] md:text-[8px] font-black uppercase tracking-[0.2em] text-white/50">Próxima Batalha</div>
-                      <h3 className="text-xl md:text-2xl font-display leading-tight truncate">{contest.name || 'Edital'}</h3>
+                   <div className="space-y-1 md:space-y-2 relative z-10">
+                      <div className="text-[8px] md:text-[8px] font-black uppercase tracking-[0.2em] text-white/50">Próxima Batalha</div>
+                      <h3 className="text-base md:text-2xl font-display leading-tight truncate">{contest.name || 'Edital'}</h3>
                       <div className="text-[10px] font-black text-secondary uppercase tracking-[0.1em] mt-1">D-Day: {contest.examDate ? new Date(contest.examDate).toLocaleDateString('pt-BR') : '--/--/--'}</div>
                    </div>
-                   <div className="flex gap-6 md:gap-8 mt-6 relative z-10 border-t border-white/10 pt-6">
-                      <div className="space-y-0.5">
-                         <div className="text-3xl md:text-4xl font-display">{timeLeft.days}</div>
+                   <div className="flex gap-4 md:gap-8 mt-4 md:mt-6 relative z-10 border-t border-white/10 pt-4 md:pt-6">
+                      <div className="space-y-0.5 flex-1">
+                         <div className="text-2xl md:text-4xl font-display">{timeLeft.days}</div>
                          <div className="text-[9px] font-black uppercase tracking-widest text-white/40 leading-none">Dias</div>
                       </div>
                       <div className="space-y-0.5">
@@ -254,15 +255,15 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
              </div>
 
              {/* Study Tip Card */}
-             <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-[2rem] md:rounded-[3rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-8 group hover:border-primary/30 transition-all">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-slate-900 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
-                   <BrainCircuit className="w-8 h-8 md:w-10 md:h-10" />
+             <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/10 rounded-2xl md:rounded-[3rem] p-4 md:p-10 flex flex-col md:flex-row items-center gap-4 md:gap-8 group hover:border-primary/30 transition-all">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-white dark:bg-slate-900 rounded-xl md:rounded-[2rem] flex items-center justify-center text-primary shadow-xl shrink-0 group-hover:scale-110 transition-transform">
+                   <BrainCircuit className="w-6 h-6 md:w-10 md:h-10" />
                 </div>
-                <div className="flex-1 space-y-2 text-center md:text-left">
-                   <h4 className="text-[11px] font-black text-text-main uppercase tracking-[0.2em]">IA Strategy Engine</h4>
-                   <p className="text-text-sub text-base md:text-lg font-medium leading-tight">"A constância vence o talento. Foque nos <span className="text-primary font-bold italic">20% que geram 80%</span>."</p>
+                <div className="flex-1 space-y-1 md:space-y-2 text-center md:text-left">
+                   <h4 className="text-[9px] md:text-[11px] font-black text-text-main uppercase tracking-[0.2em]">IA Strategy Engine</h4>
+                   <p className="text-text-sub text-xs md:text-lg font-medium leading-tight">"A constância vence o talento. Foque nos <span className="text-primary font-bold italic">20% que geram 80%</span>."</p>
                 </div>
-                <Link to="/microaprendizado" className="w-full md:w-auto bg-primary text-white px-8 py-4 rounded-xl md:rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all text-center">
+                <Link to="/microaprendizado" className="w-full md:w-auto h-12 md:h-auto bg-primary text-white px-6 md:px-8 py-3 md:py-4 rounded-lg md:rounded-2xl text-[9px] md:text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all text-center flex items-center justify-center">
                    IA Power-Up
                 </Link>
              </div>
@@ -272,20 +273,20 @@ const Dashboard = ({ contest, onUpdate }: { contest: Contest, onUpdate: (contest
 
       {/* Mission Section */}
       {todayTask && !isDefaultContest && (
-        <section className="space-y-6">
-           <div className="flex items-center justify-between px-2">
-              <h2 className="text-xl md:text-2xl font-display text-text-main">Missão de Hoje</h2>
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-tight">Dia {todayTask.dayNumber}</span>
+        <section className="space-y-4 md:space-y-6">
+           <div className="flex items-center justify-between px-2 gap-2">
+              <h2 className="text-lg md:text-2xl font-display text-text-main">Missão de Hoje</h2>
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-tight whitespace-nowrap">Dia {todayTask.dayNumber}</span>
            </div>
            
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
               <div className="bg-white dark:bg-slate-900 border border-border rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-8 space-y-4 md:space-y-6 hover:shadow-xl transition-all group overflow-hidden relative">
                  <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
                     <BookOpen className="w-32 h-32" />
                  </div>
-                 <div className="space-y-3 md:space-y-4">
-                    <div className="text-[11px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Gerais</div>
-                    <div className="text-lg md:text-xl font-display text-text-main leading-tight border-l-2 border-primary pl-4">
+                 <div className="space-y-2 md:space-y-4">
+                    <div className="text-[9px] md:text-[11px] font-black text-text-sub uppercase tracking-widest">Conhecimentos Gerais</div>
+                    <div className="text-base md:text-xl font-display text-text-main leading-tight border-l-2 border-primary pl-3 md:pl-4">
                        {todayTask.generalTopic || "Revisão Geral"}
                     </div>
                  </div>

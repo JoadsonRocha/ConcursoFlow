@@ -63,21 +63,21 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-[0.3em]">Gestão de Conteúdo</div>
-          <h1 className="text-3xl md:text-5xl font-display leading-[0.9] text-text-main tracking-tighter">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-6">
+        <div className="space-y-1.5 w-full md:w-auto">
+          <div className="flex items-center gap-2 text-primary font-black text-[9px] md:text-xs uppercase tracking-[0.3em]">Gestão de Conteúdo</div>
+          <h1 className="text-2xl md:text-5xl font-display leading-[0.9] text-text-main tracking-tighter break-words">
             Edital <span className="italic text-primary">Verticalizado</span>.
           </h1>
-          <p className="text-text-sub text-sm font-medium pt-2">Acompanhe seu progresso cirurgicamente por cada tópico.</p>
+          <p className="text-text-sub text-xs md:text-sm font-medium pt-2">Acompanhe seu progresso cirurgicamente por cada tópico.</p>
         </div>
-        <div className="flex bg-slate-100 dark:bg-slate-900 border border-border p-1.5 rounded-2xl shadow-inner w-full md:w-auto">
+        <div className="flex bg-slate-100 dark:bg-slate-900 border border-border p-1 md:p-1.5 rounded-2xl shadow-inner w-full md:w-auto">
           {['Tudo', 'Gerais', 'Específicos'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
               className={cn(
-                "flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                "flex-1 px-3 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[8px] md:text-xs font-black uppercase tracking-widest transition-all h-10 md:h-auto",
                 filter === f ? "bg-white dark:bg-slate-800 text-primary shadow-sm" : "text-text-sub hover:text-text-main"
               )}
             >
@@ -88,11 +88,11 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
       </header>
 
       <div className="relative group">
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-text-sub group-focus-within:text-primary transition-colors" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 md:w-5 h-4 md:h-5 text-text-sub group-focus-within:text-primary transition-colors" />
         <input 
           type="text" 
-          placeholder="Pesquisar matéria ou tópico..." 
-          className="w-full bg-white dark:bg-slate-900 border border-border rounded-[2rem] pl-14 pr-6 py-5 text-sm font-bold outline-none focus:ring-4 ring-primary/5 transition-all shadow-sm"
+          placeholder="Pesquisar..." 
+          className="w-full bg-white dark:bg-slate-900 border border-border rounded-2xl pl-12 md:pl-14 pr-4 md:pr-6 py-3 md:py-5 text-xs md:text-sm font-bold outline-none focus:ring-4 ring-primary/5 transition-all shadow-sm"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
