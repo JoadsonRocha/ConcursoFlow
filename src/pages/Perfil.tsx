@@ -71,28 +71,17 @@ export default function Perfil() {
     setLoading(true);
     setMessage(null);
     try {
-      let finalPhotoURL = photoURL;
-      
-      // Upload image to storage if it's a data URI
-      if (photoURL && photoURL.startsWith('data:')) {
-        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
-        await uploadString(storageRef, photoURL, 'data_url');
-        finalPhotoURL = await getDownloadURL(storageRef);
-      }
-
-      await updateProfile(user, {
-        displayName,
-        photoURL: finalPhotoURL
-      });
-      
       // Update in Firestore as well for consistency
       await updateDoc(doc(db, 'users', user.uid), {
         displayName,
-        photoURL: finalPhotoURL,
         concursoFoco,
         nivelAtual,
         fraseStatus,
         updatedAt: new Date()
+      });
+      
+      await updateProfile(user, {
+        displayName
       });
       
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
