@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
-import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 export default function Perfil() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -32,11 +33,20 @@ export default function Perfil() {
     setLoading(true);
     setMessage(null);
     try {
-      await updateProfile(user, {
-        displayName,
-        photoURL
-      });
-      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso! Recarregue para ver todas as mudanças.' });
+      const updateData: { displayName: string; photoURL?: string } = { displayName };
+      
+      // Do not attempt to update photoURL via Auth if it's a data URI (potential 400 error)
+      if (photoURL && !photoURL.startsWith('data:')) {
+        updateData.photoURL = photoURL;
+      }
+      
+      await updateProfile(user, updateData);
+      
+      const photoMessage = photoURL && photoURL.startsWith('data:') 
+        ? " Nome atualizado, mas alteração de foto (via upload direto) não é suportada." 
+        : "";
+        
+      setMessage({ type: 'success', text: `Perfil atualizado com sucesso!${photoMessage}` });
     } catch (err) {
       setMessage({ type: 'error', text: 'Erro ao atualizar perfil. Tente novamente.' });
     } finally {
@@ -65,12 +75,6 @@ export default function Perfil() {
           <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
           Configurações de Perfil
         </div>
-        <h1 className="text-3xl md:text-5xl font-display text-white tracking-tight">
-          Sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Identidade</span>
-        </h1>
-        <p className="text-slate-400 text-sm md:text-base border-l-2 border-primary/30 pl-4">
-          Gerencie sua conta e mantenha seu progresso sincronizado entre dispositivos.
-        </p>
       </header>
 
       {message && (
@@ -89,13 +93,13 @@ export default function Perfil() {
 
       <div className="space-y-8">
         <section className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-8 md:p-10 border-b border-border bg-slate-50/50 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+          <div className="p-8 md:p-10 border-b border-border bg-white flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
               <User size={120} className="text-slate-900" />
             </div>
             
             <div className="relative group">
-              <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden bg-slate-100 border border-border shadow-inner transition-transform group-hover:scale-[1.02] duration-500">
+              <div className="w-28 h-28 md:w-32 md:h-32 rounded-3xl overflow-hidden bg-white border border-border shadow-inner transition-transform group-hover:scale-[1.02] duration-500">
                 {photoURL ? (
                   <img src={photoURL} className="w-full h-full object-cover" alt="Avatar" />
                 ) : (
@@ -143,7 +147,7 @@ export default function Perfil() {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                  className="w-full bg-white border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
                   placeholder="Seu nome"
                 />
               </div>
@@ -164,29 +168,69 @@ export default function Perfil() {
           </form>
         </section>
 
-        <section className="bg-slate-900/20 backdrop-blur-md border border-white/5 p-8 md:p-10 rounded-2xl space-y-8 shadow-2xl relative overflow-hidden transition-all hover:border-red-500/20">
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 shadow-lg shadow-red-500/5">
+        <section className="bg-white border border-border rounded-2xl p-8 md:p-10 space-y-8 shadow-sm">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-inner">
                <ShieldCheck className="w-8 h-8" />
             </div>
             <div className="space-y-1">
-               <h3 className="text-2xl font-display text-white">Privacidade e Segurança</h3>
-               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Protocolos de proteção da sua conta.</p>
+               <h3 className="text-2xl font-display text-text-main">Privacidade e Segurança</h3>
+               <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Protocolos de proteção da sua conta.</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white/[0.02] rounded-2xl border border-white/5">
-            <div className="space-y-1 text-center sm:text-left">
-              <div className="text-base font-bold text-slate-200">Redefinição de Senha</div>
-              <div className="text-xs text-slate-400">Enviaremos um link de recuperação para o seu e-mail.</div>
+          <div className="space-y-4">
+            {/* Password Reset */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+              <div className="space-y-1 text-center sm:text-left">
+                <div className="text-base font-bold text-text-main">Redefinição de Senha</div>
+                <div className="text-xs text-text-sub">Enviaremos um link de recuperação para o seu e-mail.</div>
+              </div>
+              <button 
+                onClick={handlePasswordReset}
+                disabled={resetLoading}
+                className="whitespace-nowrap px-8 py-4 bg-white text-text-main border border-border rounded-xl text-xs font-bold uppercase tracking-wider hover:border-primary/50 hover:text-primary transition-all active:scale-[0.98] shadow-sm"
+              >
+                {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redefinir Agora'}
+              </button>
             </div>
-            <button 
-              onClick={handlePasswordReset}
-              disabled={resetLoading}
-              className="whitespace-nowrap px-8 py-4 bg-white/5 text-slate-300 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider hover:border-red-500/50 hover:text-red-400 transition-all active:scale-[0.98]"
-            >
-              {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redefinir Agora'}
-            </button>
+
+            {/* Notification Setting */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+              <div className="space-y-1 text-center sm:text-left">
+                <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
+                  <Bell className="w-4 h-4 text-primary" />
+                  Notificações por Email
+                </div>
+                <div className="text-xs text-text-sub">Receba atualizações importantes sobre seu progresso.</div>
+              </div>
+              <button 
+                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                className={cn(
+                  "px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-[0.98]",
+                  notificationsEnabled ? "bg-primary text-white" : "bg-white text-text-sub border border-border"
+                )}
+              >
+                {notificationsEnabled ? 'Ativado' : 'Desativado'}
+              </button>
+            </div>
+
+            {/* Logout Action */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+              <div className="space-y-1 text-center sm:text-left">
+                <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
+                  <LogOut className="w-4 h-4 text-text-sub" />
+                  Encerrar Sessão
+                </div>
+                <div className="text-xs text-text-sub">Sair da sua conta atual com segurança.</div>
+              </div>
+              <button 
+                onClick={logout}
+                className="whitespace-nowrap px-8 py-4 bg-white text-text-main border border-border rounded-xl text-xs font-bold uppercase tracking-wider hover:border-red-500/50 hover:text-red-600 transition-all active:scale-[0.98] shadow-sm"
+              >
+                Sair
+              </button>
+            </div>
           </div>
         </section>
 

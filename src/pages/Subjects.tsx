@@ -134,7 +134,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                     <BookOpen className="w-6 h-6" />
                   </div>
                   <div className="space-y-1 overflow-hidden flex-1">
-                    <h3 className="text-lg md:text-xl font-display text-text-main group-hover:text-primary transition-colors truncate font-bold tracking-tight">{sub.name}</h3>
+                    <h3 className="text-lg md:text-xl font-display text-text-main group-hover:text-primary transition-colors whitespace-normal break-words font-bold tracking-tight">{sub.name}</h3>
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-xs text-text-sub font-bold uppercase tracking-wider">{sub.category}</span>
                       <div className="w-1 h-1 rounded-full bg-border"></div>
@@ -213,7 +213,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                     <CheckCircle2 className="w-5 h-5" />
                                   </button>
                                   <span className={cn(
-                                    "text-sm font-semibold transition-all truncate", 
+                                    "text-sm font-semibold transition-all whitespace-normal break-words", 
                                     topic.completed ? "text-text-sub line-through" : "text-text-main"
                                   )}>
                                     {topic.name}
@@ -224,23 +224,23 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                   <div className="flex items-center gap-4 text-[10px] sm:text-xs font-bold text-text-sub uppercase tracking-wider h-8">
                                     <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-all">
                                       <div className={cn(
-                                        "w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition-all",
+                                        "w-4 h-4 shrink-0 rounded-md border flex items-center justify-center transition-all",
                                         topic.revision ? "bg-primary border-primary text-white" : "border-border bg-white dark:bg-white/5"
                                       )}>
-                                        {topic.revision && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                                        {topic.revision && <div className="w-1 h-1 rounded-full bg-white"></div>}
                                       </div>
                                       <input type="checkbox" className="hidden" checked={topic.revision} onChange={(e) => updateTopic(sub.id, topic.id, { revision: e.target.checked })} />
-                                      Revisão
+                                      <span className="whitespace-nowrap">Revisão</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-all">
                                       <div className={cn(
-                                        "w-5 h-5 shrink-0 rounded-md border flex items-center justify-center transition-all",
+                                        "w-4 h-4 shrink-0 rounded-md border flex items-center justify-center transition-all",
                                         topic.questions ? "bg-primary border-primary text-white" : "border-border bg-white dark:bg-white/5"
                                       )}>
-                                        {topic.questions && <div className="w-1.5 h-1.5 rounded-full bg-white"></div>}
+                                        {topic.questions && <div className="w-1 h-1 rounded-full bg-white"></div>}
                                       </div>
                                       <input type="checkbox" className="hidden" checked={topic.questions} onChange={(e) => updateTopic(sub.id, topic.id, { questions: e.target.checked })} />
-                                      Questões
+                                      <span className="whitespace-nowrap">Questões</span>
                                     </label>
                                   </div>
                                   
@@ -305,7 +305,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   </div>
                   <div>
                     <h3 className="font-display text-xl text-text-main font-bold tracking-tight">Resumo do Tópico</h3>
-                    <p className="text-xs font-bold text-text-sub uppercase tracking-wider truncate max-w-[200px] md:max-w-md">{selectedTopic.topicName}</p>
+                    <p className="text-xs font-bold text-text-sub uppercase tracking-wider whitespace-normal break-words">{selectedTopic.topicName}</p>
                   </div>
                 </div>
                 <button onClick={() => setSelectedTopic(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/5 rounded-lg transition-all text-text-sub hover:text-text-main">

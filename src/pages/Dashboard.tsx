@@ -243,7 +243,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
               <Calendar className="w-3 h-3" />
               Data da Prova
             </div>
-            <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm truncate">{contest.name}</h2>
+            <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm">{contest.name}</h2>
           </div>
           
           <div className="flex justify-center items-center gap-4 md:gap-6 bg-black/10 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm w-full md:w-auto">
@@ -275,8 +275,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
               <metric.icon className="w-3.5 h-3.5 md:w-5 md:h-5" />
             </div>
             <div className="overflow-hidden">
-               <div className="text-[9px] md:text-[10px] font-bold text-text-sub uppercase tracking-widest truncate">{metric.label}</div>
-               <div className="text-xs md:text-base font-display font-bold text-text-main leading-tight truncate">{metric.value}</div>
+               <div className="text-[9px] md:text-[10px] font-bold text-text-sub uppercase tracking-widest">{metric.label}</div>
+               <div className="text-xs md:text-base font-display font-bold text-text-main leading-tight">{metric.value}</div>
             </div>
           </div>
         ))}
@@ -436,7 +436,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
                       <div className="text-xs font-bold text-text-sub uppercase tracking-wider mb-0.5 flex items-center gap-1">
                         {sub.incidence} <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span> {sub.category}
                       </div>
-                      <div className="text-xs font-bold text-text-main truncate tracking-tight">{sub.name}</div>
+                      <div className="text-xs font-bold text-text-main whitespace-normal break-words tracking-tight">{sub.name}</div>
                     </div>
                   </div>
                   <div className="text-right ml-3 shrink-0">

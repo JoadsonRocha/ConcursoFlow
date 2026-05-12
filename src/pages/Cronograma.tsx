@@ -293,11 +293,11 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                     <div className="space-y-2">
                        <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
                         <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Específicas</span>
-                        <div className="text-[11px] font-semibold text-text-main leading-relaxed italic line-clamp-3">{d.specificTopic}</div>
+                        <div className="text-[11px] font-semibold text-text-main leading-relaxed italic whitespace-normal break-words">{d.specificTopic}</div>
                       </div>
                       <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
                         <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Básicas</span>
-                        <div className="text-[11px] font-semibold text-text-sub leading-relaxed italic line-clamp-3">{d.generalTopic}</div>
+                        <div className="text-[11px] font-semibold text-text-sub leading-relaxed italic whitespace-normal break-words">{d.generalTopic}</div>
                       </div>
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                    </div>
                    <div className="text-right space-y-1">
                       <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Retenção</div>
-                      <div className="text-xs font-semibold text-text-sub italic line-clamp-1 truncate">{d.revisionTask}</div>
+                      <div className="text-xs font-semibold text-text-sub italic whitespace-normal break-words">{d.revisionTask}</div>
                    </div>
                 </div>
               </div>

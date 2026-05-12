@@ -27,7 +27,8 @@ import {
   Trash2,
   Users,
   Heart,
-  Target
+  Target,
+  FileUp
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -394,7 +395,7 @@ export default function App() {
             )}
             title={!isSidebarOpen ? "Importar Edital" : undefined}
           >
-            <Settings className="w-4 h-4 shrink-0" />
+            <FileUp className="w-4 h-4 shrink-0" />
             {isSidebarOpen && <span>Importar Edital</span>}
           </Link>
           <button 
@@ -470,31 +471,31 @@ export default function App() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-5 w-64 bg-slate-950/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-6 z-[100] overflow-hidden"
+                        className="absolute right-0 mt-5 w-64 bg-white border border-border rounded-2xl shadow-xl py-6 z-[100] overflow-hidden"
                       >
-                        <div className="px-6 py-4 border-b border-white/5 mb-2">
-                          <div className="text-xs font-black text-white uppercase tracking-wider truncate">{user?.displayName || 'Concurseiro'}</div>
-                          <div className="text-xs text-slate-500 font-medium truncate opacity-60 italic">{user?.email}</div>
+                        <div className="px-6 py-4 border-b border-border mb-2">
+                          <div className="text-xs font-black text-text-main uppercase tracking-wider truncate">{user?.displayName || 'Concurseiro'}</div>
+                          <div className="text-xs text-text-sub font-medium truncate opacity-60 italic">{user?.email}</div>
                         </div>
                         <Link 
                           to="/perfil" 
                           onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-4 px-6 py-4 hover:bg-white/5 transition-all group"
+                          className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-all group"
                         >
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                             <UserIcon className="w-4 h-4" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-black text-white uppercase tracking-tight">Preferências</span>
-                            <span className="text-[10px] text-slate-500 uppercase tracking-wider italic">Ver meu perfil</span>
+                            <span className="text-xs font-black text-text-main uppercase tracking-tight">Preferências</span>
+                            <span className="text-[10px] text-text-sub uppercase tracking-wider italic">Ver meu perfil</span>
                           </div>
                         </Link>
-                        <hr className="border-white/5 my-2 mx-6" />
+                        <hr className="border-border my-2 mx-6" />
                         <button 
                           onClick={() => { logout(); setIsUserMenuOpen(false); }}
-                          className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-500/10 transition-all text-red-400 group"
+                          className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-50 transition-all text-red-600 group"
                         >
-                          <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <LogOut className="w-4 h-4" />
                           </div>
                           <span className="text-xs font-black uppercase tracking-wider text-left">Sair da Conta</span>
