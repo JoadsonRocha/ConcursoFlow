@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from '../lib/firebase';
+import { handleFirestoreError, OperationType } from '../lib/errorUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userDoc = await Promise.race([
             getDoc(userRef),
             timeoutPromise
-          ]) as any;
+          ]).catch(err => handleFirestoreError(err, OperationType.GET, 'users/' + user.uid)) as any;
           
           if (!userDoc.exists()) {
             const newProfile: any = {
@@ -46,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (user.displayName) newProfile.displayName = user.displayName;
             if (user.photoURL) newProfile.photoURL = user.photoURL;
 
-            await setDoc(userRef, newProfile, { merge: true });
+            await setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid));
             setProfile(newProfile);
           } else {
             setProfile(userDoc.data());
@@ -78,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: serverTimestamp(),
       currentContestId: null
     };
-    await setDoc(userRef, newProfile, { merge: true });
+    await setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + res.user.uid));
     setProfile(newProfile);
     
     return res;
