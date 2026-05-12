@@ -97,7 +97,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           <div className="flex items-center gap-2">
             <BookOpenCheck className="w-5 h-5 text-text-sub" />
             <select
-              className="bg-white dark:bg-slate-900 border border-border rounded-xl px-4 py-2 text-sm font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8 relative uppercase tracking-wider"
+              className="bg-white border border-border rounded-xl px-4 py-2 text-sm font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8 relative uppercase tracking-wider"
               value={contest.id}
               onChange={(e) => {
                 const selected = contests.find(c => c.id === e.target.value);
@@ -113,7 +113,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
       </div>
 
       {!isAnalyzed && !isAnalyzing && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-border shadow-sm flex flex-col items-center justify-center text-center space-y-6">
+        <div className="bg-white rounded-3xl p-8 border border-border shadow-sm flex flex-col items-center justify-center text-center space-y-6">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-2">
             <Info className="w-8 h-8" />
           </div>
@@ -132,7 +132,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               <div className="relative">
                 <Building2 className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <select
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all appearance-none"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all appearance-none"
                   value={banca}
                   onChange={(e) => setBanca(e.target.value)}
                 >
@@ -165,7 +165,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
       )}
 
       {isAnalyzing && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 border border-border shadow-sm flex flex-col items-center justify-center text-center space-y-6">
+        <div className="bg-white rounded-3xl p-12 border border-border shadow-sm flex flex-col items-center justify-center text-center space-y-6">
           <Loader2 className="w-12 h-12 text-primary animate-spin" />
           <div>
             <h3 className="text-lg font-black text-text-main uppercase tracking-tight">Cruzando Dados da Banca...</h3>
@@ -205,7 +205,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-slate-900 border-2 border-primary/20 rounded-3xl p-6 shadow-sm">
+            <div className="bg-white border-2 border-primary/20 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6 border-b border-border pb-4">
                 <div className="w-10 h-10 rounded-xl bg-green-500/10 text-green-600 flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
@@ -218,7 +218,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {paretoData.topTopics.map((topic, i) => (
-                  <div key={`${topic.subjectId}-${topic.topicId}`} className="p-4 bg-green-50 dark:bg-green-500/5 rounded-2xl border border-green-200 dark:border-green-500/20 flex gap-4 items-start">
+                  <div key={`${topic.subjectId}-${topic.topicId}`} className="p-4 bg-green-50 rounded-2xl border border-green-200 flex gap-4 items-start">
                     <span className="text-green-600 font-black text-lg mt-1 w-6">{i + 1}º</span>
                     <div>
                       <p className="text-sm font-bold text-text-main leading-tight mb-1">{topic.topicName}</p>
@@ -232,7 +232,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 border border-border rounded-3xl p-6 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+            <div className="bg-white border border-border rounded-3xl p-6 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
               <div className="flex items-center gap-3 mb-6 border-b border-border pb-4">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
                   <AlertCircle className="w-5 h-5" />
@@ -245,7 +245,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {paretoData.otherTopics.slice(0, 15).map((topic) => ( // limit showing max 15 to not overflow the UI too much
-                  <div key={`${topic.subjectId}-${topic.topicId}`} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/50 flex gap-3 items-start">
+                  <div key={`${topic.subjectId}-${topic.topicId}`} className="p-3 bg-slate-50 rounded-xl border border-slate-200/50 flex gap-3 items-start">
                     <div>
                       <p className="text-xs font-bold text-text-main leading-tight mb-1">{topic.topicName}</p>
                       <span className="text-[10px] text-text-sub uppercase tracking-wider font-bold">

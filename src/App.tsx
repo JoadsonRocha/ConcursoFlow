@@ -6,8 +6,6 @@ import {
   Calendar, 
   BrainCircuit, 
   Menu,
-  Moon,
-  Sun,
   LogOut,
   Sparkles,
   User as UserIcon,
@@ -44,7 +42,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
     to={to} 
     className={cn(
       "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-sm font-semibold uppercase tracking-wider",
-      active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 dark:hover:bg-white/5 hover:text-text-main",
+      active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main",
       collapsed ? "justify-center px-0" : "px-4"
     )}
     title={collapsed ? label : undefined}
@@ -64,7 +62,6 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
 // App Component
 export default function App() {
   const { user, profile, loading: authLoading, logout } = useAuth();
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark' || false);
   const [contests, setContests] = useState<Contest[]>([]);
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -89,16 +86,6 @@ export default function App() {
       setIsSidebarOpen(false);
     }
   }, [location]);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
 
   // Update currentContest when profile or contests change
   useEffect(() => {
@@ -293,7 +280,7 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg dark:bg-bg gap-4">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">Sincronizando com a Nuvem...</div>
       </div>
@@ -324,7 +311,7 @@ export default function App() {
 
       {/* Sidebar - Desktop & Mobile Drawer */}
       <aside className={cn(
-        "bg-white dark:bg-slate-900 border-r border-border transition-all duration-300 z-50",
+        "bg-white border-r border-border transition-all duration-300 z-50",
         "fixed inset-y-0 left-0 md:relative flex flex-col shrink-0 h-full",
         isSidebarOpen 
           ? "translate-x-0 w-72 md:w-[280px] px-6 py-8 shadow-2xl md:shadow-none" 
@@ -370,7 +357,7 @@ export default function App() {
                         "flex-1 flex items-center gap-4 py-3 rounded-xl transition-all text-left overflow-hidden border",
                         currentContest?.id === c.id 
                           ? "bg-primary/5 text-primary border-primary/20" 
-                          : "bg-transparent border-transparent text-text-sub hover:bg-slate-50 dark:hover:bg-white/5",
+                          : "bg-transparent border-transparent text-text-sub hover:bg-slate-50 ",
                         isSidebarOpen ? "px-4" : "justify-center px-0"
                       )}
                       title={!isSidebarOpen ? c.role : undefined}
@@ -403,7 +390,7 @@ export default function App() {
             to="/configuracoes"
             className={cn(
               "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-xs font-semibold uppercase tracking-wider",
-              location.pathname === '/configuracoes' ? "bg-slate-100 dark:bg-white/10 text-text-main" : "text-text-sub hover:bg-slate-50 dark:hover:bg-white/5",
+              location.pathname === '/configuracoes' ? "bg-slate-100 text-text-main" : "text-text-sub hover:bg-slate-50 ",
               isSidebarOpen ? "px-4" : "justify-center px-0"
             )}
             title={!isSidebarOpen ? "Importar Edital" : undefined}
@@ -416,7 +403,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 h-screen overflow-y-auto bg-bg relative scroll-smooth">
-        <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -432,15 +419,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-5">
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl transition-all text-text-sub"
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            
-            <div className="h-6 w-px bg-white/5 hidden md:block" />
-
             <div className="flex items-center gap-4 relative">
               <div className="hidden sm:flex flex-col items-end">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1 opacity-50">Sincronização</div>

@@ -194,7 +194,7 @@ export default function Perfil() {
                   {nivelAtual}
                 </div>
                 {concursoFoco && (
-                  <div className="inline-flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
+                  <div className="inline-flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 text-blue-600 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
                     <Target className="w-3.5 h-3.5" />
                     {concursoFoco.length > 20 ? concursoFoco.substring(0,20) + '...' : concursoFoco}
                   </div>
@@ -213,7 +213,7 @@ export default function Perfil() {
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                    className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
                     placeholder="Seu nome"
                   />
                 </div>
@@ -227,7 +227,7 @@ export default function Perfil() {
                     type="text"
                     value={concursoFoco}
                     onChange={(e) => setConcursoFoco(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                    className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
                     placeholder="Ex: Polícia Federal, Receita Federal..."
                   />
                 </div>
@@ -241,7 +241,7 @@ export default function Perfil() {
                     <select
                       value={nivelAtual}
                       onChange={(e) => setNivelAtual(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main font-medium focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all appearance-none"
+                      className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main font-medium focus:bg-white focus:border-primary/50 outline-none transition-all appearance-none"
                     >
                       <option value="Iniciante">Iniciante</option>
                       <option value="Intermediário">Intermediário</option>
@@ -258,7 +258,7 @@ export default function Perfil() {
                       type="text"
                       value={fraseStatus}
                       onChange={(e) => setFraseStatus(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                      className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
                       placeholder="Sua motivação diária..."
                     />
                   </div>

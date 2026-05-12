@@ -202,7 +202,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             Minhas <span className="text-primary italic">Metas</span>
           </h1>
           <div className="flex items-center gap-3">
-            <span className="text-text-sub text-[10px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full border border-border">{contest.role}</span>
+            <span className="text-text-sub text-[10px] font-bold uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full border border-border">{contest.role}</span>
           </div>
         </div>
 
@@ -291,11 +291,11 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                        <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Prioridades</span>
                     </div>
                     <div className="space-y-2">
-                       <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
+                       <div className="p-3 md:p-4 bg-slate-50 rounded-xl border border-border">
                         <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Específicas</span>
                         <div className="text-[11px] font-semibold text-text-main leading-relaxed italic whitespace-normal break-words">{d.specificTopic}</div>
                       </div>
-                      <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
+                      <div className="p-3 md:p-4 bg-slate-50 rounded-xl border border-border">
                         <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Básicas</span>
                         <div className="text-[11px] font-semibold text-text-sub leading-relaxed italic whitespace-normal break-words">{d.generalTopic}</div>
                       </div>
@@ -324,7 +324,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                     "w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border shadow-sm",
                     d.completed 
                       ? "bg-accent/5 text-accent border-accent/20 hover:bg-accent hover:text-white" 
-                      : "bg-white dark:bg-zinc-800 text-text-main border-border hover:bg-primary hover:text-white hover:border-primary active:scale-95"
+                      : "bg-white text-text-main border-border hover:bg-primary hover:text-white hover:border-primary active:scale-95"
                   )}
                 >
                   {d.completed ? 'Revisitar Dia' : 'Finalizar Metas'}

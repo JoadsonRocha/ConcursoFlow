@@ -50,7 +50,7 @@ export default function Feedback() {
         </p>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="p-8">
           {success ? (
             <motion.div 
@@ -67,7 +67,7 @@ export default function Feedback() {
               </div>
               <button 
                 onClick={() => setSuccess(false)}
-                className="mt-4 px-6 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-text-main font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
+                className="mt-4 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-text-main font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
               >
                 Enviar Outro
               </button>
@@ -79,7 +79,7 @@ export default function Feedback() {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 px-4 text-sm text-text-main font-medium focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all appearance-none"
+                  className="w-full bg-slate-50 border border-border rounded-2xl py-4 px-4 text-sm text-text-main font-medium focus:bg-white focus:border-primary/50 outline-none transition-all appearance-none"
                 >
                   <option value="sugestao">Ideia / Sugestão</option>
                   <option value="erro">Reportar Erro (Bug)</option>
@@ -95,7 +95,7 @@ export default function Feedback() {
                   onChange={(e) => setFeedback(e.target.value)}
                   required
                   placeholder="Escreva aqui..."
-                  className="w-full h-40 bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 px-4 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all resize-none placeholder:text-text-sub/50"
+                  className="w-full h-40 bg-slate-50 border border-border rounded-2xl py-4 px-4 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all resize-none placeholder:text-text-sub/50"
                 />
               </div>
 

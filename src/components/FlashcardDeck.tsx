@@ -73,7 +73,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
   if (finishMode) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 animate-in zoom-in-95 duration-500">
-        <div className="bg-white dark:bg-slate-900 p-8 md:p-12 text-center space-y-8 w-full max-w-md rounded-3xl border border-border shadow-2xl">
+        <div className="bg-white p-8 md:p-12 text-center space-y-8 w-full max-w-md rounded-3xl border border-border shadow-2xl">
           <div className="w-20 h-20 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
             <CheckCircle2 className="w-10 h-10 text-accent" />
           </div>
@@ -94,7 +94,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
 
   return (
     <div className="max-w-xl mx-auto space-y-8 animate-in slide-in-from-right-8 duration-500 px-4">
-      <header className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-border shadow-sm">
+      <header className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center font-display text-lg font-bold">
             {currentIndex + 1}
@@ -104,20 +104,24 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
             <div className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">Restam {cards.length - currentIndex - 1}</div>
           </div>
         </div>
-        <div className="text-[10px] font-bold text-text-sub bg-slate-50 dark:bg-white/5 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest">
+        <div className="text-[10px] font-bold text-text-sub bg-slate-50 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest">
             {currentCard.subjectName}
         </div>
       </header>
 
-      <div className="relative h-80 md:h-96 perspective-1000 group">
+      <div className="relative h-80 md:h-96 group" style={{ perspective: 1000 }}>
         <motion.div
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-          className="w-full h-full relative preserve-3d cursor-pointer"
+          className="w-full h-full relative cursor-pointer"
+          style={{ transformStyle: 'preserve-3d' }}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front */}
-          <div className="absolute inset-0 w-full h-full backface-hidden bg-white dark:bg-slate-900 border-2 border-border p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-sm">
+          <div 
+            className="absolute inset-0 w-full h-full bg-white border-2 border-border p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-sm"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
             <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30">
                <RefreshCw className="w-3 h-3 text-text-sub" />
                <span className="text-[8px] font-bold text-text-sub uppercase tracking-[0.2em]">Toque para virar</span>
@@ -128,11 +132,14 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
           </div>
 
           {/* Back */}
-          <div className="absolute inset-0 w-full h-full backface-hidden bg-slate-950 border-2 border-accent/20 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-inner rotate-y-180">
+          <div 
+            className="absolute inset-0 w-full h-full bg-white border-2 border-accent/20 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-inner"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
             <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50">
                <span className="text-[8px] font-bold text-accent uppercase tracking-[0.2em]">Resposta</span>
             </div>
-            <div className="text-base md:text-lg text-white font-medium leading-relaxed italic overflow-y-auto max-h-full no-scrollbar">
+            <div className="text-base md:text-lg text-text-main font-medium leading-relaxed italic overflow-y-auto max-h-full no-scrollbar">
               {currentCard.back}
             </div>
           </div>

@@ -298,7 +298,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Link to="/materias" className="rise-card p-4 space-y-3 relative border border-border hover:border-primary/30 transition-all group">
             <div className="flex items-center justify-between">
-                <div className="w-8 h-8 bg-slate-50 dark:bg-white/5 rounded-lg flex items-center justify-center text-primary border border-border">
+                <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-primary border border-border">
                   <BookOpen className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-primary uppercase tracking-wider bg-primary/5 px-2 py-1 rounded-full border border-primary/10">Base</div>
@@ -322,7 +322,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
 
           <Link to="/materias" className="rise-card p-4 space-y-3 relative border border-border hover:border-secondary/30 transition-all group">
             <div className="flex items-center justify-between">
-                <div className="w-8 h-8 bg-slate-50 dark:bg-white/5 rounded-lg flex items-center justify-center text-secondary border border-border">
+                <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-secondary border border-border">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-secondary uppercase tracking-wider bg-secondary/5 px-2 py-1 rounded-full border border-secondary/10">Foco</div>
@@ -470,7 +470,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }} 
-              className="rise-card w-full max-w-sm p-8 bg-white dark:bg-zinc-900 border border-border space-y-8"
+              className="rise-card w-full max-w-sm p-8 bg-white border border-border space-y-8"
             >
               <div className="text-center space-y-2">
                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto text-primary mb-2">

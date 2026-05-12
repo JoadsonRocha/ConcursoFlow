@@ -98,7 +98,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         <header className="flex items-center justify-between gap-4">
           <button 
             onClick={() => setActiveTab('selection')}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors text-text-sub"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -152,7 +152,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
           {/* Questions Sector */}
-          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white dark:bg-slate-900 border border-border shadow-sm">
+          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white border border-border shadow-sm">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
                <BrainCircuit className="w-32 h-32" />
             </div>
@@ -173,10 +173,10 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <button 
                   key={sub.id}
                   onClick={() => startQuiz(sub.name)}
-                  className="w-full text-left p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-primary border border-border rounded-xl transition-all flex justify-between items-center group/item"
+                  className="w-full text-left p-3.5 bg-slate-50 hover:bg-primary border border-border rounded-xl transition-all flex justify-between items-center group/item"
                 >
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-sub group-hover/item:text-white truncate pr-4">{sub.name}</span>
-                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-white/5 border border-border flex items-center justify-center group-hover/item:bg-white transition-all shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center group-hover/item:bg-white transition-all shadow-sm">
                     <Play className="w-3.5 h-3.5 text-text-main group-hover/item:text-primary transition-all fill-current" />
                   </div>
                 </button>
@@ -185,7 +185,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           </div>
 
           {/* Flashcards Sector */}
-          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white dark:bg-slate-900 border border-border shadow-sm">
+          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white border border-border shadow-sm">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
                <Lightbulb className="w-32 h-32 text-accent" />
             </div>
@@ -202,7 +202,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
 
             <div className="space-y-4 pt-8 relative z-10">
                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-slate-50 dark:bg-white/5 border border-border rounded-xl text-center">
+                  <div className="p-4 bg-slate-50 border border-border rounded-xl text-center">
                     <div className="text-lg font-display font-bold text-text-main">{flashcards.length}</div>
                     <div className="text-[9px] font-bold text-text-sub uppercase tracking-widest">Totais</div>
                   </div>
@@ -215,7 +215,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                <div className="flex gap-2">
                  <button 
                   onClick={() => setShowCreator(true)}
-                  className="flex-1 bg-slate-100 dark:bg-white/10 text-text-main py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-slate-100 text-text-main py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
                  >
                    <Plus className="w-4 h-4" />
                    Criar
@@ -240,7 +240,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Indicações Estratégicas</h3>
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-5 bg-white dark:bg-slate-900 border border-border rounded-2xl space-y-3 shadow-sm hover:border-primary/30 transition-all cursor-default">
+                <div className="p-5 bg-white border border-border rounded-2xl space-y-3 shadow-sm hover:border-primary/30 transition-all cursor-default">
                    <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                          <TrendingUp className="w-4 h-4" />
@@ -252,7 +252,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                    </p>
                 </div>
 
-                <div className="p-5 bg-white dark:bg-slate-900 border border-border rounded-2xl space-y-3 shadow-sm hover:border-accent/30 transition-all cursor-default">
+                <div className="p-5 bg-white border border-border rounded-2xl space-y-3 shadow-sm hover:border-accent/30 transition-all cursor-default">
                    <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
                          <MessageSquare className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { User, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorUtils';
@@ -10,6 +10,7 @@ interface AuthContextType {
   login: () => Promise<any>;
   loginEmail: (email: string, pass: string) => Promise<any>;
   signup: (email: string, pass: string, name: string) => Promise<any>;
+  resetPassword: (email: string) => Promise<any>;
   logout: () => Promise<void>;
   profile: any;
 }
@@ -72,6 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(res.user, { displayName: name });
     
+    try {
+      await sendEmailVerification(res.user);
+    } catch (err) {
+      console.error("Erro ao enviar email de verificação:", err);
+    }
+
     // Explicitly create the profile doc here to ensure the name is captured
     const userRef = doc(db, 'users', res.user.uid);
     const newProfile = {
@@ -91,6 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
+  const resetPassword = (email: string) => {
+    return sendPasswordResetEmail(auth, email);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -98,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login: loginWithGoogle, 
       loginEmail,
       signup,
+      resetPassword,
       logout, 
       profile 
     }}>

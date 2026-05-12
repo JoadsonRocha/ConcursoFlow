@@ -119,15 +119,15 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl border border-border"
+        className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl border border-border"
       >
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="space-y-3">
             <h2 className="text-xl font-display font-bold text-text-main">Criar Flashcards</h2>
-            <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-border w-fit">
+            <div className="flex bg-slate-100 p-1 rounded-xl border border-border w-fit">
                <button 
                 onClick={() => setMode('ai')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${mode === 'ai' ? 'bg-white dark:bg-slate-900 text-primary shadow-sm' : 'text-text-sub hover:text-text-main'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${mode === 'ai' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'}`}
                >
                  <Sparkles className="w-3 h-3" />
                  Gerar com IA
@@ -135,13 +135,13 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                </button>
                <button 
                 onClick={() => setMode('manual')}
-                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${mode === 'manual' ? 'bg-white dark:bg-slate-900 text-primary shadow-sm' : 'text-text-sub hover:text-text-main'}`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${mode === 'manual' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'}`}
                >
                  Manual
                </button>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
             <X className="w-5 h-5 text-text-sub" />
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                   value={front}
                   onChange={(e) => setFront(e.target.value)}
                   placeholder="Ex: Qual o protocolo da camada de transporte que garante a entrega?"
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24"
+                  className="w-full bg-slate-50 border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24"
                 />
               </div>
               <div className="space-y-1.5">
@@ -164,7 +164,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                   value={back}
                   onChange={(e) => setBack(e.target.value)}
                   placeholder="Ex: TCP (Transmission Control Protocol)"
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24"
+                  className="w-full bg-slate-50 border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24"
                 />
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                         value={aiTopic}
                         onChange={(e) => setAiTopic(e.target.value)}
                         placeholder="Ex: Noções de Direito Administrativo: Atos"
-                        className="flex-1 bg-slate-50 dark:bg-white/5 border border-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                        className="flex-1 bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                       />
                       <button 
                         onClick={handleAiGenerate}
@@ -205,7 +205,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                     <button onClick={() => setGeneratedCards([])} className="text-[9px] font-bold text-primary uppercase tracking-widest">Refazer</button>
                   </div>
                   {generatedCards.map((card, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50 dark:bg-white/5 border border-border rounded-xl space-y-1">
+                    <div key={idx} className="p-3 bg-slate-50 border border-border rounded-xl space-y-1">
                       <div className="text-[10px] font-bold text-text-main leading-tight">{card.front}</div>
                       <div className="text-[10px] text-text-sub italic">{card.back}</div>
                     </div>
@@ -221,7 +221,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
               <select 
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-border rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full bg-slate-50 border border-border rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-primary/20"
               >
                 {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
@@ -229,7 +229,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
             <div className="flex flex-col justify-end">
               <button 
                 onClick={() => setIsPublic(!isPublic)}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all ${isPublic ? 'bg-primary/10 border-primary text-primary' : 'bg-slate-50 border-border text-text-sub dark:bg-white/5'}`}
+                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all ${isPublic ? 'bg-primary/10 border-primary text-primary' : 'bg-slate-50 border-border text-text-sub '}`}
               >
                 <Share2 className="w-4 h-4" />
                 <span className="text-[10px] font-bold uppercase">{isPublic ? 'Público' : 'Privado'}</span>
@@ -238,7 +238,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 dark:bg-white/5 flex gap-3">
+        <div className="p-6 bg-slate-50 flex gap-3">
           <button 
             disabled={loading}
             onClick={onClose}

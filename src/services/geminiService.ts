@@ -53,8 +53,11 @@ export async function generateFlashcards(topic: string, count: number = 5): Prom
     if (!text) return [];
     
     return JSON.parse(text.trim());
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro na geração de flashcards por IA:", error);
+    if (error?.message?.includes('503') || error?.message?.includes('high demand') || error?.status === 503) {
+      throw new Error("Ocorreu um limite de cotas ou alta demanda na inteligência artificial. Por favor, tente novamente em alguns instantes.");
+    }
     throw error;
   }
 }

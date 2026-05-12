@@ -89,13 +89,13 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
             <input 
               type="text" 
               placeholder="Localizar disciplina ou assunto..." 
-              className="w-full bg-white dark:bg-white/5 border border-border rounded-xl pl-14 pr-6 py-3.5 text-sm text-text-main outline-none focus:ring-4 ring-primary/10 transition-all placeholder:text-text-sub/50"
+              className="w-full bg-white border border-border rounded-xl pl-14 pr-6 py-3.5 text-sm text-text-main outline-none focus:ring-4 ring-primary/10 transition-all placeholder:text-text-sub/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <div className="flex bg-white dark:bg-white/5 border border-border p-1 rounded-xl self-start">
+          <div className="flex bg-white border border-border p-1 rounded-xl self-start">
             {['Tudo', 'Gerais', 'Específicos'].map((f) => (
               <button
                 key={f}
@@ -154,7 +154,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-3">
                       <span className="text-xl font-display text-text-main font-bold">{percent}%</span>
-                      <div className="w-20 md:w-24 h-1.5 bg-[#F8FAFC] dark:bg-white/5 rounded-full overflow-hidden border border-border">
+                      <div className="w-20 md:w-24 h-1.5 bg-[#F8FAFC] rounded-full overflow-hidden border border-border">
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${percent}%` }}
@@ -165,7 +165,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                     <span className="text-xs font-bold text-text-sub uppercase tracking-wider">{completedCount}/{totalCount} MÓDULOS</span>
                   </div>
                   <div className={cn(
-                    "w-10 h-10 rounded-xl border border-border bg-slate-50 dark:bg-white/5 flex items-center justify-center text-text-sub transition-all",
+                    "w-10 h-10 rounded-xl border border-border bg-slate-50 flex items-center justify-center text-text-sub transition-all",
                     expandedSubject === sub.id ? "bg-primary text-white border-primary" : "group-hover:text-primary"
                   )}>
                     <ChevronRight className={cn("w-5 h-5 transition-transform duration-500", expandedSubject === sub.id && "rotate-90")} />
@@ -183,7 +183,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   >
                     <div className="p-6 md:p-10 space-y-8">
                       {sub.briefing && (
-                        <div className="bg-[#FFFFFF] dark:bg-white/5 border border-border p-6 rounded-xl flex gap-4 items-start relative overflow-hidden">
+                        <div className="bg-[#FFFFFF] border border-border p-6 rounded-xl flex gap-4 items-start relative overflow-hidden">
                           <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center text-primary shrink-0">
                             <BrainCircuit className="w-5 h-5" />
                           </div>
@@ -198,7 +198,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
 
                       <div className="space-y-3">
                         {sub.topics?.map((topic) => (
-                          <div key={topic.id} className="group/topic rise-card border-border bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/5 transition-all p-0">
+                          <div key={topic.id} className="group/topic rise-card border-border bg-white hover:bg-slate-50 transition-all p-0">
                              <div className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
                                <div className="flex items-center gap-4 flex-1 min-w-0">
                                   <button 
@@ -207,7 +207,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                       "w-8 h-8 rounded-lg border flex items-center justify-center transition-all shrink-0",
                                       topic.completed 
                                         ? "bg-accent border-accent text-white" 
-                                        : "border-border bg-white dark:bg-white/5 text-transparent hover:border-accent"
+                                        : "border-border bg-white text-transparent hover:border-accent"
                                     )}
                                   >
                                     <CheckCircle2 className="w-5 h-5" />
@@ -225,7 +225,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                     <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-all">
                                       <div className={cn(
                                         "w-4 h-4 shrink-0 rounded-md border flex items-center justify-center transition-all",
-                                        topic.revision ? "bg-primary border-primary text-white" : "border-border bg-white dark:bg-white/5"
+                                        topic.revision ? "bg-primary border-primary text-white" : "border-border bg-white "
                                       )}>
                                         {topic.revision && <div className="w-1 h-1 rounded-full bg-white"></div>}
                                       </div>
@@ -235,7 +235,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                     <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-all">
                                       <div className={cn(
                                         "w-4 h-4 shrink-0 rounded-md border flex items-center justify-center transition-all",
-                                        topic.questions ? "bg-primary border-primary text-white" : "border-border bg-white dark:bg-white/5"
+                                        topic.questions ? "bg-primary border-primary text-white" : "border-border bg-white "
                                       )}>
                                         {topic.questions && <div className="w-1 h-1 rounded-full bg-white"></div>}
                                       </div>
@@ -251,7 +251,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                         "w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all flex items-center justify-center border shrink-0",
                                         topic.errorNote 
                                           ? "text-red-500 bg-red-500/5 border-red-500/20" 
-                                          : "text-text-sub border-border bg-white dark:bg-white/5 hover:border-primary hover:text-primary"
+                                          : "text-text-sub border-border bg-white hover:border-primary hover:text-primary"
                                       )}
                                       title="Notas de Erro"
                                     >
@@ -291,14 +291,14 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
       {/* AI Summary Modal */}
       <AnimatePresence>
         {selectedTopic && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 dark:bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.98, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.98, opacity: 0, y: 10 }}
-              className="w-full max-w-2xl bg-white dark:bg-zinc-950 border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+              className="w-full max-w-2xl bg-white border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             >
-              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-[#FFFFFF] dark:bg-zinc-900/50">
+              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-[#FFFFFF] ">
                 <div className="flex items-center gap-4">
                   <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl text-primary">
                     <BrainCircuit className="w-5 h-5" />
@@ -308,7 +308,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                     <p className="text-xs font-bold text-text-sub uppercase tracking-wider whitespace-normal break-words">{selectedTopic.topicName}</p>
                   </div>
                 </div>
-                <button onClick={() => setSelectedTopic(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/5 rounded-lg transition-all text-text-sub hover:text-text-main">
+                <button onClick={() => setSelectedTopic(null)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-text-sub hover:text-text-main">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -320,7 +320,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                     <p className="text-text-sub text-xs font-bold uppercase tracking-wider animate-pulse">Gerando síntese estratégica...</p>
                   </div>
                 ) : (
-                  <div className="prose dark:prose-invert max-w-none text-text-sub text-sm leading-relaxed">
+                  <div className="prose max-w-none text-text-sub text-sm leading-relaxed">
                     <div className="whitespace-pre-wrap font-medium border-l-2 border-primary/20 pl-6">
                       {aiSummary}
                     </div>
@@ -328,7 +328,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                 )}
               </div>
 
-              <div className="p-6 border-t border-border flex justify-end gap-3 bg-[#FFFFFF] dark:bg-zinc-900/50">
+              <div className="p-6 border-t border-border flex justify-end gap-3 bg-[#FFFFFF] ">
                 <button 
                   onClick={() => setSelectedTopic(null)}
                   className="px-8 py-3 bg-primary text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
@@ -344,14 +344,14 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
       {/* Error Notebook Modal */}
       <AnimatePresence>
         {activeErrorNote && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 dark:bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.98, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.98, opacity: 0 }} 
-              className="w-full max-w-md bg-white dark:bg-zinc-950 border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+              className="w-full max-w-md bg-white border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             >
-              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-red-50/5 dark:bg-red-500/5">
+              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-red-50/5 ">
                 <div className="flex items-center gap-4">
                   <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-red-500">
                     <PenTool className="w-5 h-5" />
@@ -361,7 +361,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                     <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Protocolo de Erro</p>
                   </div>
                 </div>
-                <button onClick={() => setActiveErrorNote(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/5 rounded-lg transition-all text-text-sub hover:text-text-main">
+                <button onClick={() => setActiveErrorNote(null)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-text-sub hover:text-text-main">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -371,14 +371,14 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   Registre o gatilho emocional ou técnico que levou ao erro para consolidar o aprendizado.
                 </p>
                 <textarea 
-                  className="w-full h-40 bg-[#FFFFFF] dark:bg-white/5 border border-border rounded-xl p-6 text-sm text-text-main outline-none focus:ring-4 ring-red-500/10 transition-all resize-none leading-relaxed placeholder:text-text-sub/30"
+                  className="w-full h-40 bg-[#FFFFFF] border border-border rounded-xl p-6 text-sm text-text-main outline-none focus:ring-4 ring-red-500/10 transition-all resize-none leading-relaxed placeholder:text-text-sub/30"
                   placeholder="Ex: Confundi competência privativa com delegável..."
                   value={activeErrorNote.note}
                   onChange={(e) => setActiveErrorNote({...activeErrorNote, note: e.target.value})}
                 />
               </div>
 
-              <div className="p-6 border-t border-border flex flex-col gap-3 bg-[#FFFFFF] dark:bg-zinc-900/50">
+              <div className="p-6 border-t border-border flex flex-col gap-3 bg-[#FFFFFF] ">
                 <button 
                   onClick={() => {
                     updateTopic(activeErrorNote.subId, activeErrorNote.topicId, { errorNote: activeErrorNote.note });
