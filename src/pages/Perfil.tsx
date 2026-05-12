@@ -12,7 +12,7 @@ const storage = getStorage(db.app);
 export default function Perfil() {
   const { user, profile, logout } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+  const [photoURL, setPhotoURL] = useState(profile?.photoURL || user?.photoURL || '');
   const [concursoFoco, setConcursoFoco] = useState(profile?.concursoFoco || '');
   const [nivelAtual, setNivelAtual] = useState(profile?.nivelAtual || 'Iniciante');
   const [fraseStatus, setFraseStatus] = useState(profile?.fraseStatus || '');
@@ -71,9 +71,19 @@ export default function Perfil() {
     setLoading(true);
     setMessage(null);
     try {
+      let finalPhotoURL = photoURL;
+      
+      // Upload image to storage if it's a data URI
+      if (photoURL && photoURL.startsWith('data:')) {
+        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
+        await uploadString(storageRef, photoURL, 'data_url');
+        finalPhotoURL = await getDownloadURL(storageRef);
+      }
+
       // Update in Firestore as well for consistency
       await updateDoc(doc(db, 'users', user.uid), {
         displayName,
+        photoURL: finalPhotoURL,
         concursoFoco,
         nivelAtual,
         fraseStatus,
@@ -81,7 +91,8 @@ export default function Perfil() {
       });
       
       await updateProfile(user, {
-        displayName
+        displayName,
+        photoURL: finalPhotoURL
       });
       
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });

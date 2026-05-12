@@ -120,17 +120,17 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
   });
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 border-b border-border pb-8">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-primary font-bold text-[10px] uppercase tracking-widest">
+    <div className="w-full px-4 md:px-8 overflow-hidden space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+      <header className="flex flex-wrap justify-between items-center gap-4 lg:gap-8 border-b border-border pb-8">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3 text-primary font-bold text-[9px] uppercase tracking-widest">
             <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
             Comunidade
           </div>
-          <h1 className="text-xl md:text-3xl font-display text-text-main tracking-tight font-bold">
+          <h1 className="text-lg md:text-2xl font-display text-text-main tracking-tight font-bold">
             Materiais <span className="text-primary italic">Compartilhados</span>
           </h1>
-          <p className="text-text-sub text-[11px] md:text-sm font-medium leading-relaxed max-w-xl">
+          <p className="text-text-sub text-[10px] md:text-xs font-medium leading-relaxed max-w-xl">
             Encontre cronogramas e flashcards compartilhados por outros estudantes para acelerar sua aprovação.
           </p>
         </div>
@@ -158,8 +158,8 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <div className="relative group flex-1 sm:w-80">
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+          <div className="relative group flex-1 min-w-[200px] sm:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
             <input 
               type="text"
@@ -170,11 +170,11 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
             />
           </div>
           {activeTab === 'contests' && (
-            <div className="relative">
+            <div className="relative min-w-[180px]">
               <select 
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                className="bg-slate-100 dark:bg-white/5 border border-border rounded-xl py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-text-sub outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-white/10 transition-all appearance-none min-w-[180px]"
+                className="w-full bg-slate-100 dark:bg-white/5 border border-border rounded-xl py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-text-sub outline-none cursor-pointer hover:bg-slate-200 dark:hover:bg-white/10 transition-all appearance-none"
               >
                 <option value="Todos">Todas as Áreas</option>
                 <option value="Analista">Analista</option>

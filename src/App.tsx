@@ -455,8 +455,8 @@ export default function App() {
                   className="group outline-none block"
                 >
                   <div className="w-12 h-12 bg-white/5 rounded-2xl border-2 border-white/5 overflow-hidden group-hover:border-primary/50 transition-all shadow-xl p-1 backdrop-blur-md">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" alt="Profile" />
+                    {profile?.photoURL || user.photoURL ? (
+                      <img src={profile?.photoURL || user.photoURL} className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" alt="Profile" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-500 bg-white/5 rounded-xl">
                         <UserIcon className="w-6 h-6" />
