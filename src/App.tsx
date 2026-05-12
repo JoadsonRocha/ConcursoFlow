@@ -334,7 +334,7 @@ export default function App() {
           <div>
             {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-1">
-              <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />

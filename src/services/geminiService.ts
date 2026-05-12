@@ -1,6 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAiClient(): GoogleGenAI {
+  if (!aiClient) {
+    // Attempt to get API key from environment variables (client-side VITE_ or server-side fallback)
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not set or accessible.");
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export interface GeneratedFlashcard {
   front: string;
@@ -9,6 +21,7 @@ export interface GeneratedFlashcard {
 
 export async function generateFlashcards(topic: string, count: number = 5): Promise<GeneratedFlashcard[]> {
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Gere ${count} flashcards de estudo para concurso público sobre o tema: "${topic}". 

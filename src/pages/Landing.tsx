@@ -331,7 +331,7 @@ const Landing = () => {
               <div className="space-y-4">
                  <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Ecossistema</h4>
                  <ul className="space-y-2 text-xs font-semibold text-text-sub">
-                    <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Dashboards</li>
+                    <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Painéis</li>
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Cronogramas</li>
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Comunidade</li>
                  </ul>
@@ -349,7 +349,7 @@ const Landing = () => {
            <span className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-40">Stratis 2026 — Inteligência para concursos</span>
            <div className="flex gap-2 items-center bg-slate-50 dark:bg-white/5 px-4 py-1.5 rounded-full border border-border">
               <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm"></div>
-              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Systems Nominal</span>
+              <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Sistemas Operantes</span>
            </div>
         </div>
       </footer>

@@ -154,7 +154,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-3">
                       <span className="text-xl font-display text-text-main font-bold">{percent}%</span>
-                      <div className="w-20 md:w-24 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden border border-border">
+                      <div className="w-20 md:w-24 h-1.5 bg-[#F8FAFC] dark:bg-white/5 rounded-full overflow-hidden border border-border">
                         <motion.div 
                           initial={{ width: 0 }}
                           animate={{ width: `${percent}%` }}
@@ -183,7 +183,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   >
                     <div className="p-6 md:p-10 space-y-8">
                       {sub.briefing && (
-                        <div className="bg-slate-50 dark:bg-white/5 border border-border p-6 rounded-xl flex gap-4 items-start relative overflow-hidden">
+                        <div className="bg-[#FFFFFF] dark:bg-white/5 border border-border p-6 rounded-xl flex gap-4 items-start relative overflow-hidden">
                           <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center text-primary shrink-0">
                             <BrainCircuit className="w-5 h-5" />
                           </div>
@@ -298,7 +298,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
               exit={{ scale: 0.98, opacity: 0, y: 10 }}
               className="w-full max-w-2xl bg-white dark:bg-zinc-950 border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             >
-              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-slate-50 dark:bg-zinc-900/50">
+              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-[#FFFFFF] dark:bg-zinc-900/50">
                 <div className="flex items-center gap-4">
                   <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl text-primary">
                     <BrainCircuit className="w-5 h-5" />
@@ -328,7 +328,7 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                 )}
               </div>
 
-              <div className="p-6 border-t border-border flex justify-end gap-3 bg-slate-50 dark:bg-zinc-900/50">
+              <div className="p-6 border-t border-border flex justify-end gap-3 bg-[#FFFFFF] dark:bg-zinc-900/50">
                 <button 
                   onClick={() => setSelectedTopic(null)}
                   className="px-8 py-3 bg-primary text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
@@ -371,14 +371,14 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                   Registre o gatilho emocional ou técnico que levou ao erro para consolidar o aprendizado.
                 </p>
                 <textarea 
-                  className="w-full h-40 bg-slate-50 dark:bg-white/5 border border-border rounded-xl p-6 text-sm text-text-main outline-none focus:ring-4 ring-red-500/10 transition-all resize-none leading-relaxed placeholder:text-text-sub/30"
+                  className="w-full h-40 bg-[#FFFFFF] dark:bg-white/5 border border-border rounded-xl p-6 text-sm text-text-main outline-none focus:ring-4 ring-red-500/10 transition-all resize-none leading-relaxed placeholder:text-text-sub/30"
                   placeholder="Ex: Confundi competência privativa com delegável..."
                   value={activeErrorNote.note}
                   onChange={(e) => setActiveErrorNote({...activeErrorNote, note: e.target.value})}
                 />
               </div>
 
-              <div className="p-6 border-t border-border flex flex-col gap-3 bg-slate-50 dark:bg-zinc-900/50">
+              <div className="p-6 border-t border-border flex flex-col gap-3 bg-[#FFFFFF] dark:bg-zinc-900/50">
                 <button 
                   onClick={() => {
                     updateTopic(activeErrorNote.subId, activeErrorNote.topicId, { errorNote: activeErrorNote.note });
