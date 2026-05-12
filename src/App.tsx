@@ -3,32 +3,19 @@ import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   BookOpen, 
-  ShieldCheck, 
   Calendar, 
   BrainCircuit, 
-  Settings,
   Menu,
-  X,
-  ChevronRight,
-  TrendingUp,
-  Clock,
-  Award,
   Moon,
   Sun,
-  PenTool,
-  Save,
-  LogIn,
   LogOut,
   Sparkles,
-  Mail,
-  Lock,
   User as UserIcon,
-  ArrowRight,
   Trash2,
   Users,
-  Heart,
   Target,
-  FileUp
+  FileUp,
+  MessageCircle
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -38,11 +25,13 @@ import Microlearning from './pages/Microlearning';
 import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
+import Feedback from './pages/Feedback';
 import Landing from './pages/Landing';
 import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Perfil from './pages/Perfil';
 import Auth from './pages/Auth';
+import Pareto from './pages/Pareto';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -80,7 +69,7 @@ export default function App() {
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [migrated, setMigrated] = useState(true);
+  const [migrated, setMigrated] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -156,7 +145,29 @@ export default function App() {
     const contestsRef = collection(db, 'users', user.uid, 'contests');
     const q = query(contestsRef);
     
-    setMigrated(true);
+    // Migration Logic
+    if (!migrated) {
+      try {
+        const potentialKeys = ['contests', 'stratis_contests', 'strat_contests'];
+        for (const key of potentialKeys) {
+          const localStr = localStorage.getItem(key);
+          if (localStr) {
+            const localData = JSON.parse(localStr);
+            if (Array.isArray(localData) && localData.length > 0) {
+              localData.forEach(async (c: any) => {
+                if (!c.id) return;
+                const docRef = doc(db, 'users', user.uid, 'contests', c.id);
+                await setDoc(docRef, { ...c, ownerId: user.uid }, { merge: true }).catch(console.error);
+              });
+            }
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        console.error("Migration error:", e);
+      }
+      setMigrated(true);
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const dbContests = snapshot.docs.map(doc => {
@@ -337,9 +348,11 @@ export default function App() {
             <nav className="space-y-1">
               <SidebarItem to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
@@ -398,17 +411,6 @@ export default function App() {
             <FileUp className="w-4 h-4 shrink-0" />
             {isSidebarOpen && <span>Importar Edital</span>}
           </Link>
-          <button 
-            onClick={() => logout()}
-            className={cn(
-              "flex items-center gap-4 py-3.5 text-text-sub hover:text-red-500 rounded-xl transition-all text-xs font-semibold uppercase tracking-wider w-full",
-              isSidebarOpen ? "px-4" : "justify-center px-0"
-            )}
-            title={!isSidebarOpen ? "Sair" : undefined}
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {isSidebarOpen && <span>Sair</span>}
-          </button>
         </div>
       </aside>
 
@@ -490,6 +492,21 @@ export default function App() {
                             <span className="text-[10px] text-text-sub uppercase tracking-wider italic">Ver meu perfil</span>
                           </div>
                         </Link>
+                        <a 
+                          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20uma%20ajudinha%20com%20o%20Stratis."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-all group"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                            <MessageCircle className="w-4 h-4" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-text-main uppercase tracking-tight">Suporte</span>
+                            <span className="text-[10px] text-text-sub uppercase tracking-wider italic">WhatsApp</span>
+                          </div>
+                        </a>
                         <hr className="border-border my-2 mx-6" />
                         <button 
                           onClick={() => { logout(); setIsUserMenuOpen(false); }}
@@ -514,11 +531,13 @@ export default function App() {
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
+              <Route path="/feedback" element={<Feedback />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
             </Routes>

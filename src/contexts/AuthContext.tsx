@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorUtils';
 
@@ -22,48 +22,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubProfile: (() => void) | null = null;
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
         try {
-          // Fetch or create profile with a timeout to prevent infinite loading loop
+          // Listen to profile updates
           const userRef = doc(db, 'users', user.uid);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Timeout ao conectar com Firestore")), 15000)
-          );
           
-          const userDoc = await Promise.race([
-            getDoc(userRef),
-            timeoutPromise
-          ]).catch(err => handleFirestoreError(err, OperationType.GET, 'users/' + user.uid)) as any;
-          
-          if (!userDoc.exists()) {
-            const newProfile: any = {
-              email: user.email,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              currentContestId: null
-            };
-            if (user.displayName) newProfile.displayName = user.displayName;
-            if (user.photoURL) newProfile.photoURL = user.photoURL;
+          if (unsubProfile) unsubProfile();
+          unsubProfile = onSnapshot(userRef, (userDoc) => {
+            if (!userDoc.exists()) {
+              const newProfile: any = {
+                email: user.email,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                currentContestId: null
+              };
+              if (user.displayName) newProfile.displayName = user.displayName;
+              if (user.photoURL) newProfile.photoURL = user.photoURL;
 
-            await setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid));
-            setProfile(newProfile);
-          } else {
-            setProfile(userDoc.data());
-          }
+              setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid));
+              setProfile(newProfile);
+            } else {
+              setProfile(userDoc.data());
+            }
+          }, (err) => {
+             console.error("Erro ao carregar perfil:", err);
+          });
         } catch (err) {
           console.error("Erro ao carregar perfil:", err);
-          // Permite que o usuário entre mesmo se o perfil falhar, 
-          // mas o app pode ter comportamento limitado
+          // Permite que o usuário entre mesmo se o perfil falhar
         }
       } else {
+        if (unsubProfile) unsubProfile();
         setProfile(null);
       }
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      if (unsubProfile) unsubProfile();
+      unsubscribe();
+    };
   }, []);
 
   const signup = async (email: string, pass: string, name: string) => {

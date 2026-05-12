@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
-import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut } from 'lucide-react';
+import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { db, updateProfile } from '../lib/firebase';
+import { getStorage, ref, uploadString, getDownloadURL, uploadBytes } from 'firebase/storage';
+import { db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
 const storage = getStorage(db.app);
 
 export default function Perfil() {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || '');
+  const [concursoFoco, setConcursoFoco] = useState(profile?.concursoFoco || '');
+  const [nivelAtual, setNivelAtual] = useState(profile?.nivelAtual || 'Iniciante');
+  const [fraseStatus, setFraseStatus] = useState(profile?.fraseStatus || '');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -25,9 +27,40 @@ export default function Perfil() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'A imagem deve ter no máximo 5MB.' });
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoURL(reader.result as string);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const MAX_SIZE = 300; // max width/height to keep size small
+          
+          if (width > height && width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Compress with 0.7 quality jpeg to ensure it stays well under 100kb
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            setPhotoURL(compressedDataUrl);
+          } else {
+            setPhotoURL(reader.result as string);
+          }
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -56,12 +89,15 @@ export default function Perfil() {
       await updateDoc(doc(db, 'users', user.uid), {
         displayName,
         photoURL: finalPhotoURL,
+        concursoFoco,
+        nivelAtual,
+        fraseStatus,
         updatedAt: new Date()
       });
       
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao salvar:", err);
       setMessage({ type: 'error', text: 'Erro ao atualizar perfil. Tente novamente.' });
     } finally {
       setLoading(false);
@@ -145,25 +181,88 @@ export default function Perfil() {
                 <Mail className="w-3.5 h-3.5 text-primary" />
                 {user.email}
               </div>
-              <div className="mt-3 inline-flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Acesso Premium Ativo
+              {fraseStatus && (
+                <div className="text-sm font-medium italic text-text-sub mt-1 max-w-sm">"{fraseStatus}"</div>
+              )}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
+                <div className="inline-flex items-center gap-2 bg-primary/5 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Premium
+                </div>
+                <div className="inline-flex items-center gap-2 bg-accent/5 border border-accent/20 text-accent text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {nivelAtual}
+                </div>
+                {concursoFoco && (
+                  <div className="inline-flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
+                    <Target className="w-3.5 h-3.5" />
+                    {concursoFoco.length > 20 ? concursoFoco.substring(0,20) + '...' : concursoFoco}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <form onSubmit={handleUpdateProfile} className="p-8 md:p-10 space-y-8">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Nome Completo</label>
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
-                <input 
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full bg-white border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
-                  placeholder="Seu nome"
-                />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Nome Completo</label>
+                <div className="relative group">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                    placeholder="Seu nome"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Concurso Foco</label>
+                <div className="relative group">
+                  <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text"
+                    value={concursoFoco}
+                    onChange={(e) => setConcursoFoco(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                    placeholder="Ex: Polícia Federal, Receita Federal..."
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Nível Atual</label>
+                  <div className="relative group">
+                    <TrendingUp className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors pointer-events-none" />
+                    <select
+                      value={nivelAtual}
+                      onChange={(e) => setNivelAtual(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main font-medium focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all appearance-none"
+                    >
+                      <option value="Iniciante">Iniciante</option>
+                      <option value="Intermediário">Intermediário</option>
+                      <option value="Avançado">Avançado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Frase/Status</label>
+                  <div className="relative group">
+                    <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+                    <input 
+                      type="text"
+                      value={fraseStatus}
+                      onChange={(e) => setFraseStatus(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white dark:focus:bg-slate-900 focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                      placeholder="Sua motivação diária..."
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

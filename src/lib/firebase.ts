@@ -10,6 +10,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const config = {
@@ -26,6 +27,7 @@ const databaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || fireba
 const app = initializeApp(config);
 export const auth = getAuth(app);
 export const db = getFirestore(app, databaseId);
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);

@@ -44,6 +44,8 @@ export interface Contest {
   ownerName?: string;
   likesCount?: number;
   isPublic?: boolean;
+  banca?: string;
+  paretoAnalyzed?: boolean;
   createdAt?: any;
   updatedAt?: any;
 }
