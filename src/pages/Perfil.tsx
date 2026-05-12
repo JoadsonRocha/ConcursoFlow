@@ -4,6 +4,11 @@ import { updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { db, updateProfile } from '../lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+
+const storage = getStorage(db.app);
 
 export default function Perfil() {
   const { user, logout } = useAuth();
@@ -33,21 +38,30 @@ export default function Perfil() {
     setLoading(true);
     setMessage(null);
     try {
-      const updateData: { displayName: string; photoURL?: string } = { displayName };
+      let finalPhotoURL = photoURL;
       
-      // Do not attempt to update photoURL via Auth if it's a data URI (potential 400 error)
-      if (photoURL && !photoURL.startsWith('data:')) {
-        updateData.photoURL = photoURL;
+      // Upload image to storage if it's a data URI
+      if (photoURL && photoURL.startsWith('data:')) {
+        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
+        await uploadString(storageRef, photoURL, 'data_url');
+        finalPhotoURL = await getDownloadURL(storageRef);
       }
+
+      await updateProfile(user, {
+        displayName,
+        photoURL: finalPhotoURL
+      });
       
-      await updateProfile(user, updateData);
+      // Update in Firestore as well for consistency
+      await updateDoc(doc(db, 'users', user.uid), {
+        displayName,
+        photoURL: finalPhotoURL,
+        updatedAt: new Date()
+      });
       
-      const photoMessage = photoURL && photoURL.startsWith('data:') 
-        ? " Nome atualizado, mas alteração de foto (via upload direto) não é suportada." 
-        : "";
-        
-      setMessage({ type: 'success', text: `Perfil atualizado com sucesso!${photoMessage}` });
+      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
     } catch (err) {
+      console.error(err);
       setMessage({ type: 'error', text: 'Erro ao atualizar perfil. Tente novamente.' });
     } finally {
       setLoading(false);
