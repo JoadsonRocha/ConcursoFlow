@@ -122,7 +122,7 @@ export default function Perfil() {
             </div>
             
             <div className="text-center md:text-left space-y-2 relative z-10">
-              <h3 className="text-2xl font-display text-text-main">{displayName || 'Estudante Rise'}</h3>
+              <h3 className="text-2xl font-display text-text-main">{displayName || 'Estudante Stratis'}</h3>
               <div className="flex items-center justify-center md:justify-start gap-2 text-text-sub text-sm">
                 <Mail className="w-3.5 h-3.5 text-primary" />
                 {user.email}
@@ -191,7 +191,7 @@ export default function Perfil() {
         </section>
 
         <div className="text-center pt-8 opacity-20">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">RiseMindr Protocol v2.5.0</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stratis Protocol v2.5.0</p>
         </div>
       </div>
     </div>

@@ -1,19 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Contest } from '../types';
 import { 
   BrainCircuit, 
-  Gamepad2, 
   Lightbulb, 
-  ChevronRight, 
-  CheckCircle2, 
-  XCircle,
   Play,
+  Award,
+  Plus,
   ArrowRight,
-  Award
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  TrendingUp,
+  MessageSquare,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateQuizQuestions } from '../services/gemini';
+import { db, auth } from '../lib/firebase';
+import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
+import FlashcardCreator from '../components/FlashcardCreator';
+import FlashcardDeck from '../components/FlashcardDeck';
 
 export default function Microlearning({ contest }: { contest: Contest }) {
   const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards'>('selection');
@@ -23,6 +33,31 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  
+  const [showCreator, setShowCreator] = useState(false);
+  const [flashcards, setFlashcards] = useState<any[]>([]);
+  const [dueCards, setDueCards] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const q = query(collection(db, 'users', auth.currentUser.uid, 'flashcards'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setFlashcards(cards);
+      
+      // Filter cards due for review (nextReview <= now)
+      const now = new Date();
+      const due = cards.filter((card: any) => {
+        if (!card.nextReview) return true;
+        const reviewDate = card.nextReview.toDate();
+        return reviewDate <= now;
+      });
+      setDueCards(due);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const startQuiz = async (subject: string) => {
     setLoading(true);
@@ -57,82 +92,200 @@ export default function Microlearning({ contest }: { contest: Contest }) {
     }, 2000);
   };
 
+  if (activeTab === 'flashcards') {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+        <header className="flex items-center justify-between gap-4">
+          <button 
+            onClick={() => setActiveTab('selection')}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors text-text-sub"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center">
+            <h2 className="text-xl font-display font-bold text-text-main italic">Sessão de Flashcards</h2>
+            <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{dueCards.length} cartões pendentes</p>
+          </div>
+          <div className="w-10" />
+        </header>
+
+        {dueCards.length > 0 ? (
+          <FlashcardDeck cards={dueCards} onFinish={() => setActiveTab('selection')} />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+            <div className="w-20 h-20 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center shadow-sm">
+               <CheckCircle2 className="w-10 h-10 text-accent" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-display font-bold text-text-main">Tudo Limpo!</h3>
+              <p className="text-sm text-text-sub max-w-xs mx-auto">Você não tem cards para revisar no momento. Que tal criar novos?</p>
+            </div>
+            <button 
+              onClick={() => setShowCreator(true)}
+              className="px-8 py-3 bg-accent text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-accent/20"
+            >
+              Criar Novo Card
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (activeTab === 'selection') {
     return (
       <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+        {showCreator && <FlashcardCreator onClose={() => setShowCreator(false)} subjects={contest.subjects || []} />}
+
         <header className="space-y-4">
-          <div className="flex items-center gap-3 text-primary/80 font-bold text-xs uppercase tracking-wider">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(168,85,247,0.8)]"></div>
-            Treinamento Tático
+          <div className="flex items-center gap-3 text-primary font-bold text-[10px] uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
+            Treinamento e Prática
           </div>
-          <h1 className="text-3xl md:text-6xl font-display text-white tracking-tight font-bold italic">
-            Fixação <span className="text-primary italic animate-pulse">Ativa.</span>
+          <h1 className="text-3xl md:text-5xl font-display text-text-main tracking-tight font-bold italic">
+            Revisão <span className="text-primary italic">&</span> Performance
           </h1>
-          <p className="text-slate-500 text-sm md:text-lg max-w-2xl border-l-2 border-primary/30 pl-6 leading-relaxed font-medium">
-            Ferramentas avançadas para consolidar padrões de prova e acelerar sua retenção.
+          <p className="text-text-sub text-[11px] md:text-base max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium">
+            Ferramentas para consolidar o edital e acelerar sua retenção através de questões e repetição espaçada.
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="rise-card p-10 md:p-14 group relative overflow-hidden flex flex-col justify-between min-h-[460px] bg-gradient-to-br from-white/5 to-transparent border-none">
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
+          {/* Questions Sector */}
+          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white dark:bg-slate-900 border border-border shadow-sm">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
                <BrainCircuit className="w-32 h-32" />
             </div>
             
-            <div className="space-y-10 relative z-10">
-              <div className="bg-primary/10 border border-primary/20 w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-primary shadow-2xl">
-                <BrainCircuit className="w-8 h-8" />
+            <div className="space-y-6 relative z-10">
+              <div className="bg-primary/10 border border-primary/20 w-12 h-12 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                <BrainCircuit className="w-6 h-6" />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-3xl font-display text-white italic font-bold">Prática de Tópicos</h3>
-                <p className="text-slate-500 text-sm leading-relaxed font-medium italic pr-12">Avalie seus reflexos em tópicos isolados com desafios focados no edital.</p>
+              <div className="space-y-1">
+                <h3 className="text-xl md:text-2xl font-display text-text-main italic font-bold">Questões Dinâmicas</h3>
+                <p className="text-text-sub text-[11px] md:text-sm leading-relaxed font-medium italic pr-12">Desafios rápidos por matéria para testar seus reflexos.</p>
               </div>
             </div>
 
-            <div className="space-y-4 relative z-10 pt-10">
-              <div className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 border-b border-white/5 pb-3">Selecione um Setor</div>
-              {contest.subjects.slice(0, 4).map(sub => (
+            <div className="space-y-2 relative z-10 pt-8">
+              <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mb-2 border-b border-border pb-2 opacity-50">Práticas Sugeridas</div>
+              {contest.subjects.slice(0, 3).map(sub => (
                 <button 
                   key={sub.id}
                   onClick={() => startQuiz(sub.name)}
-                  className="w-full text-left p-5 bg-white/5 hover:bg-primary border border-white/5 rounded-2xl transition-all flex justify-between items-center group/item shadow-xl"
+                  className="w-full text-left p-3.5 bg-slate-50 dark:bg-white/5 hover:bg-primary border border-border rounded-xl transition-all flex justify-between items-center group/item"
                 >
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-500 group-hover/item:text-white truncate pr-6">{sub.name}</span>
-                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/item:bg-white group-hover/item:border-white transition-all shadow-lg">
-                    <Play className="w-4 h-4 text-slate-700 group-hover/item:text-primary transition-all fill-current" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-sub group-hover/item:text-white truncate pr-4">{sub.name}</span>
+                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-white/5 border border-border flex items-center justify-center group-hover/item:bg-white transition-all shadow-sm">
+                    <Play className="w-3.5 h-3.5 text-text-main group-hover/item:text-primary transition-all fill-current" />
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="rise-card p-10 md:p-14 group relative overflow-hidden flex flex-col justify-between min-h-[460px] bg-gradient-to-br from-white/5 to-transparent border-none">
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-1000">
+          {/* Flashcards Sector */}
+          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white dark:bg-slate-900 border border-border shadow-sm">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
                <Lightbulb className="w-32 h-32 text-accent" />
             </div>
             
-            <div className="space-y-10 relative z-10">
-              <div className="bg-accent/10 border border-accent/20 w-16 h-16 rounded-[1.5rem] flex items-center justify-center text-accent shadow-2xl">
-                <Lightbulb className="w-8 h-8" />
+            <div className="space-y-6 relative z-10">
+              <div className="bg-accent/10 border border-accent/20 w-12 h-12 rounded-xl flex items-center justify-center text-accent shadow-sm">
+                <Lightbulb className="w-6 h-6" />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-3xl font-display text-white italic font-bold">Flashcards</h3>
-                <p className="text-slate-500 text-sm leading-relaxed font-medium italic pr-12">Estruture sua memória de longo prazo com o protocolo de repetição espaçada.</p>
+              <div className="space-y-1">
+                <h3 className="text-xl md:text-2xl font-display text-text-main italic font-bold">Resumo & Flashcards</h3>
+                <p className="text-text-sub text-[11px] md:text-sm leading-relaxed font-medium italic pr-12">Memorize conceitos complexos com cartões de estudo interativos.</p>
               </div>
             </div>
 
-            <div className="space-y-6 pt-10 relative z-10">
-               <div className="p-6 bg-accent/5 border border-accent/20 rounded-[2rem] shadow-inner">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Award className="w-5 h-5 text-accent" />
-                    <span className="text-xs font-black text-accent uppercase tracking-wider">Carga de Revisão</span>
+            <div className="space-y-4 pt-8 relative z-10">
+               <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-slate-50 dark:bg-white/5 border border-border rounded-xl text-center">
+                    <div className="text-lg font-display font-bold text-text-main">{flashcards.length}</div>
+                    <div className="text-[9px] font-bold text-text-sub uppercase tracking-widest">Totais</div>
                   </div>
-                  <p className="text-sm text-slate-400 font-medium">Você possui <span className="text-white font-black italic">14 cartões</span> para o protocolo de hoje.</p>
+                  <div className="p-4 bg-accent/5 border border-accent/10 rounded-xl text-center">
+                    <div className="text-lg font-display font-bold text-accent">{dueCards.length}</div>
+                    <div className="text-[9px] font-bold text-accent uppercase tracking-widest">Para Hoje</div>
+                  </div>
                </div>
-               <button className="w-full bg-accent text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-accent/30 border-2 border-accent">
-                Iniciar Protocolo
-               </button>
+
+               <div className="flex gap-2">
+                 <button 
+                  onClick={() => setShowCreator(true)}
+                  className="flex-1 bg-slate-100 dark:bg-white/10 text-text-main py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                 >
+                   <Plus className="w-4 h-4" />
+                   Criar
+                 </button>
+                 <button 
+                  onClick={() => setActiveTab('flashcards')}
+                  disabled={dueCards.length === 0}
+                  className="flex-[2] bg-accent text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:shadow-none"
+                 >
+                  Iniciar Revisão
+                 </button>
+               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Improved Recommendations & Community */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-4">
+             <div className="flex items-center gap-2 px-1">
+                <ShieldCheck className="w-4 h-4 text-primary" />
+                <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Indicações Estratégicas</h3>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 bg-white dark:bg-slate-900 border border-border rounded-2xl space-y-3 shadow-sm hover:border-primary/30 transition-all cursor-default">
+                   <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                         <TrendingUp className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-text-main uppercase tracking-tight">Curva de Esquecimento</span>
+                   </div>
+                   <p className="text-[10px] text-text-sub leading-relaxed font-medium">
+                      O sistema detectou que você costuma esquecer conceitos de <span className="text-primary font-bold italic">Redes</span> em 3 dias. Revise hoje para consolidar.
+                   </p>
+                </div>
+
+                <div className="p-5 bg-white dark:bg-slate-900 border border-border rounded-2xl space-y-3 shadow-sm hover:border-accent/30 transition-all cursor-default">
+                   <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                         <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-text-main uppercase tracking-tight">Feedback da Comunidade</span>
+                   </div>
+                   <p className="text-[10px] text-text-sub leading-relaxed font-medium">
+                      Os flashcards de <span className="text-accent font-bold italic">Processo Penal</span> foram os mais baixados hoje. Acesse o acervo para conferir.
+                   </p>
+                </div>
+             </div>
+          </div>
+
+          <div className="space-y-4">
+             <div className="flex items-center gap-2 px-1">
+                <Search className="w-4 h-4 text-text-sub" />
+                <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Acervo Coletivo</h3>
+             </div>
+             <div className="p-6 bg-gradient-to-br from-indigo-600 to-primary rounded-2xl text-white space-y-5 shadow-lg shadow-indigo-500/20 relative overflow-hidden group">
+                <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                   <Award className="w-32 h-32" />
+                </div>
+                <div className="space-y-2 relative z-10">
+                   <h4 className="font-display font-bold text-lg leading-tight uppercase italic">Flashcards Públicos</h4>
+                   <p className="text-[10px] text-white/70 font-medium leading-relaxed">
+                      Explore decks criados por outros aprovados e economize tempo de produção.
+                   </p>
+                </div>
+                <Link to="/comunidade" className="flex items-center justify-between bg-white text-primary px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all relative z-10 shadow-xl">
+                   Explorar Acervo
+                   <ChevronRight className="w-4 h-4" />
+                </Link>
+             </div>
           </div>
         </div>
       </div>
@@ -148,9 +301,9 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             <BrainCircuit className="w-10 h-10 text-primary animate-pulse" />
           </div>
         </div>
-        <div className="text-center space-y-4">
-            <h2 className="text-3xl font-display text-white tracking-wider uppercase italic font-black">Codificando Desafios...</h2>
-            <p className="text-slate-600 text-xs font-black uppercase tracking-[0.5em] animate-pulse">Sincronizando bancos de dados recentes</p>
+        <div className="text-center space-y-2 md:space-y-4">
+            <h2 className="text-xl md:text-3xl font-display text-text-main tracking-wider uppercase italic font-bold">Preparando questões...</h2>
+            <p className="text-text-sub text-[10px] font-bold uppercase tracking-[0.3em] animate-pulse">Carregando...</p>
         </div>
       </div>
     );
@@ -265,11 +418,11 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                         <BrainCircuit className="absolute -right-6 -bottom-6 w-32 h-32 text-primary/5 rotate-12" />
                         <div className="flex items-center gap-4 mb-6 relative z-10">
                           <div className="bg-primary/20 p-2.5 rounded-xl text-primary">
-                             <BrainCircuit className="w-6 h-6" />
+                             <BrainCircuit className="w-5 h-5" />
                           </div>
-                          <span className="text-xs font-black uppercase tracking-wider text-primary">Análise Médica/Técnica</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Explicação</span>
                         </div>
-                        <p className="text-base text-slate-400 leading-relaxed italic relative z-10 font-medium">"{quizData[currentQuestion]?.explanation}"</p>
+                        <p className="text-sm md:text-base text-text-sub leading-relaxed italic relative z-10 font-medium">"{quizData[currentQuestion]?.explanation}"</p>
                     </motion.div>
                 )}
             </AnimatePresence>

@@ -95,7 +95,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       onUpdate({ ...contest, schedule: newSchedule });
     } catch (error) {
       console.error("Erro ao gerar cronograma:", error);
-      alert("Erro ao conectar com a IA para gerar o cronograma.");
+      alert("Erro ao carregar o cronograma. Verifique sua conexão.");
     } finally {
       setLoading(false);
     }
@@ -135,15 +135,15 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
           <CalendarDays className="w-8 h-8" />
         </div>
         <div className="space-y-3">
-          <div className="flex items-center justify-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
-            Planejamento Inteligente
+          <div className="flex items-center justify-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
+            Seu Plano
           </div>
-          <h1 className="text-3xl md:text-4xl font-display text-text-main tracking-tight font-bold">
-            Seu Cronograma <span className="text-primary italic">Estratégico</span>
+          <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold">
+            Meu <span className="text-primary italic">Cronograma</span>
           </h1>
-          <p className="text-text-sub max-w-lg mx-auto text-sm md:text-base font-medium leading-relaxed">
-            Estruturamos sua jornada de estudos de forma otimizada para o seu ritmo e objetivos.
+          <p className="text-text-sub max-w-lg mx-auto text-[11px] md:text-sm font-medium leading-relaxed italic">
+            Acompanhe sua jornada de estudos organizada por semanas e dias.
           </p>
         </div>
       </header>
@@ -192,17 +192,17 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-8">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-primary font-bold text-xs uppercase tracking-wider">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
-            Mapa de Execução
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-6 md:pb-8">
+        <div className="space-y-2 md:space-y-3">
+          <div className="flex items-center gap-3 text-primary font-bold text-[10px] uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
+            Calendário
           </div>
-          <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold">
-            Plano de <span className="text-primary italic">Estudos</span>
+          <h1 className="text-xl md:text-3xl font-display text-text-main tracking-tight font-bold">
+            Minhas <span className="text-primary italic">Metas</span>
           </h1>
           <div className="flex items-center gap-3">
-            <span className="text-text-sub text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full border border-border">{contest.role}</span>
+            <span className="text-text-sub text-[10px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full border border-border">{contest.role}</span>
           </div>
         </div>
 
@@ -279,7 +279,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                     <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-display text-base font-bold shadow-sm transition-colors duration-500 italic">
                         {d.dayNumber}
                     </div>
-                   <span className="text-xs font-bold text-text-sub uppercase tracking-wider">DIA DE ESTUDO</span>
+                   <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest">DIA</span>
                    </div>
                    {d.completed && <CheckCircle2 className="w-6 h-6 text-accent" />}
                 </header>
@@ -287,17 +287,17 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                 <div className="space-y-6 flex-1">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
-                       <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Prioridades</span>
+                       <div className="w-1 h-1 rounded-full bg-primary"></div>
+                       <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Prioridades</span>
                     </div>
                     <div className="space-y-2">
-                       <div className="p-4 bg-slate-50 rounded-xl border border-border">
-                        <span className="text-xs text-text-sub font-bold uppercase tracking-wider block mb-1">Específicos</span>
-                        <div className="text-xs font-semibold text-text-main leading-relaxed italic line-clamp-3">{d.specificTopic}</div>
+                       <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
+                        <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Específicas</span>
+                        <div className="text-[11px] font-semibold text-text-main leading-relaxed italic line-clamp-3">{d.specificTopic}</div>
                       </div>
-                      <div className="p-4 bg-slate-50 rounded-xl border border-border">
-                        <span className="text-xs text-text-sub font-bold uppercase tracking-wider block mb-1">Gerais</span>
-                        <div className="text-xs font-semibold text-text-sub leading-relaxed italic line-clamp-3">{d.generalTopic}</div>
+                      <div className="p-3 md:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-border">
+                        <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Básicas</span>
+                        <div className="text-[11px] font-semibold text-text-sub leading-relaxed italic line-clamp-3">{d.generalTopic}</div>
                       </div>
                     </div>
                   </div>

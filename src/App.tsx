@@ -325,25 +325,25 @@ export default function App() {
           {isSidebarOpen && (
             <div className="flex flex-col">
               <span className="text-text-main font-display text-lg tracking-tight leading-none font-bold uppercase">Stratis</span>
-              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-60">Inteligência</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-60">Estudos</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-8 flex-grow overflow-y-auto no-scrollbar">
+        <div className="space-y-6 flex-grow overflow-y-auto no-scrollbar">
           <div>
-            {isSidebarOpen && <span className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-4 ml-3">Estratégia</span>}
+            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-1">
               <SidebarItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/materias" icon={BookOpen} label="Matérias" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Estudos IA" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
           <div>
-            {isSidebarOpen && <span className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-4 ml-3">Meus Concursos</span>}
+            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Meus Estudos</span>}
             <div className="space-y-1">
               {contests.length === 0 ? (
                 isSidebarOpen && <div className="px-5 py-4 text-xs text-text-sub font-medium uppercase tracking-wider italic border border-dashed border-border rounded-xl">Nenhum salvo</div>
@@ -411,36 +411,8 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-1.5 flex items-center justify-around w-[95%] max-w-[400px] border border-border shadow-lg rounded-2xl fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        {[
-          { to: '/', icon: LayoutDashboard, label: 'Início' },
-          { to: '/materias', icon: BookOpen, label: 'Edital' },
-          { to: '/cronograma', icon: Calendar, label: 'Plano' },
-          { to: '/perfil', icon: UserIcon, label: 'Perfil' }
-        ].map((item) => (
-          <Link 
-            key={item.to}
-            to={item.to} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-300 relative group w-16", 
-              location.pathname === item.to ? "text-primary" : "text-text-sub hover:text-text-main"
-            )}
-          >
-            {location.pathname === item.to && (
-              <motion.div 
-                layoutId="mobile-nav-pill"
-                className="absolute inset-0 bg-primary/10 rounded-xl"
-              />
-            )}
-            <item.icon className={cn("w-5 h-5 relative z-10 transition-transform", location.pathname === item.to && "scale-105")} />
-            <span className="text-xs font-bold uppercase tracking-wider leading-none relative z-10">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg relative md:pb-0 pb-20 scroll-smooth">
+      <main className="flex-1 h-screen overflow-y-auto bg-bg relative scroll-smooth">
         <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
@@ -468,10 +440,10 @@ export default function App() {
 
             <div className="flex items-center gap-4 relative">
               <div className="hidden sm:flex flex-col items-end">
-                <div className="text-xs text-slate-500 font-bold uppercase tracking-wider leading-none mb-1.5 opacity-50 italic">Sincronia</div>
-                <div className="text-xs font-black text-primary leading-none flex items-center gap-2 uppercase tracking-wider">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--color-primary)]"></div>
-                  Operacional
+                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1 opacity-50">Sincronização</div>
+                <div className="text-[10px] font-black text-primary leading-none flex items-center gap-1.5 uppercase tracking-wider">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  Conectado 
                 </div>
               </div>
               <div className="relative">
@@ -513,8 +485,8 @@ export default function App() {
                             <UserIcon className="w-4 h-4" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-black text-white uppercase tracking-tight">Parametros</span>
-                            <span className="text-xs text-slate-500 uppercase tracking-wider italic">Acessar Bio-Perfil</span>
+                            <span className="text-xs font-black text-white uppercase tracking-tight">Preferências</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider italic">Ver meu perfil</span>
                           </div>
                         </Link>
                         <hr className="border-white/5 my-2 mx-6" />
@@ -525,7 +497,7 @@ export default function App() {
                           <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <LogOut className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-black uppercase tracking-wider text-left">Desconectar Sistema</span>
+                          <span className="text-xs font-black uppercase tracking-wider text-left">Sair da Conta</span>
                         </button>
                       </motion.div>
                     </>

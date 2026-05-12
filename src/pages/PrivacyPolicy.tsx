@@ -43,9 +43,9 @@ export default function PrivacyPolicy() {
           <div className="flex items-center gap-4 mb-2">
             <div className="text-xs font-black text-primary uppercase tracking-wider">Protocolo 02</div>
           </div>
-          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Processamento de Inteligência</h2>
+          <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Análise de Desempenho</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Utilizamos suas métricas operacionais para manter e evoluir nossos modelos de IA, garantindo que as sugestões de cronogramas e flashcards sejam calibradas de acordo com sua curva de esquecimento real.
+            Utilizamos suas métricas operacionais para manter e evoluir nossos sistemas de sugestão, garantindo que os cronogramas e flashcards sejam calibrados de acordo com sua curva de esquecimento real.
           </p>
         </section>
 
@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Isolamento de Informações</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Não comercializamos conjuntos de dados para terceiros. A RiseMindr opera em um ecossistema fechado onde a privacidade do estrategista é tratada como ativo de segurança máxima.
+            Não comercializamos conjuntos de dados para terceiros. A Stratis opera em um ecossistema fechado onde a privacidade do estrategista é tratada como ativo de segurança máxima.
           </p>
         </section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPolicy() {
       <footer className="text-center py-20 flex flex-col items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
-          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">RiseMindr Security — 2026 Edition</span>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis Security — 2026 Edition</span>
         </div>
         <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Sistemas operando sob protocolos de criptografia de ponta a ponta.</p>
       </footer>

@@ -66,6 +66,21 @@ service cloud.firestore {
              (data.get('id', '') is string);
     }
 
+    function isValidFlashcard(data, isCreate) {
+      return (!isCreate || (data.keys().hasAll(['front', 'back', 'ownerId', 'createdAt', 'updatedAt']) && data.keys().size() >= 5)) &&
+             (data.get('ownerId', '') == request.auth.uid) &&
+             (data.get('front', '') is string && data.get('front', '').size() <= 1000) &&
+             (data.get('back', '') is string && data.get('back', '').size() <= 3000) &&
+             (data.get('createdAt', request.time) is timestamp) &&
+             (data.get('updatedAt', request.time) is timestamp) &&
+             (data.get('ownerName', '') is string && data.get('ownerName', '').size() <= 100) &&
+             (data.get('isPublic', false) is bool) &&
+             (data.get('subjectName', '') is string && data.get('subjectName', '').size() <= 100) &&
+             (data.get('nextReview', request.time) is timestamp) &&
+             (data.get('interval', 0) is number) &&
+             (data.get('ease', 0) is number);
+    }
+
     // User Profile
     match /users/{userId} {
       allow get: if isSignedIn() && isOwner(userId);
@@ -81,11 +96,23 @@ service cloud.firestore {
       match /contests/{allContestIds=**} {
         allow read, write: if isSignedIn() && isOwner(userId);
       }
+
+      // Flashcards (Private)
+      match /flashcards/{flashcardId} {
+        allow list, get: if isSignedIn() && isOwner(userId);
+        allow create: if isVerified() && isOwner(userId) && isValidFlashcard(incoming(), true) && incoming().createdAt == request.time;
+        allow update: if isVerified() && isOwner(userId) && isValidFlashcard(incoming(), false) && 
+                      (incoming().diff(existing()).affectedKeys().hasOnly(['front', 'back', 'isPublic', 'nextReview', 'interval', 'ease', 'updatedAt', 'subjectName'])) &&
+                      incoming().ownerId == existing().ownerId &&
+                      (existing().get('createdAt', null) == null || incoming().createdAt == existing().createdAt) &&
+                      incoming().updatedAt == request.time;
+        allow delete: if isVerified() && isOwner(userId);
+      }
     }
 
     // Shared Contests (Community)
     match /shared_contests/{sharedId} {
-      allow list: if isSignedIn(); // Allow listing; get() restricts read access to public documents
+      allow list: if isSignedIn() && (resource.data.isPublic == true || resource.data.ownerId == request.auth.uid);
       allow get: if isSignedIn() && (resource.data.isPublic == true || resource.data.ownerId == request.auth.uid);
       allow create: if isVerified() && isValidContest(incoming(), true) && 
                     incoming().ownerId == request.auth.uid &&
@@ -98,6 +125,20 @@ service cloud.firestore {
         // Action: Like (Atomic Increment)
         (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']) && incoming().likesCount == existing().likesCount + 1)
       );
+      allow delete: if isVerified() && existing().ownerId == request.auth.uid;
+    }
+
+    // Shared Flashcards (Community)
+    match /shared_flashcards/{sharedId} {
+      allow list: if isSignedIn() && (resource.data.isPublic == true || resource.data.ownerId == request.auth.uid);
+      allow get: if isSignedIn() && (resource.data.isPublic == true || resource.data.ownerId == request.auth.uid);
+      allow create: if isVerified() && isValidFlashcard(incoming(), true) && 
+                    incoming().ownerId == request.auth.uid &&
+                    incoming().isPublic == true &&
+                    incoming().createdAt == request.time;
+      allow update: if isVerified() && existing().ownerId == request.auth.uid && 
+                    isValidFlashcard(incoming(), false) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['front', 'back', 'isPublic', 'nextReview', 'interval', 'ease', 'updatedAt', 'subjectName']);
       allow delete: if isVerified() && existing().ownerId == request.auth.uid;
     }
   }

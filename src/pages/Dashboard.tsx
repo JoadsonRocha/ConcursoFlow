@@ -204,10 +204,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
       <header className="space-y-0.5">
         <div className="flex items-center gap-2 mb-0.5">
            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
-           <span className="text-xs font-bold uppercase tracking-wider text-text-sub">Painel de Acompanhamento</span>
+           <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub">Resumo de Estudos</span>
         </div>
-        <h2 className="text-xl md:text-3xl font-display text-text-main tracking-tight font-bold">
-          Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Concurseiro'}</span>
+        <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">
+          Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Estudante'}</span>
         </h2>
         <div className="flex justify-between items-end mt-2">
           <div className="space-y-1">
@@ -263,20 +263,20 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
       </div>
 
       {/* Quick Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {[
           { label: 'Evolução', value: `${totalProgress.percent}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
-          { label: 'Ofensiva', value: `${streakDays} dias`, icon: Target, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/20' },
+          { label: 'Sequência', value: `${streakDays} dias`, icon: Target, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/20' },
           { label: 'Horas', value: `${totalHours}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
           { label: 'Questões', value: totalQuestions, icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
         ].map((metric, i) => (
-          <div key={i} className="rise-card p-3 flex items-center gap-3 border border-border bg-white shadow-sm hover:border-primary/30 transition-all">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border", metric.color, metric.bg, metric.border)}>
-              <metric.icon className="w-4 h-4 md:w-5 md:h-5" />
+          <div key={i} className="rise-card p-2 md:p-3 flex items-center gap-2 md:gap-3 border border-border bg-white shadow-sm hover:border-primary/30 transition-all">
+            <div className={cn("w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 border", metric.color, metric.bg, metric.border)}>
+              <metric.icon className="w-3.5 h-3.5 md:w-5 md:h-5" />
             </div>
             <div className="overflow-hidden">
-               <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest truncate">{metric.label}</div>
-               <div className="text-sm md:text-base font-display font-bold text-text-main leading-tight truncate">{metric.value}</div>
+               <div className="text-[9px] md:text-[10px] font-bold text-text-sub uppercase tracking-widest truncate">{metric.label}</div>
+               <div className="text-xs md:text-base font-display font-bold text-text-main leading-tight truncate">{metric.value}</div>
             </div>
           </div>
         ))}
@@ -305,8 +305,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
             </div>
             <div className="space-y-2">
                 <div className="space-y-0.5">
-                  <h4 className="text-sm font-display font-bold text-text-main">Gerais</h4>
-                  <p className="text-xs font-medium text-text-sub">Conhecimentos estruturais.</p>
+                  <h4 className="text-sm font-display font-bold text-text-main">Básicas</h4>
+                  <p className="text-[10px] font-medium text-text-sub">Matérias base do edital.</p>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between items-end">
@@ -329,8 +329,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
             </div>
             <div className="space-y-2">
                 <div className="space-y-0.5">
-                  <h4 className="text-sm font-display font-bold text-text-main">Específicos</h4>
-                  <p className="text-xs font-medium text-text-sub">Maior importância estratégica.</p>
+                  <h4 className="text-sm font-display font-bold text-text-main">Específicas</h4>
+                  <p className="text-[10px] font-medium text-text-sub">Peso maior na nota final.</p>
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between items-end">
@@ -350,26 +350,34 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Today's Task */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-text-sub uppercase tracking-wider px-1 flex items-center gap-2">
+          <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
              <div className="w-1 h-3 bg-primary rounded-full"></div>
-             Plano Operacional
+             Meta de Hoje
           </h3>
-          <div className="rise-card p-6 flex flex-col items-center text-center space-y-5 bg-gradient-to-b from-white to-slate-50 border border-border shadow-sm">
+          <div className="rise-card p-4 md:p-6 flex flex-col items-center text-center space-y-5 bg-gradient-to-b from-white to-slate-50 border border-border shadow-sm">
             {todayTask ? (
-              <div className="space-y-5 w-full">
-                <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary shadow-sm mx-auto">
-                    <Calendar className="w-6 h-6" />
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-text-sub">Meta Estratégica do Ciclo</p>
-                  <div className="p-4 bg-white rounded-2xl border border-primary/10 shadow-sm text-left relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 p-3 opacity-5 text-primary">
-                        <Target className="w-12 h-12" />
-                     </div>
-                     <span className="text-[10px] sm:text-xs font-bold uppercase text-primary tracking-wider flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Eixo Temático
-                     </span>
-                     <div className="font-display text-lg text-text-main font-bold leading-tight mt-1 truncate">{todayTask.specificTopic || todayTask.generalTopic}</div>
+              <div className="space-y-4 w-full">
+                <div className="space-y-3 w-full">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-text-sub">Planejamento para agora</p>
+                  
+                  <div className="space-y-2 text-left w-full">
+                    {todayTask.generalTopic && (
+                      <div className="p-3 bg-white rounded-xl border border-border/60 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-colors">
+                         <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1.5 mb-1 opacity-70">
+                            <div className="w-1 h-1 bg-slate-400 rounded-full" /> Geral
+                         </span>
+                         <div className="text-[11px] font-bold text-text-main leading-tight line-clamp-2">{todayTask.generalTopic}</div>
+                      </div>
+                    )}
+
+                    {todayTask.specificTopic && (
+                      <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group hover:bg-primary/10 transition-colors">
+                         <span className="text-[8px] font-bold uppercase text-primary tracking-widest flex items-center gap-1.5 mb-1">
+                            <div className="w-1 h-1 bg-primary rounded-full" /> Específico
+                         </span>
+                         <div className="text-xs font-bold text-text-main leading-tight italic line-clamp-2">{todayTask.specificTopic}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -408,9 +416,9 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
 
         {/* Priority Subjects (Metrics) */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold text-text-sub uppercase tracking-wider px-1 flex items-center gap-2">
+          <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
              <div className="w-1 h-3 bg-secondary rounded-full"></div>
-             Prioridades Críticas
+             Focar Mais
           </h3>
           <div className="grid grid-cols-1 gap-2">
             {prioritySubjects.map((sub, idx) => {
@@ -431,24 +439,24 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
                       <div className="text-xs font-bold text-text-main truncate tracking-tight">{sub.name}</div>
                     </div>
                   </div>
-                  <div className="text-right ml-3">
-                    <div className="text-base font-display font-bold text-text-main leading-none">{progress.percent}%</div>
-                    <div className="text-xs font-bold text-text-sub uppercase tracking-wider mt-0.5">Domínio</div>
+                  <div className="text-right ml-3 shrink-0">
+                    <div className="text-sm md:text-base font-display font-bold text-text-main leading-none">{progress.percent}%</div>
+                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-0.5">Domínio</div>
                   </div>
                 </Link>
               );
             })}
              
-             <div className="grid grid-cols-2 gap-2 mt-1">
-                <Link to="/microaprendizado" className="rise-card p-3 text-center border-border/60 hover:border-primary/40 transition-all flex flex-col items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-primary" />
-                  <span className="text-xs font-bold text-text-main uppercase tracking-wider">Base de Estudo</span>
-                </Link>
-                <Link to="/comunidade" className="rise-card p-3 text-center border-border/60 hover:border-accent/40 transition-all flex flex-col items-center gap-1">
-                   <ShieldCheck className="w-3 h-3 text-accent" />
-                   <span className="text-xs font-bold text-text-main uppercase tracking-wider">Ranking Elite</span>
-                </Link>
-             </div>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                 <Link to="/microaprendizado" className="rise-card p-2 text-center border-border/60 hover:border-primary/40 transition-all flex flex-col items-center gap-1">
+                   <Sparkles className="w-3 h-3 text-primary" />
+                   <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Revisão</span>
+                 </Link>
+                 <Link to="/comunidade" className="rise-card p-2 text-center border-border/60 hover:border-accent/40 transition-all flex flex-col items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-accent" />
+                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Comunidade</span>
+                 </Link>
+              </div>
           </div>
         </div>
 

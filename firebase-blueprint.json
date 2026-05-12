@@ -44,6 +44,26 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "role", "ownerId"]
+    },
+    "Flashcard": {
+      "title": "Flashcard",
+      "description": "A study card with front and back content for spaced repetition.",
+      "type": "object",
+      "properties": {
+        "front": { "type": "string" },
+        "back": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "nextReview": { "type": "string", "format": "date-time" },
+        "interval": { "type": "number" },
+        "ease": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["front", "back", "ownerId"]
     }
   },
   "firestore": {
@@ -55,9 +75,17 @@
       "schema": "Contest",
       "description": "Stores user-specific contest data and progress."
     },
+    "/users/{userId}/flashcards/{flashcardId}": {
+      "schema": "Flashcard",
+      "description": "Stores private user flashcards."
+    },
     "/shared_contests/{sharedId}": {
       "schema": "Contest",
       "description": "Stores public syllabi shared by users for the community."
+    },
+    "/shared_flashcards/{sharedId}": {
+      "schema": "Flashcard",
+      "description": "Stores public flashcards shared by users."
     }
   }
 }

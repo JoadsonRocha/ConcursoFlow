@@ -185,11 +185,11 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
           Arquitetura de Estudos
         </div>
-        <h1 className="text-3xl md:text-5xl font-display text-white tracking-tight">
-          Configurar <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Manual</span> ou <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">IA</span>
+        <h1 className="text-2xl md:text-5xl font-display text-text-main tracking-tight font-bold">
+          Configuração <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Manual</span> ou <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">Automática</span>
         </h1>
-        <p className="text-slate-400 text-sm md:text-base border-l-2 border-primary/30 pl-4 max-w-2xl mx-auto md:mx-0">
-          Personalize sua jornada de estudos. Use nossa IA para extrair informações do edital ou configure cada detalhe manualmente.
+        <p className="text-text-sub text-[11px] md:text-base border-l-2 border-primary/30 pl-4 max-w-2xl">
+          Personalize sua jornada de estudos. Use nosso sistema para extrair informações do edital ou configure cada detalhe manualmente.
         </p>
       </header>
 
@@ -198,12 +198,12 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         <button
           onClick={() => setActiveTab('ai')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all",
+            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
             activeTab === 'ai' ? "bg-white text-slate-950 shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
           <Sparkles className="w-4 h-4 cursor-default" />
-          Extração por IA
+          Automático
         </button>
         <button
           onClick={() => setActiveTab('manual')}
@@ -302,8 +302,8 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
                   <Sparkles className="w-7 h-7" />
                  </div>
                 <div className="space-y-0.5">
-                  <h2 className="text-2xl font-display text-text-main tracking-tight">Análise de Edital</h2>
-                  <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Processamento automático do seu documento</p>
+                  <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">Análise de Edital</h2>
+                  <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Processamento automático do seu documento</p>
                 </div>
               </div>
 
