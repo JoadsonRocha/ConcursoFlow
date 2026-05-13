@@ -816,16 +816,21 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                   onClick={() => setPreviewMindMap(m)}
                   className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
                 >
-                  <div className="aspect-square bg-slate-50 rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100">
+                  <div className="aspect-square bg-white rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100 shadow-inner">
                     {m.svgData?.[0] ? (
-                      <div className="w-full h-full flex items-center justify-center p-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                         <div className="scale-[0.12] origin-center pointer-events-none" dangerouslySetInnerHTML={{ __html: m.svgData[0] }} />
+                      <div className="w-full h-full flex items-center justify-center p-1 opacity-80 group-hover:opacity-100 transition-opacity overflow-hidden">
+                         <div 
+                           className="w-[800px] h-[1131px] scale-[0.08] sm:scale-[0.1] origin-center pointer-events-none [&>svg]:w-full [&>svg]:h-full" 
+                           dangerouslySetInnerHTML={{ __html: m.svgData[0] }} 
+                         />
                       </div>
                     ) : (
                       <Share2 className="w-6 h-6 text-slate-300" />
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5">
-                      <Search className="w-4 h-4 text-indigo-600" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/5 backdrop-blur-[1px]">
+                      <div className="bg-white/90 p-2 rounded-full shadow-sm">
+                        <Search className="w-4 h-4 text-primary" />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1">
