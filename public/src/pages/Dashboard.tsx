@@ -349,7 +349,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                                   onDelete(c.id);
                                 }
                               }}
-                              className="p-3 text-text-sub hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50"
+                              className="p-3 text-text-sub hover:text-red-500 opacity-40 sm:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50"
                               title="Excluir Edital"
                             >
                               <Trash2 className="w-4 h-4" />

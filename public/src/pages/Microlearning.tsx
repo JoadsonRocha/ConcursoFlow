@@ -760,12 +760,12 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <div 
                   key={card.id} 
                   onClick={() => setPreviewFlashcard(card)}
-                  className="p-5 bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                  className="p-5 bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col h-full"
                 >
-                  <div className="flex justify-between items-start gap-4 mb-3">
-                    <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-md">
-                      {card.subject || 'Geral'}
-                    </span>
+                  <div className="flex justify-between items-start gap-4 mb-4">
+                    <div className="w-10 h-10 bg-accent/5 rounded-xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
+                      <BrainCircuit className="w-5 h-5" />
+                    </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={(e) => {
@@ -791,8 +791,14 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                       </button>
                     </div>
                   </div>
-                  <h4 className="text-sm font-bold text-text-main mb-2 line-clamp-2">{card.front}</h4>
-                  <p className="text-xs text-text-sub italic line-clamp-3">{card.back}</p>
+                  
+                  <div className="flex-1 space-y-2">
+                    <div className="text-[10px] font-bold text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-md inline-block">
+                      {card.subject || 'Geral'}
+                    </div>
+                    <h4 className="text-sm font-bold text-text-main line-clamp-2">{card.front}</h4>
+                    <p className="text-[11px] text-text-sub italic line-clamp-2 leading-relaxed">{card.back}</p>
+                  </div>
                 </div>
               ))
             )}
@@ -810,11 +816,13 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                   onClick={() => setPreviewMindMap(m)}
                   className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
                 >
-                  <div className="aspect-square bg-slate-50 rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center">
+                  <div className="aspect-square bg-slate-50 rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100">
                     {m.svgData?.[0] ? (
-                      <div className="scale-[0.08] origin-center opacity-30 pointer-events-none" dangerouslySetInnerHTML={{ __html: m.svgData[0] }} />
+                      <div className="w-full h-full flex items-center justify-center p-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                         <div className="scale-[0.12] origin-center pointer-events-none" dangerouslySetInnerHTML={{ __html: m.svgData[0] }} />
+                      </div>
                     ) : (
-                      <Share2 className="w-5 h-5 text-slate-300" />
+                      <Share2 className="w-6 h-6 text-slate-300" />
                     )}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5">
                       <Search className="w-4 h-4 text-indigo-600" />
@@ -868,7 +876,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             Treinamento e Prática
           </div>
           <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold italic">
-            Treinamento
+            Revisão
           </h1>
           <div className="flex items-center gap-4 mt-2">
             <p className="text-text-sub text-[10px] md:text-sm max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium italic flex-1">

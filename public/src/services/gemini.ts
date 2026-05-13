@@ -97,30 +97,30 @@ export const generateSVGMap = async (prompt: string, quantity: number = 3) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `VOCÊ É O MAIOR ESTRATEGISTA DE CONCURSOS PÚBLICOS DO BRASIL.
-      Seu objetivo é criar uma "ESQUEMATIZAÇÃO TÁTICA" (Mapa Mental de Alto Impacto) sobre o tema: "${prompt}".
+      contents: `VOCÊ É UM PROFESSOR DE CONCURSOS ESTRATEGISTA, ESPECIALISTA EM REVISÕES POR MAPAS MENTAIS DE ALTO IMPACTO.
+      Seu objetivo é criar uma "ESQUEMATIZAÇÃO TÁTICA PROFISSIONAL" (Mapa Mental de Elite) sobre o tema: "${prompt}".
       
-      ESTRUTURA DO MAPA (FOCO EM CONCURSEIRO):
-      1. TEMA CENTRAL: Destaque o núcleo do assunto.
-      2. RAMIFICAÇÕES DE 1º NÍVEL: Grandes grupos, regimes, naturezas jurídicas ou divisões clássicas da doutrina/jurisprudência.
-      3. RAMIFICAÇÕES DE 2º NÍVEL: Detalhes críticos, prazos, quóruns, exceções e o "PULO DO GATO" que as bancas (Ex: FGV, FCC, CEBRASPE) adoram cobrar.
-      4. MNEMÔNICOS E GATILHOS: Inclua mnemônicos clássicos e gatilhos de memorização visual.
+      DIRETRIZ DE ENGENHARIA DE REVISÃO: Pensamento de Professor Especialista.
       
-      NÍVEL DE PROFUNDIDADE:
-      - Foque no que é cobrado em provas de nível superior (Analista, Auditor, Magistratura).
-      - Use palavras-chave estratégicas. Evite textos longos.
-      - Use cores contrastantes para diferenciar conceitos opostos (ex: Facultativo vs Obrigatório).
-      - Adicione ícones ou sinais (≠, ✅, ❌, ⚠️) para destacar pontos de confusão comum.
+      DIRETRIZES DE DESIGN TÁTICO:
+      1. PERSONA: Mentor de elite para concursos de alto nível (Auditor, Juiz, Promotor, Analista).
+      2. PROFUNDIDADE: Detalhado, técnico e exaustivo nos pontos de incidência (Doutrina, Lei e Jurisprudência).
+      3. ESTRUTURA DO MAPA:
+         - TEMA CENTRAL: Destaque visual impactante.
+         - RAMIFICAÇÕES DE 1º NÍVEL: Grandes blocos, classificações e regimes.
+         - RAMIFICAÇÕES DE 2º NÍVEL: Exceções, Prazos, Quóruns, e as "Entrelinhas" das bancas (FGV, FCC, CEBRASPE).
+         - MNEMÔNICOS: Inclua gatilhos de memorização visual e mnemônicos operacionais.
       
-      REQUISITOS TÉCNICOS SVG:
-      - Divida o conteúdo em exatamente ${quantity} SVG(s) independentes e lógicos.
+      REQUISITOS VISUAIS E TÉCNICOS (SVG):
+      - MARCA D'ÁGUA OBRIGATÓRIA: Adicione o texto "STRATIS PLANNER" no fundo do SVG, com opacidade baixíssima (fill="rgba(0,0,0,0.05)" ou opacity="0.08"), servindo como fundo protetor.
       - Design limpo, proporção A4 vertical (viewBox="0 0 800 1131").
-      - Todo texto deve estar dentro de tags <text> com fontes legíveis.
-      - Use linhas e setas dinâmicas para conectar o fluxo de pensamento.
-      - Produza código SVG minimalista, profissional e perfeitamente válido.
+      - Use cores contrastantes e hierarquia visual clara (temas principais com fontes maiores/negrito).
+      - Todo texto deve estar dentro de tags <text> com fontes perfeitamente legíveis.
+      - Use linhas e setas dinâmicas para guiar o fluxo de raciocínio.
+      - O SVG deve ser profissional, elegante e funcional.
       
       SAÍDA:
-      Retorne um array JSON com exatamente ${quantity} strings de código SVG.`,
+      Divida o conteúdo em exatamente ${quantity} SVG(s) independentes e lógicos. Retorne um array JSON com exatamente ${quantity} strings de código SVG.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {

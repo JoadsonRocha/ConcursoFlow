@@ -213,7 +213,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
                       onDelete(c.id);
                     }
                   }}
-                  className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                  className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-40 sm:opacity-0 group-hover:opacity-100"
                   title="Excluir"
                 >
                   <Trash2 className="w-4 h-4" />

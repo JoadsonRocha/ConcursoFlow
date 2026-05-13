@@ -24,9 +24,16 @@ export async function generateFlashcards(topic: string, count: number = 5): Prom
     const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Gere ${count} flashcards de estudo para concurso público sobre o tema: "${topic}". 
-      Os cards devem ser no formato Pergunta (frente) e Resposta (verso).
-      As respostas devem ser concisas mas completas, focando em pontos que costumam cair em provas.`,
+      contents: `VOCÊ É UM PROFESSOR DE CONCURSOS ESPECIALISTA EM REVISÕES ATIVAS E MEMORIZAÇÃO DE ALTO DESEMPENHO.
+      Gere ${count} flashcards de estudo "NÍVEL ESPECIALISTA" para concurso público sobre o tema: "${topic}". 
+
+      DIRETRIZES DE DESIGN TÁTICO:
+      1. PERSONA: Responda como um mentor de elite que conhece as "pegadinhas" das principais bancas (FGV, FCC, CEBRASPE).
+      2. ESTRUTURA: Pergunta (frente) instigante e Resposta (verso) densa, técnica e completa.
+      3. CONTEÚDO: Foque em prazos, quóruns, exceções, distinções doutrinárias e o "pulo do gato" que separa o aprovado do amador.
+      4. QUALIDADE: Use linguagem jurídica/técnica precisa. Evite obviedades.
+
+      Os cards devem ser no formato Pergunta (frente) e Resposta (verso).`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
