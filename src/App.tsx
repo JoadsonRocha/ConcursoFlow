@@ -28,9 +28,11 @@ import Feedback from './pages/Feedback';
 import Landing from './pages/Landing';
 import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import CookiePolicy from './pages/CookiePolicy';
 import Perfil from './pages/Perfil';
 import Auth from './pages/Auth';
 import Pareto from './pages/Pareto';
+import BrandLogo from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -42,7 +44,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string,
   <Link 
     to={to} 
     className={cn(
-      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-sm font-semibold uppercase tracking-wider",
+      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-[11px] font-bold uppercase tracking-wider",
       active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main",
       collapsed ? "justify-center px-0" : "px-4"
     )}
@@ -73,9 +75,8 @@ export default function App() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setIsSidebarOpen(true);
-      } else {
+      // Set initial desktop state but don't force it continuously
+      if (window.innerWidth <= 768) {
         setIsSidebarOpen(false);
       }
     };
@@ -330,15 +331,9 @@ export default function App() {
           ? "translate-x-0 w-72 md:w-[280px] px-6 py-8 shadow-2xl md:shadow-none" 
           : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-8"
       )}>
-        <div className="mb-14 flex items-center gap-3">
-          <div className="w-10 h-10 primary-button rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          {isSidebarOpen && (
-            <div className="flex flex-col">
-            </div>
-          )}
-        </div>
+        <Link to="/" className="mb-14 px-2 block hover:opacity-80 transition-opacity">
+          <BrandLogo showText={false} size={isSidebarOpen ? "md" : "sm"} />
+        </Link>
 
         <div className="space-y-6 flex-grow overflow-y-auto no-scrollbar">
           <div>
@@ -349,58 +344,18 @@ export default function App() {
               <SidebarItem to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
-          <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Saved</span>}
-            <div className="space-y-1">
-              {contests.length === 0 ? (
-                isSidebarOpen && <div className="px-5 py-4 text-xs text-text-sub font-medium uppercase tracking-wider italic border border-dashed border-border rounded-xl">Nenhum salvo</div>
-              ) : (
-                contests.slice(0, 4).map(c => (
-                  <div key={c.id} className="group relative flex items-center gap-2">
-                    <button 
-                      onClick={() => setCurrentContest(c)}
-                      className={cn(
-                        "flex-1 flex items-center gap-4 py-3 rounded-xl transition-all text-left overflow-hidden border",
-                        currentContest?.id === c.id 
-                          ? "bg-primary/5 text-primary border-primary/20" 
-                          : "bg-transparent border-transparent text-text-sub hover:bg-slate-50 ",
-                        isSidebarOpen ? "px-4" : "justify-center px-0"
-                      )}
-                      title={!isSidebarOpen ? c.role : undefined}
-                    >
-                      <Target className={cn("w-4 h-4 shrink-0", currentContest?.id === c.id ? "text-primary" : "text-text-sub opacity-50")} />
-                      {isSidebarOpen && (
-                        <div className="overflow-hidden">
-                          <div className="text-xs font-bold uppercase tracking-tight truncate leading-none text-text-main">{c.role}</div>
-                          <div className="text-xs opacity-40 font-medium uppercase tracking-wide truncate mt-1">{c.name}</div>
-                        </div>
-                      )}
-                    </button>
-                    {isSidebarOpen && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteContest(c.id); }}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-text-sub hover:text-red-500 rounded-lg transition-all absolute right-2"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+
         </div>
 
         <div className="mt-auto pt-6 border-t border-border">
           <Link 
             to="/configuracoes"
             className={cn(
-              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-xs font-semibold uppercase tracking-wider",
+              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-[11px] font-bold uppercase tracking-wider",
               location.pathname === '/configuracoes' ? "bg-slate-100 text-text-main" : "text-text-sub hover:bg-slate-50 ",
               isSidebarOpen ? "px-4" : "justify-center px-0"
             )}
@@ -418,15 +373,18 @@ export default function App() {
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={cn("p-2 bg-white border border-border hover:bg-slate-50 rounded-lg transition-all text-text-sub md:hidden")}
+              className={cn("p-2 bg-white border border-border hover:bg-slate-50 rounded-lg transition-all text-text-sub")}
             >
-              <Menu className="w-5 h-5 transition-transform" />
+              <Menu className={cn("w-5 h-5 transition-transform", isSidebarOpen ? "rotate-90" : "rotate-0")} />
             </button>
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase">
+            <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
+              <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
                 Stratis Planner
               </h2>
-            </div>
+              <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
+                Inteligência para concursos
+              </span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-5">
@@ -518,7 +476,7 @@ export default function App() {
         <div className="p-5 md:p-10 max-w-7xl mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
-              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} />} />
+              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={setCurrentContest} />} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
@@ -529,6 +487,7 @@ export default function App() {
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
             </Routes>
           </AnimatePresence>
         </div>

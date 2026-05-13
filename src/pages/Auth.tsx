@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 export default function Auth() {
   const { login, loginEmail, signup, resetPassword, user } = useAuth();
@@ -87,15 +88,7 @@ export default function Auth() {
 
       <div className="hidden md:flex md:w-1/2 lg:w-3/5 bg-white backdrop-blur-3xl relative items-center justify-center p-20 overflow-hidden border-r border-border ">
         <div className="relative z-10 space-y-10 max-w-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white shadow-xl shadow-primary/20">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis Planner</span>
-              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-70">Plataforma</span>
-            </div>
-          </div>
+          <BrandLogo size="lg" />
           
           <div className="space-y-6">
             <h1 className="text-4xl lg:text-6xl font-display text-text-main leading-tight tracking-tight font-bold">
@@ -129,10 +122,7 @@ export default function Auth() {
             </Link>
             
             <div className="md:hidden flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <span className="text-xl font-display font-bold text-text-main tracking-tighter uppercase italic">Stratis Planner</span>
+              <BrandLogo size="md" />
             </div>
 
             <div className="space-y-2">
@@ -261,6 +251,15 @@ export default function Auth() {
                 </motion.div>
               )}
 
+              {authMode === 'signup' && (
+                <p className="text-[10px] text-text-sub font-medium leading-relaxed px-1">
+                  Ao ativar seu acesso, você declara que concorda com nossos{' '}
+                  <Link to="/termos" className="text-primary hover:underline">Termos de Uso</Link>,{' '}
+                  <Link to="/privacidade" className="text-primary hover:underline">Política de Privacidade</Link> e{' '}
+                  <Link to="/cookies" className="text-primary hover:underline">Cookies</Link>.
+                </p>
+              )}
+
               <button 
                 type="submit"
                 disabled={loading}
@@ -317,9 +316,14 @@ export default function Auth() {
             </form>
           )}
 
-          <footer className="pt-10 text-center">
-             <p className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-60">
-                Stratis Planner v2.5.0 — Security Layer Active
+          <footer className="pt-10 text-center space-y-4">
+             <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-60">
+                <Link to="/termos" className="hover:text-primary">Termos</Link>
+                <Link to="/privacidade" className="hover:text-primary">Privacidade</Link>
+                <Link to="/cookies" className="hover:text-primary">Cookies</Link>
+             </div>
+             <p className="text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-40">
+                Stratis Planner 2026 — LGPD Compliance
              </p>
           </footer>
         </div>

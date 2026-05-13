@@ -1,84 +1,120 @@
 import React from 'react';
-import { ShieldCheck, ChevronLeft, Sparkles } from 'lucide-react';
+import { FileText, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function TermsOfUse() {
   return (
-    <div className="max-w-4xl mx-auto space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 pt-10 px-6">
-      <Link to="/" className="inline-flex items-center gap-3 text-xs font-black text-slate-500 uppercase tracking-wider hover:text-primary transition-all group">
-        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary transition-all">
-          <ChevronLeft className="w-4 h-4" />
-        </div>
-        Retornar ao Centro de Controle
+    <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in duration-700">
+      <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-text-sub hover:text-primary transition-colors mb-12">
+        <ChevronLeft className="w-4 h-4" />
+        Voltar ao início
       </Link>
 
-      <header className="space-y-8 text-center pt-8">
-        <div className="w-24 h-24 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary mx-auto shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-primary/10 blur-2xl animate-pulse"></div>
-          <ShieldCheck className="w-10 h-10 relative z-10" />
-        </div>
-        <div className="space-y-3">
-          <h1 className="text-4xl md:text-7xl font-display leading-[0.9] text-text-main tracking-tighter font-black italic">
-            Termos de <span className="italic text-primary animate-pulse">Uso.</span>
+      <header className="mb-16">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+            <FileText className="w-6 h-6" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-text-main tracking-tight">
+            Termos de Uso
           </h1>
-          <p className="text-slate-500 text-xs font-black uppercase tracking-[0.5em] italic">Rise Protocol v2.5.0 — Última Modificação: Mai/2026</p>
         </div>
+        <p className="text-text-sub text-sm font-medium">Última atualização: 13 de maio de 2026</p>
       </header>
 
-      <div className="rise-card p-10 md:p-20 space-y-16">
-        <section className="space-y-6 relative group">
-          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="text-xs font-black text-primary uppercase tracking-wider">Seção 01</div>
-            <Sparkles className="w-4 h-4 text-primary opacity-50" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-display text-text-main italic font-bold">Aceitação dos Protocolos</h2>
-          <p className="text-text-sub leading-relaxed font-medium italic text-lg">
-            Ao acessar e utilizar a infraestrutura Stratis Planner, você concorda em cumprir e estar vinculado a estes Protocolos de Uso. Se você não concordar com qualquer fragmento destes termos, a conexão deve ser interrompida imediatamente.
+      <div className="prose prose-slate max-w-none space-y-12 text-text-main">
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">1. Sobre o Stratis Planner</h2>
+          <p className="leading-relaxed">
+            O Stratis Planner é uma plataforma de planejamento inteligente para concursos públicos e exames. Utilizamos inteligência artificial para ajudar você a criar planos de estudo personalizados, resumos, explicações, flashcards e outros recursos educacionais.
           </p>
         </section>
 
-        <section className="space-y-6 relative group">
-          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-accent/20 group-hover:bg-accent transition-colors"></div>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="text-xs font-black text-accent uppercase tracking-wider">Seção 02</div>
-            <Sparkles className="w-4 h-4 text-accent opacity-50" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-display text-text-main italic font-bold">Arquitetura de Serviço</h2>
-          <p className="text-text-sub leading-relaxed font-medium italic text-lg">
-            Stratis Planner é um ecossistema tático que mobiliza Inteligência Artificial para verticalizar editais e otimizar a progressão de disciplinas. Nossos serviços são fornecidos "como estão", sob licença de uso individual.
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">2. Aceitação dos Termos</h2>
+          <p className="leading-relaxed">
+            O uso da plataforma implica aceitação integral destes Termos. Caso não concorde com qualquer disposição aqui presente, interrompa o uso do serviço imediatamente.
           </p>
         </section>
 
-        <section className="space-y-6 relative group">
-          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-white/10 group-hover:bg-white/30 transition-colors"></div>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="text-xs font-black text-slate-700 uppercase tracking-wider">Seção 03</div>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-display text-text-main italic font-bold">Integridade da Conta</h2>
-          <p className="text-text-sub leading-relaxed font-medium italic text-lg">
-            A segurança da credencial é de responsabilidade única do usuário. Qualquer anomalia ou acesso não autorizado deve ser transmitido imediatamente à nossa célula de suporte central.
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">3. Cadastro e Conta</h2>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>É necessário criar uma conta com dados verdadeiros e atualizados.</li>
+            <li>Você é responsável por manter a confidencialidade da sua senha e por todas as atividades realizadas em sua conta.</li>
+            <li>Não é permitido compartilhar login com terceiros.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">4. Licença de Uso</h2>
+          <p className="leading-relaxed">
+            Concedemos a você uma licença pessoal, limitada, não exclusiva e revogável para uso da plataforma exclusivamente para fins de estudo pessoal.
           </p>
         </section>
 
-        <section className="space-y-6 relative group">
-          <div className="absolute -left-10 top-0 h-full w-1 rounded-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="text-xs font-black text-primary uppercase tracking-wider">Seção 04</div>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-display text-text-main italic font-bold">Propriedade Intelectual</h2>
-          <p className="text-text-sub leading-relaxed font-medium italic text-lg">
-            Todo o código, arquitetura, design e algoritmos de verticalização são propriedades exclusivas da Stratis Planner e protegidos por leis internacionais de propriedade intelectual.
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">5. Conteúdo Gerado por IA</h2>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>O conteúdo gerado pela IA serve apenas como ferramenta de apoio ao estudo.</li>
+            <li>Não garantimos precisão absoluta das informações. Você deve sempre validar com fontes oficiais (editais, leis, gabaritos etc.).</li>
+            <li>A aprovação em concursos depende exclusivamente do seu esforço e dedicação.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">6. Regras de Conduta</h2>
+          <p className="font-medium mb-2">É proibido:</p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Copiar, reproduzir ou distribuir o conteúdo da plataforma para fins comerciais;</li>
+            <li>Usar a plataforma para treinar outros modelos de IA;</li>
+            <li>Realizar scraping ou extração automatizada de dados;</li>
+            <li>Compartilhar conta ou praticar atos ilícitos.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">7. Pagamentos e Cancelamento</h2>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Os preços estão disponíveis na página de planos.</li>
+            <li>Você pode cancelar sua assinatura a qualquer momento.</li>
+            <li>Reembolso segue o Código de Defesa do Consumidor (direito de arrependimento em até 7 dias para contratações online).</li>
+          </ul>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">8. Limitação de Responsabilidade</h2>
+          <p className="leading-relaxed">
+            A plataforma é oferecida "no estado em que se encontra". Não nos responsabilizamos por danos indiretos, interrupções sistêmicas ou resultados individuais em exames.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">9. Propriedade Intelectual</h2>
+          <p className="leading-relaxed">
+            Todo o conteúdo, tecnologia e marca Stratis Planner são de nossa propriedade exclusiva e protegidos por leis de direitos autorais.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">10. Alterações</h2>
+          <p className="leading-relaxed">
+            Podemos atualizar estes Termos periodicamente. Avisaremos sobre mudanças relevantes. O uso continuado significa aceitação das novas versões.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">11. Lei Aplicável</h2>
+          <p className="leading-relaxed">
+            Estes Termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de Boa Vista/RR para dirimir quaisquer questões.
           </p>
         </section>
       </div>
 
-      <footer className="text-center py-20 flex flex-col items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis Planner — 2026 Edition</span>
-        </div>
-        <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Todos os direitos reservados à célula de desenvolvimento.</p>
+      <footer className="mt-20 pt-8 border-t border-border text-center">
+        <p className="text-xs text-text-sub font-medium uppercase tracking-widest">
+          © {new Date().getFullYear()} Stratis Planner. Todos os direitos reservados.
+        </p>
       </footer>
     </div>
   );

@@ -10,23 +10,30 @@ import {
   ArrowRight,
   Target,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  Plus,
+  PencilLine
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import BrandLogo from '../components/BrandLogo';
 
 interface DashboardProps {
   contest: Contest;
+  contests: Contest[];
   onUpdate: (contest: Contest) => void;
+  onSwitchContest: (contest: Contest) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
+const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest }) => {
   const { user } = useAuth();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showLogModal, setShowLogModal ] = useState(false);
   const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -215,9 +222,9 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
         <motion.div 
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 4 }}
-          className="w-24 h-24 bg-primary/10 border border-primary/20 rounded-3xl flex items-center justify-center text-primary shadow-xl"
+          className="w-24 h-24 bg-white border border-primary/20 rounded-3xl flex items-center justify-center shadow-xl"
         >
-          <Sparkles className="w-12 h-12" />
+          <BrandLogo showText={false} size="lg" />
         </motion.div>
         <div className="space-y-6">
           <h2 className="text-3xl md:text-5xl font-display text-text-main tracking-tight font-bold italic">
@@ -241,34 +248,116 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-      <header className="space-y-0.5">
-        <div className="flex items-center gap-2 mb-0.5">
-           <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
-           <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub">Resumo de Estudos</span>
-        </div>
-        <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">
-          Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Estudante'}</span>
-        </h2>
-        <div className="flex justify-between items-end mt-2">
-          <div className="space-y-1">
-            <p className="text-text-sub text-xs font-medium">
-              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub">Painel de Performance</span>
+          </div>
+          <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">
+            Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Estudante'}</span>
+          </h2>
+          <p className="text-text-sub text-xs font-medium">
+            {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          <div className="mt-2 min-h-[16px]">
             {todayHistory && (todayHistory.hours > 0 || todayHistory.questions > 0) && (
-              <div className="flex gap-3 text-xs font-bold text-text-sub">
-                {todayHistory.hours > 0 && <span><Clock className="w-3.5 h-3.5 inline mr-1 text-primary"/>{todayHistory.hours}h</span>}
-                {todayHistory.questions > 0 && <span><Target className="w-3.5 h-3.5 inline mr-1 text-secondary"/>{todayHistory.questions}q</span>}
+              <div className="flex gap-3 text-[10px] font-bold text-text-sub uppercase tracking-wider animate-in fade-in slide-in-from-left-2">
+                {todayHistory.hours > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/5 rounded-full border border-primary/10">
+                    <Clock className="w-2.5 h-2.5 text-primary"/>
+                    {todayHistory.hours}h
+                  </span>
+                )}
+                {todayHistory.questions > 0 && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-secondary/5 rounded-full border border-secondary/10">
+                    <Target className="w-2.5 h-2.5 text-secondary"/>
+                    {todayHistory.questions}q
+                  </span>
+                )}
               </div>
             )}
           </div>
+        </div>
+
+        <div className="flex items-stretch gap-2">
           <button 
             onClick={() => setShowLogModal(true)}
-            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:underline hover:bg-primary/5 px-2 py-1.5 rounded-lg transition-all"
+            className="flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20 group border border-transparent"
           >
-            <Sparkles className="w-4 h-4" /> Registrar Hoje
+            <PencilLine className="w-4 h-4 text-white" />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Registrar</span>
           </button>
+
+          <div className="relative">
+            <button 
+              onClick={() => setIsSelectorOpen(!isSelectorOpen)}
+              className="h-full flex items-center gap-3 bg-white border border-border px-5 py-3 rounded-2xl hover:border-primary/30 transition-all shadow-sm group min-w-[180px] md:min-w-[200px] justify-between"
+            >
+            <div className="flex flex-col items-start text-left">
+              <span className="text-[9px] font-bold text-primary uppercase tracking-widest leading-none mb-1">Meus Concursos</span>
+              <span className="text-xs font-black text-text-main uppercase tracking-tight truncate max-w-[150px]">
+                {contest.role || 'Selecionar Cargo'}
+              </span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 text-text-sub transition-transform", isSelectorOpen ? "rotate-180" : "")} />
+          </button>
+
+          <AnimatePresence>
+            {isSelectorOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsSelectorOpen(false)} />
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-3 w-72 bg-white border border-border rounded-2xl shadow-2xl z-50 overflow-hidden"
+                >
+                  <div className="p-4 border-b border-border bg-slate-50/50">
+                    <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Trocar de Plano</span>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
+                    {contests.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-text-sub font-bold uppercase italic tracking-widest">Nenhum cargo salvo</div>
+                    ) : (
+                      contests.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => {
+                            onSwitchContest(c);
+                            setIsSelectorOpen(false);
+                          }}
+                          className={cn(
+                            "w-full px-5 py-4 flex flex-col items-start gap-1 transition-all hover:bg-slate-50 border-l-4",
+                            contest.id === c.id ? "border-primary bg-primary/5" : "border-transparent"
+                          )}
+                        >
+                          <span className={cn("text-xs font-black uppercase tracking-tight", contest.id === c.id ? "text-primary" : "text-text-main")}>
+                            {c.role}
+                          </span>
+                          <span className="text-[10px] font-medium text-text-sub uppercase tracking-wider opacity-60">
+                            {c.name}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-3 border-t border-border bg-slate-50/30">
+                    <Link 
+                      to="/configuracoes" 
+                      onClick={() => setIsSelectorOpen(false)}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-border rounded-xl text-[10px] font-black text-text-main uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-primary" /> Gerenciar Concursos
+                    </Link>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
-      </header>
+      </div>
+    </header>
 
 
       {/* Main Countdown Card */}
@@ -556,6 +645,16 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Mobile FAB for Record */}
+      <div className="fixed bottom-6 right-6 z-[100] md:hidden">
+        <button 
+          onClick={() => setShowLogModal(true)}
+          className="w-14 h-14 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center active:scale-90 transition-transform border border-white/20"
+        >
+          <PencilLine className="w-6 h-6" />
+        </button>
+      </div>
     </div>
   );
 };

@@ -76,11 +76,6 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
           <p className="text-text-sub text-xs md:text-sm max-w-2xl leading-relaxed">
             Este painel organiza o conteúdo do seu edital. Marque os tópicos conforme avança em seus estudos.
           </p>
-          <div className="flex flex-wrap gap-4 text-xs">
-            <a href="https://www.abntcatalogo.com.br/norma.aspx?ID=3057" target="_blank" className="text-primary hover:underline font-bold">📋 ISO/IEC 27001</a>
-            <a href="https://www.gov.br/cidadania/pt-br/acesso-a-informacao/lgpd" target="_blank" className="text-primary hover:underline font-bold">🔒 LGPD</a>
-            <a href="https://www.fcc.org.br/" target="_blank" className="text-primary hover:underline font-bold">📚 FCC</a>
-          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 mt-8">
@@ -256,13 +251,6 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                       title="Notas de Erro"
                                     >
                                       <PenTool className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                      onClick={(e) => handleAiAsk(e, sub.name, topic.id, topic.name)}
-                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-all flex items-center justify-center shrink-0"
-                                      title="Resumo"
-                                    >
-                                      <BrainCircuit className="w-4 h-4" />
                                     </button>
                                   </div>
                                </div>

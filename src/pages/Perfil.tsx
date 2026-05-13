@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -347,8 +348,13 @@ export default function Perfil() {
           </div>
         </section>
 
-        <div className="text-center pt-8 opacity-20">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stratis Planner Protocol v3.0.0</p>
+        <div className="text-center pt-8 space-y-4">
+          <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-text-sub uppercase tracking-widest opacity-40">
+            <Link to="/termos" className="hover:text-primary transition-colors">Termos de Uso</Link>
+            <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+            <Link to="/cookies" className="hover:text-primary transition-colors">Cookies</Link>
+          </div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider opacity-20">Stratis Planner Protocol v3.0.0</p>
         </div>
       </div>
     </div>

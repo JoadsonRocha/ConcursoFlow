@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import BrandLogo from '../components/BrandLogo';
 
 const Landing = () => {
   const { login, loginEmail, signup } = useAuth();
@@ -118,12 +119,8 @@ const Landing = () => {
         isScrolled ? "bg-white/90 backdrop-blur-xl border-b border-border shadow-sm py-3" : "bg-transparent py-5"
       )}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 md:gap-3">
-              <img src="/logo.png" alt="Stratis" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
-            <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis Planner</span>
-              <span className="text-[9px] md:text-xs font-bold text-primary uppercase tracking-wider mt-0.5 opacity-80">Inteligência para concursos</span>
-            </div>
+          <Link to="/" className="flex items-center gap-2 md:gap-3 transition-transform hover:scale-105">
+            <BrandLogo size="md" />
           </Link>
 
           
@@ -313,12 +310,7 @@ const Landing = () => {
       <footer className="py-16 border-t border-border bg-white px-6 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
            <div className="col-span-1 md:col-span-2 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
-                  <img src="/logo.png" alt="Stratis" className="w-4 h-4 object-contain" />
-                </div>
-                <span className="text-lg font-display font-bold text-text-main tracking-tight uppercase">Stratis Planner</span>
-              </div>
+              <BrandLogo size="md" />
               <p className="text-text-sub max-w-sm text-sm font-medium leading-relaxed">
                 Stratis Planner. Tecnologia de alto desempenho para concurseiros estrategistas.
               </p>
@@ -337,6 +329,7 @@ const Landing = () => {
                  <ul className="space-y-2 text-xs font-semibold text-text-sub">
                     <li><Link to="/termos" className="hover:text-primary transition-colors uppercase tracking-wider">Termos</Link></li>
                     <li><Link to="/privacidade" className="hover:text-primary transition-colors uppercase tracking-wider">Privacidade</Link></li>
+                    <li><Link to="/cookies" className="hover:text-primary transition-colors uppercase tracking-wider">Cookies</Link></li>
                  </ul>
               </div>
            </div>
