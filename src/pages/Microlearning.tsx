@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Contest } from '../types';
+import { toast } from 'sonner';
 import { 
   BrainCircuit, 
   Lightbulb, 
@@ -15,18 +16,26 @@ import {
   MessageSquare,
   Search,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  X,
+  Trash2,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateQuizQuestions } from '../services/gemini';
 import { db, auth } from '../lib/firebase';
-import { collection, query, where, onSnapshot, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, limit, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import FlashcardCreator from '../components/FlashcardCreator';
 import FlashcardDeck from '../components/FlashcardDeck';
+import SVGMapCreator from '../components/SVGMapCreator';
+import SVGMapViewer from '../components/SVGMapViewer';
+import { Node, Edge } from 'reactflow';
 
 export default function Microlearning({ contest }: { contest: Contest }) {
-  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards'>('selection');
+  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>('selection');
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -35,8 +44,19 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   
   const [showCreator, setShowCreator] = useState(false);
+  const [showMindMapCreator, setShowMindMapCreator] = useState(false);
+  const [mapToDelete, setMapToDelete] = useState<string | null>(null);
+  const [flashcardToDelete, setFlashcardToDelete] = useState<string | null>(null);
   const [flashcards, setFlashcards] = useState<any[]>([]);
+  const [personalMindMaps, setPersonalMindMaps] = useState<any[]>([]);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(true);
+  const [librarySubTab, setLibrarySubTab] = useState<'flashcards' | 'maps'>('flashcards');
   const [dueCards, setDueCards] = useState<any[]>([]);
+  const [previewMindMap, setPreviewMindMap] = useState<any | null>(null);
+  const [previewFlashcard, setPreviewFlashcard] = useState<any | null>(null);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishType, setPublishType] = useState<'map' | 'flashcard'>('map');
+  const [publishForm, setPublishForm] = useState({ title: '', description: '' });
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -54,10 +74,130 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         return reviewDate <= now;
       });
       setDueCards(due);
+      setIsLibraryLoading(false);
+    }, (err) => {
+      console.error(err);
+      setIsLibraryLoading(false);
     });
 
-    return () => unsubscribe();
+    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', auth.currentUser.uid));
+    const unsubscribeMaps = onSnapshot(qMaps, (snapshot) => {
+      setPersonalMindMaps(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setIsLibraryLoading(false);
+    }, (err) => {
+      console.error(err);
+      setIsLibraryLoading(false);
+    });
+
+    return () => {
+        unsubscribe();
+        unsubscribeMaps();
+    };
   }, []);
+
+  const saveMindMap = async (svgData: string[], title: string) => {
+    if (!auth.currentUser) return;
+    try {
+      await addDoc(collection(db, 'mindmaps'), {
+        title,
+        svgData,
+        isPublic: false,
+        ownerId: auth.currentUser.uid,
+        createdAt: serverTimestamp(),
+        likesCount: 0,
+        clonesCount: 0
+      });
+      toast.success("Mapa mental salvo!");
+      setShowMindMapCreator(false);
+    } catch (err) {
+      console.error("Erro ao salvar mapa mental:", err);
+      toast.error("Erro ao salvar mapa mental: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const deleteMindMap = (e: any, id: string) => {
+    e.stopPropagation();
+    setMapToDelete(id);
+  };
+
+  const confirmDeleteMindMap = async () => {
+    if (!mapToDelete) return;
+    try {
+      await deleteDoc(doc(db, 'mindmaps', mapToDelete));
+      setMapToDelete(null);
+      toast.success("Mapa mental apagado!");
+    } catch (err) {
+      console.error("Erro ao apagar mapa mental:", err);
+      toast.error("Erro ao apagar mapa mental.");
+    }
+  };
+
+  const confirmDeleteFlashcard = async () => {
+    if (!flashcardToDelete || !auth.currentUser) return;
+    try {
+      await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'flashcards', flashcardToDelete));
+      setFlashcardToDelete(null);
+      toast.success("Flashcard removido!");
+    } catch (err) {
+      console.error("Erro ao apagar flashcard:", err);
+      toast.error("Erro ao apagar flashcard.");
+    }
+  };
+
+  const publishItem = async () => {
+    console.log("Publishing item...", { publishType, previewMindMap: !!previewMindMap, previewFlashcard: !!previewFlashcard, publishForm });
+    if (!auth.currentUser) {
+      console.error("No user logged in.");
+      return;
+    }
+    const item = publishType === 'map' ? previewMindMap : previewFlashcard;
+    if (!item) {
+      console.warn("Item not found for publishing.");
+      return;
+    }
+
+    if (!publishForm.title.trim() || !publishForm.description.trim()) {
+      console.warn("Validation failed: title or description is empty.", publishForm);
+      toast.error("O título e a descrição são obrigatórios para publicar na comunidade.");
+      return;
+    }
+
+    toast.info("Publicando na comunidade...");
+
+    try {
+      if (publishType === 'map') {
+        await updateDoc(doc(db, 'mindmaps', item.id), {
+          title: publishForm.title,
+          description: publishForm.description,
+          isPublic: true,
+          ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          publishedAt: serverTimestamp(),
+        });
+        setPreviewMindMap((prev: any) => ({ ...prev, isPublic: true }));
+      } else {
+        // For flashcards, we add to shared_flashcards collection
+        await addDoc(collection(db, 'shared_flashcards'), {
+          front: item.front,
+          back: item.back,
+          subjectName: item.subject || 'Geral',
+          ownerId: auth.currentUser.uid,
+          ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          likesCount: 0,
+          clonesCount: 0,
+          title: publishForm.title,
+          description: publishForm.description,
+          createdAt: serverTimestamp(),
+        });
+        // Optionally mark local card as published if that field existed, but it's not strictly necessary for flashcards logic
+      }
+
+      toast.success(publishType === 'map' ? 'Mapa publicado!' : 'Flashcard publicado!');
+      setShowPublishModal(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao publicar: ' + err?.message);
+    }
+  };
 
   const startQuiz = async (subject: string) => {
     setLoading(true);
@@ -69,7 +209,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
       setScore(0);
       setShowResult(false);
     } catch (err) {
-      alert("Erro ao carregar quiz. Tente novamente.");
+      toast.error("Erro ao carregar quiz. Tente novamente.");
       setActiveTab('selection');
     } finally {
       setLoading(false);
@@ -132,161 +272,534 @@ export default function Microlearning({ contest }: { contest: Contest }) {
     );
   }
 
+  if (activeTab === 'library') {
+    if (previewFlashcard) {
+      return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+          <header className="flex items-center justify-between gap-4">
+            <button 
+              onClick={() => setPreviewFlashcard(null)}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="text-center flex-1 min-w-0">
+              <h2 className="text-xl font-display font-bold text-text-main italic truncate">{previewFlashcard.front}</h2>
+              <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{previewFlashcard.subject || 'Flashcard'}</p>
+            </div>
+            <button 
+              onClick={() => {
+                setPublishType('flashcard');
+                setPreviewFlashcard(previewFlashcard);
+                setPublishForm({ title: previewFlashcard.front, description: '' });
+                setShowPublishModal(true);
+              }}
+              className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+              title="Publicar na Comunidade"
+            >
+              <Sparkles className="w-5 h-5" />
+            </button>
+          </header>
+
+          <div className="space-y-6">
+            <div className="rise-card w-full bg-white border border-border shadow-sm p-8 space-y-8">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Frente / Pergunta</span>
+                  <p className="text-xl font-display font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front}"</p>
+                </div>
+                
+                <div className="h-px bg-slate-100 w-full" />
+
+                <div className="space-y-3">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verso / Resposta</span>
+                  <p className="text-base text-slate-600 leading-relaxed font-medium">
+                    {previewFlashcard.back}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setPreviewFlashcard(null)}
+                className="flex-1 bg-slate-100 text-text-main py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200"
+              >
+                Voltar à Biblioteca
+              </button>
+              <button 
+                onClick={() => {
+                  setFlashcardToDelete(previewFlashcard.id);
+                  setPreviewFlashcard(null);
+                }}
+                className="px-6 bg-red-50 text-red-500 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all border border-red-100"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (previewMindMap) {
+      return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+          <header className="flex items-center justify-between gap-4">
+            <button 
+              onClick={() => setPreviewMindMap(null)}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="text-center flex-1 min-w-0">
+              <h2 className="text-xl font-display font-bold text-text-main italic truncate">{previewMindMap.title}</h2>
+              <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Visualização de Mapa Mental</p>
+            </div>
+            <div className="flex gap-2">
+              {!previewMindMap.isPublic && (
+                <button 
+                  onClick={() => {
+                    setPublishType('map');
+                    setPublishForm({ title: previewMindMap.title, description: '' });
+                    setShowPublishModal(true);
+                  }}
+                  className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                  title="Publicar na Comunidade"
+                >
+                  <Sparkles className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </header>
+
+          <div className="rise-card w-full bg-white border border-border flex flex-col shadow-sm overflow-hidden h-[75vh]">
+            <div className="flex-1 bg-slate-50 relative overflow-hidden">
+               <SVGMapViewer svgData={previewMindMap.svgData || []} />
+            </div>
+          </div>
+          
+          <div className="flex gap-4">
+            <button 
+                onClick={() => setPreviewMindMap(null)}
+                className="flex-1 bg-slate-100 text-text-main py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-all border border-slate-200"
+              >
+                Voltar à Lista
+              </button>
+            {previewMindMap.isPublic && (
+              <div className="px-6 flex items-center justify-center bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 font-bold text-[10px] uppercase tracking-widest">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Na Comunidade
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
+        <header className="flex items-center justify-between gap-4">
+          <button 
+            onClick={() => setActiveTab('selection')}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center flex-1">
+            <h2 className="text-xl font-display font-bold text-text-main italic">Minha Biblioteca</h2>
+            <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Gerencie seus materiais de estudo</p>
+          </div>
+          <button 
+            onClick={() => {
+              if (librarySubTab === 'flashcards') setShowCreator(true);
+              else setShowMindMapCreator(true);
+            }}
+            className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </header>
+
+        <div className="flex items-center gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-200">
+          <button 
+            onClick={() => setLibrarySubTab('flashcards')}
+            className={cn(
+              "flex-1 py-3 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+              librarySubTab === 'flashcards' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            Flashcards ({flashcards.length})
+          </button>
+          <button 
+            onClick={() => setLibrarySubTab('maps')}
+            className={cn(
+              "flex-1 py-3 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
+              librarySubTab === 'maps' ? "bg-white text-indigo-600 shadow-sm" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            Mapas Mentais ({personalMindMaps.length})
+          </button>
+        </div>
+
+        {isLibraryLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-10 h-10 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+            <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest animate-pulse">Sincronizando Biblioteca...</p>
+          </div>
+        ) : librarySubTab === 'flashcards' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {flashcards.length === 0 ? (
+              <div className="col-span-full py-20 text-center text-text-sub text-xs font-bold uppercase tracking-widest border-2 border-dashed border-border rounded-3xl">
+                Você ainda não criou flashcards
+              </div>
+            ) : (
+              flashcards.map(card => (
+                <div 
+                  key={card.id} 
+                  onClick={() => setPreviewFlashcard(card)}
+                  className="p-5 bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                >
+                  <div className="flex justify-between items-start gap-4 mb-3">
+                    <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-md">
+                      {card.subject || 'Geral'}
+                    </span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPublishType('flashcard');
+                          setPreviewFlashcard(card);
+                          setPublishForm({ title: card.front, description: '' });
+                          setShowPublishModal(true);
+                        }}
+                        className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                        title="Publicar na Comunidade"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFlashcardToDelete(card.id);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <h4 className="text-sm font-bold text-text-main mb-2 line-clamp-2">{card.front}</h4>
+                  <p className="text-xs text-text-sub italic line-clamp-3">{card.back}</p>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+             {personalMindMaps.length === 0 ? (
+              <div className="col-span-full py-20 text-center text-text-sub text-xs font-bold uppercase tracking-widest border-2 border-dashed border-border rounded-3xl">
+                Você ainda não criou mapas mentais
+              </div>
+            ) : (
+              personalMindMaps.map(m => (
+                <div 
+                  key={m.id} 
+                  onClick={() => setPreviewMindMap(m)}
+                  className="p-5 bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
+                >
+                  <div className="aspect-[4/5] bg-slate-50 rounded-xl mb-4 overflow-hidden relative group-hover:brightness-95 transition-all">
+                    {m.svgData?.[0] && (
+                      <div className="scale-[0.2] origin-top-left p-4 opacity-50" dangerouslySetInnerHTML={{ __html: m.svgData[0] }} />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/5">
+                      <Search className="w-6 h-6 text-indigo-600" />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-text-main truncate uppercase tracking-tight">{m.title}</h4>
+                      <p className="text-[9px] text-text-sub font-bold uppercase tracking-widest mt-1 italic">
+                        {m.isPublic ? 'Na Comunidade' : 'Privado'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!m.isPublic && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPublishType('map');
+                            setPreviewMindMap(m);
+                            setPublishForm({ title: m.title, description: '' });
+                            setShowPublishModal(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                          title="Publicar na Comunidade"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => deleteMindMap(e, m.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Apagar"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (activeTab === 'selection') {
     return (
       <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
         {showCreator && <FlashcardCreator onClose={() => setShowCreator(false)} subjects={contest.subjects || []} />}
-
-        <header className="space-y-4">
-          <div className="flex items-center gap-3 text-primary font-bold text-[10px] uppercase tracking-widest">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
+        <header className="space-y-2">
+          <div className="flex items-center gap-3 text-primary font-bold text-[9px] uppercase tracking-widest">
+            <div className="w-1 h-1 rounded-full bg-primary shadow-sm"></div>
             Treinamento e Prática
           </div>
-          <h1 className="text-3xl md:text-5xl font-display text-text-main tracking-tight font-bold italic">
-            Revisão <span className="text-primary italic">&</span> Performance
+          <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold italic">
+            Treinamento
           </h1>
-          <p className="text-text-sub text-[11px] md:text-base max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium">
-            Ferramentas para consolidar o edital e acelerar sua retenção através de questões e repetição espaçada.
-          </p>
+          <div className="flex items-center gap-4 mt-2">
+            <p className="text-text-sub text-[10px] md:text-sm max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium italic flex-1">
+              Ferramentas para consolidar o edital e acelerar sua retenção através de questões e repetição espaçada.
+            </p>
+            <button 
+              onClick={() => setActiveTab('library')}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-text-main rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-200"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              Ver Biblioteca
+            </button>
+          </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
-          {/* Questions Sector */}
-          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white border border-border shadow-sm">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
-               <BrainCircuit className="w-32 h-32" />
-            </div>
-            
-            <div className="space-y-6 relative z-10">
-              <div className="bg-primary/10 border border-primary/20 w-12 h-12 rounded-xl flex items-center justify-center text-primary shadow-sm">
-                <BrainCircuit className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl md:text-2xl font-display text-text-main italic font-bold">Questões Dinâmicas</h3>
-                <p className="text-text-sub text-[11px] md:text-sm leading-relaxed font-medium italic pr-12">Desafios rápidos por matéria para testar seus reflexos.</p>
-              </div>
-            </div>
-
-            <div className="space-y-2 relative z-10 pt-8">
-              <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mb-2 border-b border-border pb-2 opacity-50">Práticas Sugeridas</div>
-              {contest.subjects.slice(0, 3).map(sub => (
-                <button 
-                  key={sub.id}
-                  onClick={() => startQuiz(sub.name)}
-                  className="w-full text-left p-3.5 bg-slate-50 hover:bg-primary border border-border rounded-xl transition-all flex justify-between items-center group/item"
-                >
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-sub group-hover/item:text-white truncate pr-4">{sub.name}</span>
-                  <div className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center group-hover/item:bg-white transition-all shadow-sm">
-                    <Play className="w-3.5 h-3.5 text-text-main group-hover/item:text-primary transition-all fill-current" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* Flashcards Sector */}
-          <div className="rise-card p-6 md:p-10 group relative overflow-hidden flex flex-col justify-between min-h-[400px] bg-white border border-border shadow-sm">
+          <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
-               <Lightbulb className="w-32 h-32 text-accent" />
+               <Lightbulb className="w-24 h-24 text-accent" />
             </div>
             
-            <div className="space-y-6 relative z-10">
+            <div className="space-y-4 relative z-10">
               <div className="bg-accent/10 border border-accent/20 w-12 h-12 rounded-xl flex items-center justify-center text-accent shadow-sm">
                 <Lightbulb className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-xl md:text-2xl font-display text-text-main italic font-bold">Resumo & Flashcards</h3>
-                <p className="text-text-sub text-[11px] md:text-sm leading-relaxed font-medium italic pr-12">Memorize conceitos complexos com cartões de estudo interativos.</p>
+                <h3 className="text-xl font-display text-text-main font-bold">Flashcards</h3>
+                <p className="text-text-sub text-xs leading-relaxed italic">Memorize conceitos importantes com facilidade.</p>
               </div>
             </div>
 
-            <div className="space-y-4 pt-8 relative z-10">
-               <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-slate-50 border border-border rounded-xl text-center">
-                    <div className="text-lg font-display font-bold text-text-main">{flashcards.length}</div>
-                    <div className="text-[9px] font-bold text-text-sub uppercase tracking-widest">Totais</div>
+            <div className="space-y-3 pt-4 relative z-10">
+               <div className="flex gap-2">
+                  <div className="p-3 bg-slate-50 border border-border rounded-xl text-center flex-1">
+                    <div className="text-xl font-display font-bold text-text-main">{flashcards.length}</div>
+                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-1">Totais</div>
                   </div>
-                  <div className="p-4 bg-accent/5 border border-accent/10 rounded-xl text-center">
-                    <div className="text-lg font-display font-bold text-accent">{dueCards.length}</div>
-                    <div className="text-[9px] font-bold text-accent uppercase tracking-widest">Para Hoje</div>
+                  <div className="p-3 bg-accent/5 border border-accent/10 rounded-xl text-center flex-1">
+                    <div className="text-xl font-display font-bold text-accent">{dueCards.length}</div>
+                    <div className="text-[10px] font-bold text-accent uppercase tracking-widest mt-1">Hoje</div>
                   </div>
                </div>
 
-               <div className="flex gap-2">
+                <div className="flex gap-2 mt-2">
                  <button 
                   onClick={() => setShowCreator(true)}
-                  className="flex-1 bg-slate-100 text-text-main py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-slate-100 text-text-main py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5"
                  >
-                   <Plus className="w-4 h-4" />
+                   <Plus className="w-3.5 h-3.5" />
                    Criar
                  </button>
                  <button 
                   onClick={() => setActiveTab('flashcards')}
                   disabled={dueCards.length === 0}
-                  className="flex-[2] bg-accent text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:shadow-none"
+                  className="flex-[2] bg-accent text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20 disabled:opacity-50 disabled:shadow-none"
                  >
-                  Iniciar Revisão
+                  Revisar Cartões
                  </button>
                </div>
             </div>
           </div>
+
+          {/* Mind Maps Sector */}
+          <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
+               <Share2 className="w-24 h-24 text-indigo-500" />
+            </div>
+            
+            <div className="space-y-4 relative z-10">
+              <div className="bg-indigo-500/10 border border-indigo-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-indigo-500 shadow-sm">
+                <Share2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-display text-text-main font-bold">Mapas Mentais</h3>
+                <p className="text-text-sub text-xs leading-relaxed italic">Visualize conexões de qualquer assunto.</p>
+              </div>
+            </div>
+            <div className="pt-4 relative z-10">
+                 <button 
+                  onClick={() => setShowMindMapCreator(true)}
+                  className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-indigo-500/20 mb-3"
+                 >
+                  Criar Novo Mapa
+                 </button>
+                 <div className="space-y-2 mt-3 max-h-32 overflow-y-auto pr-1">
+                    {personalMindMaps.map(m => (
+                      <div 
+                        key={m.id} 
+                        className="group/item flex flex-col gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all cursor-pointer"
+                        onClick={() => setPreviewMindMap(m)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-indigo-800 font-bold truncate italic flex-1">{m.title}</span>
+                          <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                            {!m.isPublic && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPublishType('map');
+                                  setPreviewMindMap(m);
+                                  setPublishForm({ title: m.title, description: '' });
+                                  setShowPublishModal(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"
+                                title="Publicar na Comunidade"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => deleteMindMap(e, m.id)} 
+                              className="p-1.5 rounded-lg bg-white border border-red-100 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all"
+                              title="Apagar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        {m.isPublic && (
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Publicado
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                 </div>
+            </div>
+          </div>
         </div>
+        
+        {showMindMapCreator && <SVGMapCreator onClose={() => setShowMindMapCreator(false)} saveMap={saveMindMap} />}
 
-        {/* Improved Recommendations & Community */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-             <div className="flex items-center gap-2 px-1">
-                <ShieldCheck className="w-4 h-4 text-primary" />
-                <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Indicações Estratégicas</h3>
-             </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-5 bg-white border border-border rounded-2xl space-y-3 shadow-sm hover:border-primary/30 transition-all cursor-default">
-                   <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                         <TrendingUp className="w-4 h-4" />
+        <AnimatePresence>
+          {previewFlashcard && activeTab !== 'library' && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-xl transition-all">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                className="rise-card w-full max-w-lg bg-white border border-border flex flex-col max-h-[80vh] overflow-hidden shadow-2xl p-8 space-y-8"
+              >
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-3 py-1 bg-accent/10 rounded-full border border-accent/20">
+                    {previewFlashcard.subject || 'Flashcard'}
+                  </span>
+                  <button onClick={() => setPreviewFlashcard(null)} className="p-2 rounded-xl hover:bg-slate-100 transition-colors"><X /></button>
+                </div>
+
+                <div className="space-y-6 flex-1 overflow-y-auto pr-2">
+                  <div className="space-y-3">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Frente / Pergunta</span>
+                    <p className="text-lg font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front}"</p>
+                  </div>
+                  
+                  <div className="h-px bg-slate-100 w-full" />
+
+                  <div className="space-y-3">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verso / Resposta</span>
+                    <p className="text-base text-slate-600 leading-relaxed font-medium">
+                      {previewFlashcard.back}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                   <button 
+                    onClick={() => {
+                      setPublishType('flashcard');
+                      setPublishForm({ title: previewFlashcard.front, description: '' });
+                      setShowPublishModal(true);
+                    }}
+                    className="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                   >
+                     <Sparkles className="w-3.5 h-3.5" />
+                     Compartilhar na Comunidade
+                   </button>
+                   <button 
+                    onClick={() => setPreviewFlashcard(null)}
+                    className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                   >
+                     Fechar
+                   </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {previewMindMap && activeTab !== 'library' && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-xl transition-all">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                className="rise-card w-full max-w-5xl bg-white border border-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl p-8 space-y-6"
+              >
+                <div className="flex justify-between items-center gap-4">
+                  <h3 className="text-xl font-display text-text-main font-bold italic truncate flex-1">{previewMindMap.title}</h3>
+                  <div className="flex gap-2 shrink-0">
+                    {!previewMindMap.isPublic ? (
+                      <button 
+                        onClick={() => {
+                          setPublishType('map');
+                          setPublishForm({ title: previewMindMap.title, description: '' });
+                          setShowPublishModal(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline text-[9px]">Publicar na Comunidade</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] uppercase tracking-widest rounded-xl">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline text-[9px]">Na Comunidade</span>
                       </div>
-                      <span className="text-xs font-bold text-text-main uppercase tracking-tight">Curva de Esquecimento</span>
-                   </div>
-                   <p className="text-[10px] text-text-sub leading-relaxed font-medium">
-                      O sistema detectou que você costuma esquecer conceitos de <span className="text-primary font-bold italic">Redes</span> em 3 dias. Revise hoje para consolidar.
-                   </p>
+                    )}
+                    <button onClick={() => setPreviewMindMap(null)} className="p-2 rounded-xl hover:bg-slate-100"><X /></button>
+                  </div>
                 </div>
+                <div className="flex-1 bg-slate-50 border border-border rounded-xl flex flex-col overflow-y-auto min-h-[400px]">
+                  <SVGMapViewer svgData={previewMindMap.svgData || []} />
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-                <div className="p-5 bg-white border border-border rounded-2xl space-y-3 shadow-sm hover:border-accent/30 transition-all cursor-default">
-                   <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
-                         <MessageSquare className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-bold text-text-main uppercase tracking-tight">Feedback da Comunidade</span>
-                   </div>
-                   <p className="text-[10px] text-text-sub leading-relaxed font-medium">
-                      Os flashcards de <span className="text-accent font-bold italic">Processo Penal</span> foram os mais baixados hoje. Acesse o acervo para conferir.
-                   </p>
-                </div>
-             </div>
-          </div>
-
-          <div className="space-y-4">
-             <div className="flex items-center gap-2 px-1">
-                <Search className="w-4 h-4 text-text-sub" />
-                <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Acervo Coletivo</h3>
-             </div>
-             <div className="p-6 bg-gradient-to-br from-indigo-600 to-primary rounded-2xl text-white space-y-5 shadow-lg shadow-indigo-500/20 relative overflow-hidden group">
-                <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                   <Award className="w-32 h-32" />
-                </div>
-                <div className="space-y-2 relative z-10">
-                   <h4 className="font-display font-bold text-lg leading-tight uppercase italic">Flashcards Públicos</h4>
-                   <p className="text-[10px] text-white/70 font-medium leading-relaxed">
-                      Explore decks criados por outros aprovados e economize tempo de produção.
-                   </p>
-                </div>
-                <Link to="/comunidade" className="flex items-center justify-between bg-white text-primary px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all relative z-10 shadow-xl">
-                   Explorar Acervo
-                   <ChevronRight className="w-4 h-4" />
-                </Link>
-             </div>
-          </div>
+        <div className="space-y-6">
+          {/* Main Content would be here */}
         </div>
       </div>
     );
@@ -313,13 +826,13 @@ export default function Microlearning({ contest }: { contest: Contest }) {
     const percentage = Math.round((score/quizData.length)*100);
     return (
       <div className="flex flex-col items-center justify-center py-16 animate-in zoom-in-95 duration-700">
-        <div className="rise-card p-14 md:p-20 text-center space-y-12 w-full max-w-xl border-primary/20 bg-gradient-to-br from-slate-950 to-transparent">
+        <div className="rise-card p-14 md:p-20 text-center space-y-12 w-full max-w-xl">
           <div className="space-y-8 relative z-10">
             <div className="w-24 h-24 bg-primary/10 border border-primary/20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl">
               <Award className="w-10 h-10 text-primary" />
             </div>
             <div className="space-y-3">
-              <h2 className="text-4xl font-display text-white italic font-black tracking-tight">Sessão Finalizada.</h2>
+              <h2 className="text-4xl font-display text-text-main italic font-black tracking-tight">Sessão Finalizada.</h2>
               <p className="text-slate-500 text-sm font-medium leading-relaxed italic">Progresso transmitido com sucesso. Cadência mantida.</p>
             </div>
 
@@ -328,22 +841,22 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <span className="text-primary text-7xl md:text-8xl font-display leading-none italic font-black">{score}</span>
                 <span className="text-xs font-black text-slate-600 uppercase tracking-wider mt-4">Acertos</span>
               </div>
-              <div className="h-16 w-px bg-white/10"></div>
+              <div className="h-16 w-px bg-border"></div>
               <div className="flex flex-col items-center">
-                <span className="text-white text-7xl md:text-8xl font-display leading-none italic font-black">{quizData.length}</span>
+                <span className="text-text-main text-7xl md:text-8xl font-display leading-none italic font-black">{quizData.length}</span>
                 <span className="text-xs font-black text-slate-600 uppercase tracking-wider mt-4">Total</span>
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/5 py-6 px-12 rounded-2xl inline-block shadow-inner backdrop-blur-md">
+            <div className="bg-slate-100 border border-border py-6 px-12 rounded-2xl inline-block shadow-inner">
                <span className="text-xs font-black text-slate-700 uppercase tracking-wider mr-4">Performance Tática</span>
-               <span className="text-2xl font-display text-white italic font-black">{percentage}%</span>
+               <span className="text-2xl font-display text-text-main italic font-black">{percentage}%</span>
             </div>
           </div>
 
           <button 
             onClick={() => setActiveTab('selection')}
-            className="w-full bg-white text-slate-950 py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider hover:scale-105 transition-all shadow-2xl active:scale-95 border-2 border-white"
+            className="w-full bg-primary text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-wider hover:scale-105 transition-all shadow-xl active:scale-95 border-2 border-primary"
           >
             Sincronizar e Sair
           </button>
@@ -354,21 +867,21 @@ export default function Microlearning({ contest }: { contest: Contest }) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-12 animate-in slide-in-from-right-8 duration-700 pb-20">
-        <header className="flex justify-between items-center px-8 border-b border-white/5 pb-8">
+        <header className="flex justify-between items-center px-8 border-b border-border pb-8">
             <div className="flex items-center gap-6">
-              <div className="w-14 h-14 bg-white text-slate-950 border border-white/10 rounded-2xl flex items-center justify-center font-display text-2xl italic font-black shadow-2xl">
+              <div className="w-14 h-14 bg-primary/10 text-primary border border-primary/20 rounded-2xl flex items-center justify-center font-display text-2xl italic font-black shadow-sm">
                 {currentQuestion + 1}
               </div>
               <div className="space-y-1">
                 <div className="text-xs font-black text-slate-600 uppercase tracking-wider">Célula Atual</div>
-                <div className="text-xs font-black text-white uppercase tracking-wider">{quizData.length} MÓDULOS TOTAIS</div>
+                <div className="text-xs font-black text-text-main uppercase tracking-wider">{quizData.length} MÓDULOS TOTAIS</div>
               </div>
             </div>
             <div className="text-xs font-black text-primary uppercase tracking-wider bg-primary/10 border border-primary/20 px-6 py-3 rounded-full shadow-2xl animate-pulse">Monitoramento Ativo</div>
         </header>
 
-        <div className="rise-card p-10 md:p-16 space-y-14 border-white/10 bg-gradient-to-br from-slate-950 to-transparent">
-            <h2 className="text-xl md:text-3xl font-display leading-[1.4] text-white italic font-bold tracking-tight">
+        <div className="rise-card p-10 md:p-16 space-y-14">
+            <h2 className="text-xl md:text-3xl font-display leading-[1.4] text-text-main italic font-bold tracking-tight">
                 {quizData[currentQuestion]?.question}
             </h2>
 
@@ -385,12 +898,12 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                             className={cn(
                                 "w-full text-left p-7 md:p-10 rounded-[2rem] border-2 transition-all flex justify-between items-center group relative overflow-hidden",
                                 selectedOption === null 
-                                  ? "bg-white/5 border-white/5 hover:border-primary/50 hover:bg-white/10 text-slate-400" 
+                                  ? "bg-slate-50 border-border hover:border-primary/50 hover:bg-slate-100 text-slate-500" 
                                   : isCorrect 
-                                    ? "bg-accent/10 border-accent text-white shadow-[0_0_30px_rgba(34,197,94,0.3)] scale-105 z-10" 
+                                    ? "bg-accent/10 border-accent text-text-main shadow-[0_0_30px_rgba(245,158,11,0.3)] scale-105 z-10" 
                                     : isWrong 
-                                      ? "bg-red-500/10 border-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)] scale-105 z-10" 
-                                      : "bg-slate-950/40 border-transparent opacity-20"
+                                      ? "bg-red-500/10 border-red-500 text-text-main shadow-[0_0_30px_rgba(239,68,68,0.3)] scale-105 z-10" 
+                                      : "bg-slate-100 border-border opacity-50 text-slate-400"
                             )}
                         >
                             <span className="text-base font-bold pr-10 leading-relaxed italic">{opt}</span>
@@ -398,7 +911,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                               {isCorrect && <CheckCircle2 className="w-8 h-8 text-accent animate-in zoom-in duration-500" />}
                               {isWrong && <XCircle className="w-8 h-8 text-red-500 animate-in zoom-in duration-500" />}
                               {!selectedOption && (
-                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-primary group-hover:bg-primary transition-all shadow-lg">
+                                <div className="w-10 h-10 rounded-xl bg-slate-100 border border-border flex items-center justify-center group-hover:border-primary group-hover:bg-primary transition-all shadow-sm">
                                   <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-white" />
                                 </div>
                               )}
@@ -426,8 +939,108 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <AnimatePresence>
+                {(mapToDelete || flashcardToDelete) && (
+                  <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center"
+                    >
+                      <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                      <h3 className="text-xl font-display font-bold text-slate-800 mb-2">
+                        {mapToDelete ? 'Apagar Mapa Mental' : 'Remover Flashcard'}
+                      </h3>
+                      <p className="text-slate-500 text-sm mb-6">
+                        {mapToDelete 
+                          ? 'Tem certeza que deseja apagar este mapa permanentemente?' 
+                          : 'Este flashcard será removido da sua coleção de estudos.'}
+                      </p>
+                      
+                      <div className="flex gap-3 mt-8">
+                        <button
+                          onClick={() => { setMapToDelete(null); setFlashcardToDelete(null); }}
+                          className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={mapToDelete ? confirmDeleteMindMap : confirmDeleteFlashcard}
+                          className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-red-500/30"
+                        >
+                          Apagar
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showPublishModal && (
+                  <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center"
+                    >
+                      <Share2 className="w-12 h-12 text-indigo-500 mx-auto mb-4" />
+                      <h3 className="text-xl font-display font-bold text-slate-800 mb-2">
+                        {publishType === 'map' ? 'Publicar Mapa Mental' : 'Publicar Flashcard'}
+                      </h3>
+                      <p className="text-slate-500 text-sm mb-6 font-medium italic">Compartilhe seu conhecimento com a comunidade de concurseiros.</p>
+                      
+                      <div className="space-y-4 text-left">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 block">Título Público</label>
+                          <input 
+                            value={publishForm.title}
+                            onChange={(e) => setPublishForm({...publishForm, title: e.target.value})}
+                            placeholder="Como este material deve ser listado?"
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none font-bold text-slate-700 transition-all italic"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-1.5 ">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block">Descrição Objetiva</label>
+                            <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest">* Obrigatório</span>
+                          </div>
+                          <textarea 
+                            value={publishForm.description}
+                            onChange={(e) => setPublishForm({...publishForm, description: e.target.value})}
+                            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl min-h-[120px] resize-none focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-600 font-medium leading-relaxed transition-all"
+                            placeholder="Explique resumidamente o que este material aborda (ex: Principais prazos da Lei 8112)..."
+                          />
+                        </div>
+                        <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center justify-between text-xs text-slate-500">
+                          <span>Autor: <strong className="text-slate-700">{auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]}</strong></span>
+                          <span>{new Date().toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 mt-8">
+                        <button
+                          onClick={() => setShowPublishModal(false)}
+                          className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-xl transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={publishItem}
+                          disabled={!publishForm.title.trim() || !publishForm.description.trim()}
+                          className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:hover:bg-slate-300 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-indigo-600/30 disabled:shadow-none"
+                        >
+                          Publicar
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+            </AnimatePresence>
+
         </div>
     </div>
   );
 }
-

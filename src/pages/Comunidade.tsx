@@ -3,26 +3,29 @@ import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Contest } from '../types';
-import { Users, Heart, Download, Search, Filter, Calendar, Award, Sparkles, User as UserIcon, X, ChevronRight, BookOpen, Lightbulb } from 'lucide-react';
+import { Users, Heart, Download, Search, Filter, Calendar, Award, Sparkles, User as UserIcon, X, ChevronRight, BookOpen, Lightbulb, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import SVGMapViewer from '../components/SVGMapViewer';
+import { toast } from 'sonner';
 
 export default function Comunidade({ onImport }: { onImport: (contest: Contest) => void }) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'contests' | 'flashcards'>('contests');
+  const [activeTab, setActiveTab] = useState<'contests' | 'flashcards' | 'mindmaps'>('contests');
   const [sharedContests, setSharedContests] = useState<Contest[]>([]);
   const [sharedFlashcards, setSharedFlashcards] = useState<any[]>([]);
+  const [sharedMindMaps, setSharedMindMaps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('Todos');
   const [previewContest, setPreviewContest] = useState<Contest | null>(null);
+  const [previewMindMap, setPreviewMindMap] = useState<any | null>(null);
 
   useEffect(() => {
     setLoading(true);
     if (activeTab === 'contests') {
       const q = query(
-        collection(db, 'shared_contests'), 
-        where('isPublic', '==', true)
+        collection(db, 'shared_contests')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const docs = snapshot.docs.map(doc => ({
@@ -36,10 +39,9 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
         setLoading(false);
       });
       return () => unsubscribe();
-    } else {
+    } else if (activeTab === 'flashcards') {
       const q = query(
-        collection(db, 'shared_flashcards'),
-        where('isPublic', '==', true)
+        collection(db, 'shared_flashcards')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const docs = snapshot.docs.map(doc => ({
@@ -47,6 +49,20 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
           id: doc.id
         }));
         setSharedFlashcards(docs);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      const q = query(
+        collection(db, 'mindmaps'),
+        where('isPublic', '==', true)
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const docs = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        }));
+        setSharedMindMaps(docs);
         setLoading(false);
       });
       return () => unsubscribe();
@@ -66,6 +82,34 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
     }
   };
 
+  const handleShareMindMap = async (map: any) => {
+    const text = `Confira este mapa mental na comunidade: ${map.title}\nGerado pelo App Estratégia de Estudos!`;
+    const url = window.location.href; // Linking to the current page which is community
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: map.title,
+          text: text,
+          url: url,
+        });
+        toast.success("Mapa compartilhado!");
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error("Erro ao compartilhar:", err);
+          toast.error("Erro ao compartilhar.");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        toast.success("Link copiado para a área de transferência!");
+      } catch (err) {
+        toast.error("Erro ao copiar link.");
+      }
+    }
+  };
+
   const handleCloneFlashcard = async (card: any) => {
     if (!user) return;
     try {
@@ -82,9 +126,10 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
       };
       delete clonedCard.id;
       await addDoc(collection(db, 'users', user.uid, 'flashcards'), clonedCard);
-      alert(`Flashcard de ${card.subjectName} adicionado!`);
+      toast.success(`Flashcard de ${card.subjectName} adicionado!`);
     } catch (err) {
       console.error("Erro ao clonar flashcard:", err);
+      toast.error("Erro ao clonar flashcard.");
     }
   };
 
@@ -100,9 +145,35 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
         updatedAt: new Date().toISOString()
       };
       onImport(clonedContest);
-      alert(`${contest.role} adicionado aos seus estudos!`);
+      toast.success(`${contest.role} adicionado aos seus estudos!`);
     } catch (err) {
       console.error("Erro ao clonar:", err);
+      toast.error("Erro ao clonar edital.");
+    }
+  };
+
+  const handleCloneMindMap = async (map: any) => {
+    if (!user) return;
+    try {
+      const clonedMap = {
+        title: `${map.title} (Clone)`,
+        svgData: map.svgData,
+        isPublic: false,
+        ownerId: user.uid,
+        likesCount: 0,
+        clonesCount: 0,
+        createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, 'mindmaps'), clonedMap);
+      toast.success(`Mapa "${map.title}" adicionado aos seus estudos!`);
+      
+      // Increment clones count on original
+      await updateDoc(doc(db, 'mindmaps', map.id), {
+        clonesCount: increment(1)
+      });
+    } catch (err) {
+      console.error("Erro ao clonar mapa mental:", err);
+      toast.error("Erro ao clonar mapa mental.");
     }
   };
 
@@ -116,6 +187,11 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
   const filteredFlashcards = sharedFlashcards.filter(f => {
     const matchesSearch = f.front.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           f.subjectName.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const filteredMindMaps = sharedMindMaps.filter(m => {
+    const matchesSearch = m.title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -135,11 +211,11 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
           </p>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-border">
+        <div className="flex flex-col sm:flex-row bg-slate-100 p-1 rounded-2xl border border-border w-full gap-1">
           <button 
             onClick={() => setActiveTab('contests')}
             className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
               activeTab === 'contests' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
             )}
           >
@@ -149,12 +225,22 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
           <button 
             onClick={() => setActiveTab('flashcards')}
             className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
               activeTab === 'flashcards' ? "bg-white text-accent shadow-sm" : "text-text-sub hover:text-text-main"
             )}
           >
             <Lightbulb className="w-4 h-4" />
             Flashcards
+          </button>
+          <button 
+            onClick={() => setActiveTab('mindmaps')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
+              activeTab === 'mindmaps' ? "bg-white text-indigo-500 shadow-sm" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            <Sparkles className="w-4 h-4" />
+            Mapas
           </button>
         </div>
 
@@ -189,17 +275,17 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="h-80 bg-white/5 rounded-2xl animate-pulse border border-white/5 shadow-2xl"></div>
+            <div key={i} className="h-80 bg-slate-100 rounded-2xl animate-pulse border border-border shadow-sm"></div>
           ))}
         </div>
       ) : activeTab === 'contests' ? (
         filtered.length === 0 ? (
-          <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-gradient-to-br from-slate-950 to-transparent border-white/5">
-            <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-center shadow-2xl">
-              <Users className="w-10 h-10 text-slate-800" />
+          <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-slate-50 border-border">
+            <div className="w-24 h-24 bg-white border border-border rounded-[2rem] flex items-center justify-center shadow-sm">
+              <Users className="w-10 h-10 text-slate-400" />
             </div>
             <div className="space-y-3">
-              <h3 className="text-2xl font-display text-white italic font-bold">Nenhum Registro Encontrado</h3>
+              <h3 className="text-2xl font-display text-text-main italic font-bold">Nenhum Registro Encontrado</h3>
               <p className="text-slate-500 text-sm font-medium italic">Tente ajustar seus parâmetros de busca no acervo.</p>
             </div>
           </div>
@@ -275,20 +361,20 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
             </AnimatePresence>
           </div>
         )
-      ) : (
+      ) : activeTab === 'flashcards' ? (
         /* Flashcards List */
         filteredFlashcards.length === 0 ? (
-          <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-gradient-to-br from-slate-950 to-transparent border-white/5">
-            <div className="w-24 h-24 bg-accent/5 border border-accent/10 rounded-[2rem] flex items-center justify-center shadow-2xl">
-              <Lightbulb className="w-10 h-10 text-accent/20" />
+          <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-slate-50 border-border">
+            <div className="w-24 h-24 bg-accent/5 border border-accent/10 rounded-[2rem] flex items-center justify-center shadow-sm">
+              <Lightbulb className="w-10 h-10 text-accent/40" />
             </div>
             <div className="space-y-3">
-              <h3 className="text-2xl font-display text-white italic font-bold">Sem Flashcards</h3>
+              <h3 className="text-2xl font-display text-text-main italic font-bold">Sem Flashcards</h3>
               <p className="text-slate-500 text-sm font-medium italic">Seja o primeiro a compartilhar seus cartões de estudo.</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-20">
             <AnimatePresence mode="popLayout">
               {filteredFlashcards.map((f) => (
                 <motion.div
@@ -327,9 +413,82 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
             </AnimatePresence>
           </div>
         )
-      )}
+      ) : activeTab === 'mindmaps' ? (
+          /* MindMaps List */
+          filteredMindMaps.length === 0 ? (
+            <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-slate-50 border-border">
+              <div className="w-24 h-24 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] flex items-center justify-center shadow-sm">
+                <Sparkles className="w-10 h-10 text-indigo-500/40" />
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-2xl font-display text-text-main italic font-bold">Sem Mapas Mentais</h3>
+                <p className="text-slate-500 text-sm font-medium italic">Seja o primeiro a compartilhar seus mapas mentais.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-20">
+              <AnimatePresence mode="popLayout">
+                {filteredMindMaps.map((m) => (
+                  <motion.div
+                    key={m.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group relative bg-white border border-border rounded-2xl p-5 hover:border-indigo-500/30 transition-all flex flex-col cursor-pointer hover:shadow-lg hover:-translate-y-1"
+                    onClick={() => setPreviewMindMap(m)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                       <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-500/5 px-2 py-1 rounded-lg border border-indigo-500/10">
+                          Mapa Mental
+                       </span>
+                       <span className="text-[10px] font-semibold text-slate-400">
+                         {m.publishedAt ? new Date(m.publishedAt.toDate()).toLocaleDateString() : 'Recente'}
+                       </span>
+                    </div>
+                    <div className="space-y-3 flex-1 mb-4">
+                       <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug">{m.title}</h3>
+                       {m.description && (
+                         <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">{m.description}</p>
+                       )}
+                    </div>
+                    <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
+                       <div className="flex items-center gap-2">
+                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                           {m.ownerName?.[0]?.toUpperCase() || 'E'}
+                         </div>
+                         <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px]">{m.ownerName || 'Estrategista'}</span>
+                       </div>
+                       
+                       <div className="flex items-center gap-2">
+                         <button 
+                           className="flex items-center gap-1.5 text-slate-400 hover:text-red-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-red-100"
+                           onClick={(e) => handleLike(m.id, 'mindmaps', e)}
+                         >
+                           <Heart className="w-3.5 h-3.5" />
+                           <span className="text-xs font-bold">{m.likesCount || 0}</span>
+                         </button>
+                         <button 
+                           className="flex items-center gap-1.5 text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-indigo-100"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleCloneMindMap(m);
+                           }}
+                           title="Importar para meus mapas"
+                         >
+                           <Download className="w-3.5 h-3.5" />
+                           <span className="text-xs font-bold">{m.clonesCount || 0}</span>
+                         </button>
+                       </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )
+        ) : null
+      }
 
-      {/* Preview Modal */}
+      {/* Preview Modal Contest */}
       <AnimatePresence>
         {previewContest && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-xl transition-all">
@@ -417,6 +576,46 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                   <Download className="w-5 h-5" />
                   Importar Estrutura
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {previewMindMap && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-xl transition-all">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="rise-card w-full max-w-5xl bg-white border border-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl p-8 space-y-6"
+            >
+              <div className="flex justify-between items-center gap-4">
+                <h3 className="text-xl font-display text-text-main font-bold italic truncate flex-1">{previewMindMap.title}</h3>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleShareMindMap(previewMindMap)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-widest rounded-xl transition-colors"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Compartilhar</span>
+                  </button>
+                  <button 
+                    onClick={() => handleCloneMindMap(previewMindMap)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors shadow-lg shadow-indigo-600/20"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Importar para meus mapas</span>
+                  </button>
+                  <button onClick={() => setPreviewMindMap(null)} className="p-2 rounded-xl hover:bg-slate-100"><X /></button>
+                </div>
+              </div>
+              <div className="flex-1 bg-slate-50 border border-border rounded-xl overflow-hidden min-h-[400px]">
+                <SVGMapViewer svgData={previewMindMap.svgData || []} />
+              </div>
+              <div className="text-xs font-bold text-text-sub uppercase tracking-widest text-center">
+                Por {previewMindMap.ownerName || 'Estrategista'}
               </div>
             </motion.div>
           </div>

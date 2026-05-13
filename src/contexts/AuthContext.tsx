@@ -49,18 +49,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               setProfile(userDoc.data());
             }
+            setLoading(false); // Set loading false ONLY after profile snapshot is received
           }, (err) => {
              console.error("Erro ao carregar perfil:", err);
+             setLoading(false); // Also set false on error to avoid infinite loading
           });
         } catch (err) {
           console.error("Erro ao carregar perfil:", err);
-          // Permite que o usuário entre mesmo se o perfil falhar
+          setLoading(false);
         }
       } else {
         if (unsubProfile) unsubProfile();
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Analytics } from "@vercel/analytics/react";
+import { Toaster } from 'sonner';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')!).render(
     <HashRouter>
       <AuthProvider>
         <App />
+        <Toaster position="top-right" richColors />
         <Analytics />
       </AuthProvider>
     </HashRouter>

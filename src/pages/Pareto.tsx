@@ -53,8 +53,8 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
     const targetBanca = contest.banca || banca;
 
     contest.subjects.forEach(sub => {
-      sub.topics.forEach(tp => {
-         const weight = getWeight(sub.name + tp.name + targetBanca);
+      (sub.topics || []).forEach(tp => {
+         const weight = getWeight(sub.name + (tp.name || '') + targetBanca);
          allTopics.push({
            subjectId: sub.id,
            subjectName: sub.name,

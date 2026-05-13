@@ -10,6 +10,12 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    function isValidMindMap(data) {
+      return data.title is string && data.title.size() <= 100 &&
+             data.isPublic is bool &&
+             data.ownerId is string &&
+             data.createdAt is timestamp;
+    }
 
     match /feedbacks/{feedbackId} {
       allow read: if false; // only admin can read
@@ -53,6 +59,16 @@ service cloud.firestore {
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
       allow update: if isSignedIn() && (
         (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])) ||
+        (existing().ownerId == request.auth.uid)
+      );
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /mindmaps/{mindmapId} {
+      allow read: if (resource.data.isPublic == true) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (resource.data.isPublic == true && incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'clonesCount'])) ||
         (existing().ownerId == request.auth.uid)
       );
       allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;

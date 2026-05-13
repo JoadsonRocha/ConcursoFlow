@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { Toaster, toast } from 'sonner';
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -67,6 +68,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [migrated, setMigrated] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
@@ -87,43 +89,31 @@ export default function App() {
     }
   }, [location]);
 
-  // Update currentContest when profile or contests change
+  // Initial Load: Find the contest indicated by the profile OR first available
   useEffect(() => {
-    if (contests.length === 0) {
-      if (currentContest) setCurrentContest(null);
-      return;
-    }
+    if (authLoading || contests.length === 0) return;
 
-    // Try to find the contest indicated by the profile
-    if (profile?.currentContestId) {
-      const saved = contests.find(c => c.id === profile.currentContestId);
-      if (saved) {
-        setCurrentContest(saved);
+    // Only set initial currentContest if it's not already set
+    if (!currentContest) {
+      if (profile?.currentContestId) {
+        const saved = contests.find(c => c.id === profile.currentContestId);
+        if (saved) {
+          setCurrentContest(saved);
+        } else {
+          setCurrentContest(contests[0]);
+        }
       } else {
         setCurrentContest(contests[0]);
-        if (user) {
-          const userRef = doc(db, 'users', user.uid);
-          updateDoc(userRef, { 
-            currentContestId: contests[0].id,
-            updatedAt: serverTimestamp()
-          }).catch(console.error);
-        }
       }
     } else {
-      // If no profile currentContestId, just pick the first one 
-      // but only set if it's fundamentally different to avoid loop
-      const target = contests[0];
-      setCurrentContest(target);
-      if (user && profile) {
-        const userRef = doc(db, 'users', user.uid);
-        updateDoc(userRef, { 
-          currentContestId: target.id,
-          updatedAt: serverTimestamp()
-        }).catch(console.error);
+      // If we HAVE a currentContest, just make sure it stays in sync with its DB counterpart
+      const inSync = contests.find(c => c.id === currentContest.id);
+      if (inSync && JSON.stringify(inSync) !== JSON.stringify(currentContest)) {
+        setCurrentContest(inSync);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, contests, user]);
+  }, [profile, contests.length, authLoading]); // Added authLoading to wait, removed currentContest to avoid loop
 
   // Firestore Sync & Migration
   useEffect(() => {
@@ -169,19 +159,41 @@ export default function App() {
       runMigration();
     }
 
+    const sanitizeSubjects = (subjects: any[]) => {
+      return (subjects || []).map((s: any) => ({
+        ...s,
+        id: s.id || `sub-${Math.random().toString(36).substr(2, 9)}`,
+        name: s.name || 'Matéria sem nome',
+        category: s.category || 'Gerais',
+        topics: (s.topics || []).map((t: any) => ({
+          ...t,
+          id: t.id || `top-${Math.random().toString(36).substr(2, 9)}`,
+          name: t.name || 'Tópico sem nome',
+          completed: !!t.completed
+        }))
+      }));
+    };
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const dbContests = snapshot.docs.map(doc => {
         const data = doc.data();
+        
         return {
           ...data,
           id: doc.id,
-          subjects: data.subjects || [],
-          schedule: data.schedule || []
+          subjects: sanitizeSubjects(data.subjects),
+          schedule: (data.schedule || []).map((d: any) => ({
+            ...d,
+            completed: !!d.completed
+          }))
         } as Contest;
       });
       setContests(dbContests);
+      setDataLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'users/' + user.uid + '/contests');
+      console.error("Firestore Error in contests snapshot:", error);
+      toast.error("Erro ao carregar dados. Verifique sua conexão.");
+      setDataLoading(false);
     });
 
     return () => unsubscribe();
@@ -221,54 +233,40 @@ export default function App() {
       });
     } catch (err: any) {
       console.error("Erro ao salvar edital:", err);
-      alert("Falha de segurança ao salvar no Firestore: " + err.message);
+      toast.error("Falha de segurança ao salvar no Firestore: " + err.message);
     }
   };
 
   const handleUpdateContest = async (updatedContest: Contest) => {
     if (!user) return;
     
+    // Update local state IMMEDIATELY (Optimistic Update)
+    setCurrentContest(updatedContest);
+    setContests(prev => prev.map(c => c.id === updatedContest.id ? updatedContest : c));
+
     try {
       const docRef = doc(db, 'users', user.uid, 'contests', updatedContest.id);
       
+      // Separate system fields from user data
+      const { createdAt: _ignored, updatedAt: _ignored2, ownerId: _ignored3, ...contestData } = updatedContest;
+      
       const payload: any = { 
-        ...updatedContest, 
+        ...contestData, 
         ownerId: user.uid,
         updatedAt: serverTimestamp(),
       };
-
-      // Only set createdAt if we are absolutely sure this is a new document, 
-      // otherwise Firestore merge will just ignore it and leave existing alone.
-      if (!updatedContest.createdAt) {
-        // Do not use serverTimestamp() during an update if it might overwrite conditionally.
-        // But since we use merge: true, if we just omit it, it won't be overwritten.
-        // Wait, if it doesn't exist at all, we NEED it for 'create' rule.
-        // Let's rely on handleImportEdital to set createdAt initially.
-        // If this is an update, we SHOULD NOT SEND createdAt to avoid breaking the immutable rule!
-      }
       
-      // Remove createdAt from payload if it's already there to prevent updates from failing due to timestamp mismatch
-      if (payload.createdAt) {
-          delete payload.createdAt;
-      }
-
-      console.log('Sending payload:', payload);
       await setDoc(docRef, payload, { merge: true });
-    } catch (err: any) {
-      console.error("Erro ao atualizar progresso (CONTEST):", err);
-      alert("Erro de segurança (Contest): " + err.message);
-    }
 
-    try {
-      // Ensure profile knows this is the current one
+      // Update profile current ID in background
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { 
         currentContestId: updatedContest.id,
         updatedAt: serverTimestamp()
       });
     } catch (err: any) {
-      console.error("Erro ao atualizar progresso (USER_PROFILE):", err);
-      alert("Erro de segurança (User): " + err.message);
+      console.error("Erro ao sincronizar com nuvem:", err);
+      toast.error("Erro ao salvar dados na nuvem: " + err.message);
     }
   };
 
@@ -284,18 +282,20 @@ export default function App() {
       const docRef = doc(db, 'users', user.uid, 'contests', id);
       await deleteDoc(docRef);
       
-      alert("Cargo removido com sucesso!");
+      toast.success("Cargo removido com sucesso!");
     } catch (err) {
       console.error("Erro ao deletar cargo:", err);
-      alert("Erro ao remover cargo. Verifique sua conexão ou permissões.");
+      toast.error("Erro ao remover cargo. Verifique sua conexão ou permissões.");
     }
   };
 
-  if (authLoading) {
+  if (authLoading || (user && dataLoading)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">Sincronizando com a Nuvem...</div>
+        <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">
+          {authLoading ? "Autenticando..." : "Sincronizando seus Cronogramas..."}
+        </div>
       </div>
     );
   }
@@ -336,8 +336,6 @@ export default function App() {
           </div>
           {isSidebarOpen && (
             <div className="flex flex-col">
-              <span className="text-text-main font-display text-lg tracking-tight leading-none font-bold uppercase">Stratis Planner</span>
-              <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-60">Estudos</span>
             </div>
           )}
         </div>
@@ -357,7 +355,7 @@ export default function App() {
           </div>
 
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Meus Estudos</span>}
+            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Saved</span>}
             <div className="space-y-1">
               {contests.length === 0 ? (
                 isSidebarOpen && <div className="px-5 py-4 text-xs text-text-sub font-medium uppercase tracking-wider italic border border-dashed border-border rounded-xl">Nenhum salvo</div>

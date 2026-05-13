@@ -64,6 +64,20 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["front", "back", "ownerId"]
+    },
+    "MindMap": {
+      "title": "MindMap",
+      "description": "A mind map with nodes and edges.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "nodes": { "type": "array", "items": { "type": "object" } },
+        "edges": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["title", "ownerId", "createdAt"]
     }
   },
   "firestore": {
@@ -78,6 +92,10 @@
     "/users/{userId}/flashcards/{flashcardId}": {
       "schema": "Flashcard",
       "description": "Stores private user flashcards."
+    },
+    "/mindmaps/{mindmapId}": {
+      "schema": "MindMap",
+      "description": "Stores public and private mind maps."
     },
     "/shared_contests/{sharedId}": {
       "schema": "Contest",

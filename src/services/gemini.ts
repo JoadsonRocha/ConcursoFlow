@@ -6,12 +6,16 @@ export const generateStudySummary = async (subject: string, topic: string) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Como um mentor de concursos especializado em ${subject}, crie um resumo profissional e conciso sobre "${topic}". 
-      Inclua:
-      1. Definição rápida.
-      2. 3 pontos principais que a banca FCC costuma cobrar.
-      3. Uma dica de memorização (mnemônico se possível).
-      Responda em Português com formatação Markdown limpa.`,
+      contents: `VOCÊ É O ESTRATEGISTA-CHEFE DE UMA MENTORIA DE ELITE PARA CONCURSOS.
+      Crie um "BRIEFING OPERACIONAL" sobre "${topic}" dentro da disciplina de ${subject}.
+      
+      ESTRUTURA OBRIGATÓRIA:
+      1. NÚCLEO ESSENCIAL: Definição técnica e seca (estilo letra da lei ou doutrina majoritária).
+      2. INCIDÊNCIA TÁTICA: 3 pontos de altíssima relevância que as bancas (Ex: FCC, FGV, Cebraspe) adoram cobrar.
+      3. ARMADILHAS: Identifique 1 "pegadinha" comum que costuma eliminar candidatos.
+      4. MEMORIZAÇÃO ACELERADA: Forneça um mnemônico, tabela mental simples ou gatilho visual.
+      
+      Responda em Português com Markdown elegante e profissional.`,
     });
     
     return response.text || "Não foi possível gerar o resumo.";
@@ -24,12 +28,128 @@ export const generateStudySummary = async (subject: string, topic: string) => {
   }
 };
 
+export const generateMindMap = async (subject: string) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Crie uma estrutura técnica de mapa mental sobre "${subject}" com foco em concursos.
+      DIRETRIZES:
+      - Nó central deve ser "${subject}" (id: "1").
+      - Crie ramos principais para as divisões doutrinárias ou legais mais importantes.
+      - Adicione sub-ramos para detalhes que costumam ser "pegadinhas" (exceções, prazos, quóruns).
+      - Use etiquetas curtas e diretas (máximo 5 palavras).
+      
+      Retorne um JSON com:
+      - nodes: { id: string, data: { label: string }, position: { x: number, y: number } }
+      - edges: { id: string, source: string, target: string }`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            nodes: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  data: {
+                    type: Type.OBJECT,
+                    properties: { label: { type: Type.STRING } },
+                    required: ["label"]
+                  },
+                  position: {
+                    type: Type.OBJECT,
+                    properties: { x: { type: Type.NUMBER }, y: { type: Type.NUMBER } },
+                    required: ["x", "y"]
+                  }
+                },
+                required: ["id", "data", "position"]
+              }
+            },
+            edges: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  source: { type: Type.STRING },
+                  target: { type: Type.STRING }
+                },
+                required: ["id", "source", "target"]
+              }
+            }
+          },
+          required: ["nodes", "edges"]
+        }
+      }
+    });
+
+    if (!response.text) throw new Error("Não foi possível gerar o mapa mental.");
+    return JSON.parse(response.text);
+  } catch (error: any) {
+    console.error("Erro ao gerar mapa mental:", error);
+    throw error;
+  }
+};
+
+export const generateSVGMap = async (prompt: string, quantity: number = 3) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `VOCÊ É O MAIOR ESTRATEGISTA DE CONCURSOS PÚBLICOS DO BRASIL.
+      Seu objetivo é criar uma "ESQUEMATIZAÇÃO TÁTICA" (Mapa Mental de Alto Impacto) sobre o tema: "${prompt}".
+      
+      ESTRUTURA DO MAPA (FOCO EM CONCURSEIRO):
+      1. TEMA CENTRAL: Destaque o núcleo do assunto.
+      2. RAMIFICAÇÕES DE 1º NÍVEL: Grandes grupos, regimes, naturezas jurídicas ou divisões clássicas da doutrina/jurisprudência.
+      3. RAMIFICAÇÕES DE 2º NÍVEL: Detalhes críticos, prazos, quóruns, exceções e o "PULO DO GATO" que as bancas (Ex: FGV, FCC, CEBRASPE) adoram cobrar.
+      4. MNEMÔNICOS E GATILHOS: Inclua mnemônicos clássicos e gatilhos de memorização visual.
+      
+      NÍVEL DE PROFUNDIDADE:
+      - Foque no que é cobrado em provas de nível superior (Analista, Auditor, Magistratura).
+      - Use palavras-chave estratégicas. Evite textos longos.
+      - Use cores contrastantes para diferenciar conceitos opostos (ex: Facultativo vs Obrigatório).
+      - Adicione ícones ou sinais (≠, ✅, ❌, ⚠️) para destacar pontos de confusão comum.
+      
+      REQUISITOS TÉCNICOS SVG:
+      - Divida o conteúdo em exatamente ${quantity} SVG(s) independentes e lógicos.
+      - Design limpo, proporção A4 vertical (viewBox="0 0 800 1131").
+      - Todo texto deve estar dentro de tags <text> com fontes legíveis.
+      - Use linhas e setas dinâmicas para conectar o fluxo de pensamento.
+      - Produza código SVG minimalista, profissional e perfeitamente válido.
+      
+      SAÍDA:
+      Retorne um array JSON com exatamente ${quantity} strings de código SVG.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
+      }
+    });
+
+    if (!response.text) throw new Error("Não foi possível gerar mapas SVG.");
+    return JSON.parse(response.text);
+  } catch (error: any) {
+    console.error("Erro ao gerar mapas SVG:", error);
+    throw error;
+  }
+};
+
 export const generateQuizQuestions = async (subject: string, topic: string) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Gere 3 questões de múltipla escolha sobre "${topic}" no contexto de ${subject} no estilo da banca FCC.
-      Retorne um array JSON de objetos com: { question, options: string[], correctAnswerIndex: number, explanation }.`,
+      contents: `Gere 3 questões de múltipla escolha inéditas no nível de "Analista/Auditor" sobre o tema "${topic}" (${subject}).
+      ESTILO: Simulando bancas de alto nível (FCC/FGV).
+      CARACTERÍSTICAS:
+      - Enunciados complexos com situações-problema ou casos práticos.
+      - Alternativas com distinções sutis (evite respostas óbvias).
+      - A explicação deve ser EXAUSTIVA, citando o fundamento legal ou doutrinário se possível.
+      
+      Retorne um array JSON: { question, options: string[], correctAnswerIndex: number, explanation }.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {

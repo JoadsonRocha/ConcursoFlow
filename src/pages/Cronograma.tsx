@@ -22,6 +22,7 @@ import { generateSchedule } from '../services/gemini';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface CronogramaProps {
   contest: Contest;
@@ -70,14 +71,14 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       await setDoc(contestRef, { isPublic: true, updatedAt: serverTimestamp() }, { merge: true });
       
       onUpdate({ ...contest, isPublic: true });
-      alert("Cronograma e Edital Verticalizado compartilhados com sucesso na Comunidade! 🚀");
+      toast.success("Cronograma e Edital Verticalizado compartilhados com sucesso na Comunidade! 🚀");
     } catch (error) {
       console.error("Erro ao compartilhar:", error);
       // Detailed error for developers
       if (error instanceof Error && error.message.includes('permission')) {
-        alert("Erro de permissão: Certifique-se de que seus dados estão corretos.");
+        toast.error("Erro de permissão: Certifique-se de que seus dados estão corretos.");
       } else {
-        alert("Erro ao compartilhar. Verifique sua conexão.");
+        toast.error("Erro ao compartilhar. Verifique sua conexão.");
       }
     } finally {
       setSharing(false);
@@ -95,7 +96,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       onUpdate({ ...contest, schedule: newSchedule });
     } catch (error) {
       console.error("Erro ao gerar cronograma:", error);
-      alert("Erro ao carregar o cronograma. Verifique sua conexão.");
+      toast.error("Erro ao carregar o cronograma. Verifique sua conexão.");
     } finally {
       setLoading(false);
     }
@@ -104,8 +105,51 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const toggleDay = (dayIndex: number) => {
     if (!contest.schedule) return;
     const newSchedule = [...contest.schedule];
-    newSchedule[dayIndex] = { ...newSchedule[dayIndex], completed: !newSchedule[dayIndex].completed };
-    onUpdate({ ...contest, schedule: newSchedule });
+    const isNowCompleted = !newSchedule[dayIndex].completed;
+    newSchedule[dayIndex] = { ...newSchedule[dayIndex], completed: isNowCompleted };
+    
+    // Logic to sync with vertical edital (subjects)
+    let newSubjects = [...contest.subjects];
+    
+    if (isNowCompleted) {
+      const day = newSchedule[dayIndex];
+      const topicsStr = [day.specificTopic, day.generalTopic].join(' ').toLowerCase();
+
+      const normalize = (s: string) => s.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+        .replace(/[^\w\s]/gi, '') // remove special characters
+        .replace(/^[\d.\-\s]+/, '') // remove numeric prefixes
+        .trim();
+
+      const scheduleWords = normalize(topicsStr).split(/\s+/).filter(w => w.length > 2);
+      
+      newSubjects = newSubjects.map(subject => ({
+        ...subject,
+        topics: (subject.topics || []).map(topic => {
+          const normalizedTopic = normalize(topic.name);
+          const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
+          
+          // Check for significant overlap:
+          // 1. Topic name is directly in schedule string
+          // 2. Or a large portion of topic words match any word in schedule string
+          const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
+          const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
+          const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+
+          if (hasDirectMatch || matchRatio >= 0.6) {
+            return { ...topic, completed: true };
+          }
+          return topic;
+        })
+      }));
+    } else {
+      // Reverting a day doesn't necessarily mean we should unmark topics, 
+      // but for consistency we might want to if the user expects full sync.
+      // However, progress is usually cumulative and topics might appear in multiple days.
+      // We'll stick to marking as completed for now as requested.
+    }
+    
+    onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects });
   };
 
   const exportText = () => {

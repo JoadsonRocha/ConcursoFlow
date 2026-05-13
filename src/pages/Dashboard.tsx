@@ -73,13 +73,20 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
     .slice(0, 3);
 
   const calculateDetailedProgress = (subs: Subject[]) => {
-    const total = subs.reduce((acc, s) => acc + s.totalTopics, 0);
+    const total = subs.reduce((acc, s) => acc + (s.topics?.length || 0), 0);
     const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
     return { total, completed, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
-  const generalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => s.incidence === 'Média' || s.incidence === 'Baixa') || []);
-  const technicalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => s.incidence === 'Muito Alta' || s.incidence === 'Alta') || []);
+  const generalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => {
+    const cat = s.category?.toLowerCase() || '';
+    return cat.includes('geral') || cat.includes('gerais') || cat.includes('base') || cat.includes('basica') || cat.includes('comun') || cat.includes('comuns');
+  }) || []);
+  
+  const technicalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => {
+    const cat = s.category?.toLowerCase() || '';
+    return cat.includes('específico') || cat.includes('especificos') || cat.includes('tecnico') || cat.includes('foco');
+  }) || []);
   const totalProgress = calculateDetailedProgress(contest?.subjects || []);
 
   // Quick Metrics Calculations
@@ -121,10 +128,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
   const isDefaultContest = !contest || !contest.ownerId;
   const todayHistory = contest?.dailyHistory?.find(h => h.date === new Date().toISOString().split('T')[0]);
 
-  const handleSavePerformance = () => {
+  const handleSavePerformance = async () => {
     if (!contest) return;
 
     let newSchedule = contest.schedule;
+    let newSubjects = [...contest.subjects];
+
     if (todayTask) {
       newSchedule = contest.schedule?.map(day => {
         if (day.id === todayTask.id) {
@@ -137,6 +146,36 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
         }
         return day;
       });
+
+      // Sync with vertical edital - IMPROVED MATCHING
+      const topicsStr = [todayTask.specificTopic, todayTask.generalTopic].join(' ').toLowerCase();
+      const normalize = (s: string) => s.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+        .replace(/[^\w\s]/gi, '') // remove special characters
+        .replace(/^[\d.\-\s]+/, '') // remove numeric prefixes
+        .trim();
+
+      const scheduleWords = normalize(topicsStr).split(/\s+/).filter(w => w.length > 2);
+      
+      newSubjects = newSubjects.map(subject => ({
+        ...subject,
+        topics: subject.topics?.map(topic => {
+          const normalizedTopic = normalize(topic.name);
+          const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
+          
+          // Check for significant overlap:
+          // 1. Topic name is directly in schedule string
+          // 2. Or a large portion of topic words match any word in schedule string
+          const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
+          const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
+          const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+
+          if (hasDirectMatch || matchRatio >= 0.6) {
+            return { ...topic, completed: true };
+          }
+          return topic;
+        })
+      }));
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -162,6 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, onUpdate }) => {
     onUpdate({ 
       ...contest, 
       schedule: newSchedule,
+      subjects: newSubjects,
       dailyHistory: newHistory 
     });
     
