@@ -193,6 +193,37 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         </p>
       </header>
 
+      {/* Existing Contests Management */}
+      {contests.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold text-text-sub uppercase tracking-widest px-1">Meus Editais Salvos</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {contests.map((c) => (
+              <div key={c.id} className={cn(
+                "p-4 bg-white border rounded-2xl flex items-center justify-between transition-all group",
+                currentContest?.id === c.id ? "border-primary/40 shadow-sm" : "border-border hover:border-primary/20"
+              )}>
+                <div className="overflow-hidden">
+                  <div className="text-xs font-black text-text-main uppercase tracking-tight truncate">{c.role}</div>
+                  <div className="text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{c.name}</div>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Excluir este edital permanentemente?')) {
+                      onDelete(c.id);
+                    }
+                  }}
+                  className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Mode Switcher */}
       <div className="flex bg-slate-900/40 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-xl">
         <button

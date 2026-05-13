@@ -476,7 +476,7 @@ export default function App() {
         <div className="p-5 md:p-10 max-w-7xl mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
-              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={setCurrentContest} />} />
+              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={setCurrentContest} onDelete={handleDeleteContest} />} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />

@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   ChevronDown,
   Plus,
-  PencilLine
+  PencilLine,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
@@ -26,9 +27,10 @@ interface DashboardProps {
   contests: Contest[];
   onUpdate: (contest: Contest) => void;
   onSwitchContest: (contest: Contest) => void;
+  onDelete?: (id: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest }) => {
+const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest, onDelete }) => {
   const { user } = useAuth();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showLogModal, setShowLogModal ] = useState(false);
@@ -321,24 +323,39 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                       <div className="p-6 text-center text-xs text-text-sub font-bold uppercase italic tracking-widest">Nenhum cargo salvo</div>
                     ) : (
                       contests.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => {
-                            onSwitchContest(c);
-                            setIsSelectorOpen(false);
-                          }}
-                          className={cn(
-                            "w-full px-5 py-4 flex flex-col items-start gap-1 transition-all hover:bg-slate-50 border-l-4",
-                            contest.id === c.id ? "border-primary bg-primary/5" : "border-transparent"
+                        <div key={c.id} className="group relative flex items-center pr-2">
+                          <button
+                            onClick={() => {
+                              onSwitchContest(c);
+                              setIsSelectorOpen(false);
+                            }}
+                            className={cn(
+                              "flex-1 px-5 py-4 flex flex-col items-start gap-1 transition-all hover:bg-slate-50 border-l-4",
+                              contest.id === c.id ? "border-primary bg-primary/5" : "border-transparent"
+                            )}
+                          >
+                            <span className={cn("text-xs font-black uppercase tracking-tight", contest.id === c.id ? "text-primary" : "text-text-main")}>
+                              {c.role}
+                            </span>
+                            <span className="text-[10px] font-medium text-text-sub uppercase tracking-wider opacity-60">
+                              {c.name}
+                            </span>
+                          </button>
+                          {onDelete && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Deseja realmente excluir este edital?')) {
+                                  onDelete(c.id);
+                                }
+                              }}
+                              className="p-3 text-text-sub hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50"
+                              title="Excluir Edital"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           )}
-                        >
-                          <span className={cn("text-xs font-black uppercase tracking-tight", contest.id === c.id ? "text-primary" : "text-text-main")}>
-                            {c.role}
-                          </span>
-                          <span className="text-[10px] font-medium text-text-sub uppercase tracking-wider opacity-60">
-                            {c.name}
-                          </span>
-                        </button>
+                        </div>
                       ))
                     )}
                   </div>
