@@ -34,7 +34,7 @@ export default function TermsOfUse() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Aceitação dos Protocolos</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Ao acessar e utilizar a infraestrutura Stratis, você concorda em cumprir e estar vinculado a estes Protocolos de Uso. Se você não concordar com qualquer fragmento destes termos, a conexão deve ser interrompida imediatamente.
+            Ao acessar e utilizar a infraestrutura Stratis Planner, você concorda em cumprir e estar vinculado a estes Protocolos de Uso. Se você não concordar com qualquer fragmento destes termos, a conexão deve ser interrompida imediatamente.
           </p>
         </section>
 
@@ -46,7 +46,7 @@ export default function TermsOfUse() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Arquitetura de Serviço</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Stratis é um ecossistema tático que mobiliza Inteligência Artificial para verticalizar editais e otimizar a progressão de disciplinas. Nossos serviços são fornecidos "como estão", sob licença de uso individual.
+            Stratis Planner é um ecossistema tático que mobiliza Inteligência Artificial para verticalizar editais e otimizar a progressão de disciplinas. Nossos serviços são fornecidos "como estão", sob licença de uso individual.
           </p>
         </section>
 
@@ -68,7 +68,7 @@ export default function TermsOfUse() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Propriedade Intelectual</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Todo o código, arquitetura, design e algoritmos de verticalização são propriedades exclusivas da Stratis e protegidos por leis internacionais de propriedade intelectual.
+            Todo o código, arquitetura, design e algoritmos de verticalização são propriedades exclusivas da Stratis Planner e protegidos por leis internacionais de propriedade intelectual.
           </p>
         </section>
       </div>
@@ -76,7 +76,7 @@ export default function TermsOfUse() {
       <footer className="text-center py-20 flex flex-col items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis — 2026 Edition</span>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis Planner — 2026 Edition</span>
         </div>
         <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Todos os direitos reservados à célula de desenvolvimento.</p>
       </footer>

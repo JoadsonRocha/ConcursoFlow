@@ -92,7 +92,7 @@ export default function Auth() {
               <Sparkles className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis</span>
+              <span className="text-2xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis Planner</span>
               <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-70">Plataforma</span>
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function Auth() {
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <span className="text-xl font-display font-bold text-text-main tracking-tighter uppercase italic">Stratis</span>
+              <span className="text-xl font-display font-bold text-text-main tracking-tighter uppercase italic">Stratis Planner</span>
             </div>
 
             <div className="space-y-2">
@@ -315,7 +315,7 @@ export default function Auth() {
 
           <footer className="pt-10 text-center">
              <p className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-60">
-                Stratis v2.5.0 — Security Layer Active
+                Stratis Planner v2.5.0 — Security Layer Active
              </p>
           </footer>
         </div>

@@ -121,7 +121,7 @@ const Landing = () => {
           <Link to="/" className="flex items-center gap-2 md:gap-3">
               <img src="/logo.png" alt="Stratis" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
             <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis</span>
+              <span className="text-lg md:text-xl font-display font-bold text-text-main tracking-tight leading-none uppercase">Stratis Planner</span>
               <span className="text-[9px] md:text-xs font-bold text-primary uppercase tracking-wider mt-0.5 opacity-80">Inteligência para concursos</span>
             </div>
           </Link>
@@ -172,7 +172,7 @@ const Landing = () => {
               </span> artificial.
             </h1>
             <p className="text-base md:text-xl text-text-sub font-medium leading-relaxed max-w-2xl mx-auto pt-4 md:pt-2">
-              Esqueça PDFs infindáveis e planilhas confusas. O Stratis organiza seu edital, cria metas diárias e gera flashcards. Você só foca no estudo.
+              Esqueça PDFs infindáveis e planilhas confusas. O Stratis Planner organiza seu edital, cria metas diárias e gera flashcards. Você só foca no estudo.
             </p>
           </motion.div>
 
@@ -274,7 +274,7 @@ const Landing = () => {
                       <Users className="w-7 h-7" />
                    </div>
                    <h3 className="text-3xl font-display font-bold">Comunidade e Compartilhamento</h3>
-                   <p className="text-white/90 text-base md:text-lg font-medium leading-relaxed max-w-lg">Não precisa começar do zero. Importe editais prontos, cronogramas de pessoas aprovadas e troque flashcards validados com milhares de estudantes na rede do Stratis.</p>
+                   <p className="text-white/90 text-base md:text-lg font-medium leading-relaxed max-w-lg">Não precisa começar do zero. Importe editais prontos, cronogramas de pessoas aprovadas e troque flashcards validados com milhares de estudantes na rede do Stratis Planner.</p>
                 </div>
              </div>
           </div>
@@ -317,10 +317,10 @@ const Landing = () => {
                 <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary border border-primary/20">
                   <img src="/logo.png" alt="Stratis" className="w-4 h-4 object-contain" />
                 </div>
-                <span className="text-lg font-display font-bold text-text-main tracking-tight uppercase">Stratis</span>
+                <span className="text-lg font-display font-bold text-text-main tracking-tight uppercase">Stratis Planner</span>
               </div>
               <p className="text-text-sub max-w-sm text-sm font-medium leading-relaxed">
-                Stratis. Tecnologia de alto desempenho para concurseiros estrategistas.
+                Stratis Planner. Tecnologia de alto desempenho para concurseiros estrategistas.
               </p>
            </div>
            <div className="grid grid-cols-2 gap-12 col-span-2">
@@ -342,7 +342,7 @@ const Landing = () => {
            </div>
         </div>
         <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6">
-           <span className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-40">Stratis 2026 — Inteligência para concursos</span>
+           <span className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-40">Stratis Planner 2026 — Inteligência para concursos</span>
            <div className="flex gap-2 items-center bg-slate-50 px-4 py-1.5 rounded-full border border-border">
               <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm"></div>
               <span className="text-xs font-bold text-text-sub uppercase tracking-wider">Sistemas Operantes</span>

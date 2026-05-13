@@ -134,26 +134,39 @@ export default function App() {
     
     // Migration Logic
     if (!migrated) {
-      try {
-        const potentialKeys = ['contests', 'stratis_contests', 'strat_contests'];
-        for (const key of potentialKeys) {
-          const localStr = localStorage.getItem(key);
-          if (localStr) {
-            const localData = JSON.parse(localStr);
-            if (Array.isArray(localData) && localData.length > 0) {
-              localData.forEach(async (c: any) => {
-                if (!c.id) return;
-                const docRef = doc(db, 'users', user.uid, 'contests', c.id);
-                await setDoc(docRef, { ...c, ownerId: user.uid }, { merge: true }).catch(console.error);
-              });
+      const runMigration = async () => {
+        try {
+          const potentialKeys = ['contests', 'stratis_contests', 'strat_contests'];
+          for (const key of potentialKeys) {
+            const localStr = localStorage.getItem(key);
+            if (localStr) {
+              const localData = JSON.parse(localStr);
+              if (Array.isArray(localData) && localData.length > 0) {
+                let allSuccess = true;
+                for (const c of localData) {
+                  if (!c.id) continue;
+                  try {
+                    const docRef = doc(db, 'users', user.uid, 'contests', c.id);
+                    await setDoc(docRef, { ...c, ownerId: user.uid }, { merge: true });
+                  } catch (e) {
+                    console.error("Failed to migrate contest", c.id, e);
+                    allSuccess = false;
+                  }
+                }
+                if (allSuccess) {
+                  localStorage.removeItem(key);
+                }
+              } else {
+                 localStorage.removeItem(key);
+              }
             }
-            localStorage.removeItem(key);
           }
+        } catch (e) {
+          console.error("Migration error:", e);
         }
-      } catch (e) {
-        console.error("Migration error:", e);
-      }
-      setMigrated(true);
+        setMigrated(true);
+      };
+      runMigration();
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -323,7 +336,7 @@ export default function App() {
           </div>
           {isSidebarOpen && (
             <div className="flex flex-col">
-              <span className="text-text-main font-display text-lg tracking-tight leading-none font-bold uppercase">Stratis</span>
+              <span className="text-text-main font-display text-lg tracking-tight leading-none font-bold uppercase">Stratis Planner</span>
               <span className="text-xs font-bold text-primary uppercase tracking-wider mt-1 opacity-60">Estudos</span>
             </div>
           )}
@@ -413,7 +426,7 @@ export default function App() {
             </button>
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase">
-                Stratis
+                Stratis Planner
               </h2>
             </div>
           </div>
@@ -471,7 +484,7 @@ export default function App() {
                           </div>
                         </Link>
                         <a 
-                          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20uma%20ajudinha%20com%20o%20Stratis."
+                          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20uma%20ajudinha%20com%20o%20Stratis%20Planner."
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() => setIsUserMenuOpen(false)}

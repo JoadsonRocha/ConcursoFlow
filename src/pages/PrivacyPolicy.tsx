@@ -56,7 +56,7 @@ export default function PrivacyPolicy() {
           </div>
           <h2 className="text-2xl md:text-3xl font-display text-white italic font-bold">Isolamento de Informações</h2>
           <p className="text-slate-400 leading-relaxed font-medium italic text-lg">
-            Não comercializamos conjuntos de dados para terceiros. A Stratis opera em um ecossistema fechado onde a privacidade do estrategista é tratada como ativo de segurança máxima.
+            Não comercializamos conjuntos de dados para terceiros. A Stratis Planner opera em um ecossistema fechado onde a privacidade do estrategista é tratada como ativo de segurança máxima.
           </p>
         </section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPolicy() {
       <footer className="text-center py-20 flex flex-col items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
-          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis Security — 2026 Edition</span>
+          <span className="text-xs font-black text-slate-700 uppercase tracking-[0.5em] italic">Stratis Planner Security — 2026 Edition</span>
         </div>
         <p className="text-xs font-black text-slate-800 uppercase tracking-wider">Sistemas operando sob protocolos de criptografia de ponta a ponta.</p>
       </footer>
