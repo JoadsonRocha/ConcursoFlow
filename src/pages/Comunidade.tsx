@@ -309,12 +309,12 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
                 >
                   <div className="flex items-start justify-between mb-8 relative z-10">
                     <div className="space-y-2 max-w-[75%]">
-                      <p className="text-xs text-text-sub truncate italic">{contest.name}</p>
-                      <h4 className="text-sm font-display text-text-main leading-tight truncate group-hover:text-primary transition-colors italic">{contest.role}</h4>
+                      <p className="text-[10px] text-text-sub line-clamp-1 italic">{contest.name}</p>
+                      <h4 className="text-sm font-display text-text-main leading-tight line-clamp-2 group-hover:text-primary transition-colors italic">{contest.role}</h4>
                       <div className="flex items-center gap-2 pt-1">
                          <UserIcon className="w-3 h-3 text-text-sub/50" />
-                         <span className="text-[10px] text-text-sub truncate flex items-center gap-1">
-                           Por {contest.ownerName || 'Estrategista'}
+                         <span className="text-[10px] text-text-sub truncate flex items-center gap-1 normal-case">
+                           por {contest.ownerName || 'Estrategista'}
                            {contest.ownerIsCreator && <Award className="w-3 h-3 text-primary" />}
                          </span>
                       </div>

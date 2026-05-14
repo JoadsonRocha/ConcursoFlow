@@ -57,9 +57,12 @@ const Landing = () => {
       let msg = 'Erro ao processar autenticação';
       if (err.code === 'auth/user-not-found') msg = 'Usuário não encontrado';
       if (err.code === 'auth/wrong-password') msg = 'Senha incorreta';
+      if (err.code === 'auth/invalid-credential') msg = 'E-mail ou senha incorretos';
       if (err.code === 'auth/email-already-in-use') msg = 'Este e-mail já está em uso';
       if (err.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres';
       if (err.code === 'auth/invalid-email') msg = 'E-mail inválido';
+      if (err.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente novamente mais tarde.';
+      if (err.code === 'auth/user-disabled') msg = 'Usuário desativado.';
       setError(msg);
     } finally {
       setLoading(false);

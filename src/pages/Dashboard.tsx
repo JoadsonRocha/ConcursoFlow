@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
+  collection, 
+  query, 
+  orderBy,
+  limit, 
+  getDocs,
+  DocumentData
+} from 'firebase/firestore';
+import { 
   BookOpen, 
   ShieldCheck, 
   Calendar, 
@@ -16,13 +24,15 @@ import {
   Plus,
   PencilLine,
   Trash2,
-  PieChart
+  PieChart,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import BrandLogo from '../components/BrandLogo';
+import { db } from '../lib/firebase';
 
 interface DashboardProps {
   contest: Contest;
@@ -114,6 +124,26 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   const [showLogModal, setShowLogModal ] = useState(false);
   const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [featuredContests, setFeaturedContests] = useState<Contest[]>([]);
+
+  const isDefaultContest = !contest || !contest.ownerId;
+
+  useEffect(() => {
+    async function fetchFeatured() {
+      try {
+        console.log("Fetching featured contests...");
+        const q = query(collection(db, 'shared_contests'), orderBy('likesCount', 'desc'), limit(3));
+        const snapshot = await getDocs(q);
+        console.log("Snapshot size:", snapshot.size);
+        setFeaturedContests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contest)));
+      } catch (error) {
+        console.error("Error fetching featured contests:", error);
+      }
+    }
+    if (isDefaultContest) {
+        fetchFeatured();
+    }
+  }, [isDefaultContest]);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -222,7 +252,6 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   const todayTask = contest?.schedule?.find(day => day.dayNumber === todayDayNumber) || todayTaskIncomplete;
   
-  const isDefaultContest = !contest || !contest.ownerId;
   const todayHistory = contest?.dailyHistory?.find(h => h.date === new Date().toISOString().split('T')[0]);
 
   const [showSimilarityModal, setShowSimilarityModal] = useState(false);
@@ -356,6 +385,30 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             COMUNIDADE
           </Link>
         </div>
+
+        {featuredContests.length > 0 && (
+          <div className="w-full max-w-3xl pt-10 border-t border-border">
+            <h3 className="text-xs font-bold text-text-sub uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+              <Users className="w-4 h-4" /> Editais da Comunidade
+            </h3>
+            <p className="text-[10px] text-text-sub mb-6 text-center italic">Veja exemplos de editais que outros estudantes estão usando (apenas para referência)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {featuredContests.map(c => (
+                <div key={c.id} className="p-4 bg-white border border-border rounded-xl text-left space-y-2 hover:border-primary/30 transition-all">
+                    <div className="text-[9px] font-bold text-primary uppercase">{c.banca || 'Concurso'}</div>
+                    <div className="text-[11px] font-black text-text-main leading-tight line-clamp-2">{c.role}</div>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="text-[10px] font-bold text-text-sub flex items-center gap-1">
+                        <Star className="w-2.5 h-2.5 text-primary fill-primary" />
+                        {c.likesCount || 0}
+                      </div>
+                      <Link to="/comunidade" className="text-[10px] font-bold text-primary uppercase tracking-wider hover:underline">Acessar</Link>
+                    </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     );
   }
@@ -488,7 +541,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
               <Calendar className="w-3 h-3" />
               Data da Prova
             </div>
-            <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm">{contest.name}</h2>
+            <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm">{contest.role}</h2>
             
             <div className="text-sm font-bold text-white/90">
               {new Date(contest.examDate).toLocaleDateString('pt-BR')}

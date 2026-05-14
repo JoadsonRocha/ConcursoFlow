@@ -97,7 +97,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           <div className="flex items-center gap-2">
             <BookOpenCheck className="w-5 h-5 text-text-sub" />
             <select
-              className="bg-white border border-border rounded-xl px-4 py-2 text-sm font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8 relative uppercase tracking-wider"
+              className="bg-white border border-border rounded-xl px-4 py-2 text-sm font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8 relative uppercase tracking-wider max-w-[200px] md:max-w-xs truncate"
               value={contest.id}
               onChange={(e) => {
                 const selected = contests.find(c => c.id === e.target.value);
@@ -105,7 +105,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               }}
             >
               {contests.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.role}</option>
               ))}
             </select>
           </div>
@@ -118,7 +118,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
             <Info className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-text-main uppercase tracking-tight mb-2">Edital Atual: {contest.name}</h3>
+            <h3 className="text-lg font-black text-text-main uppercase tracking-tight mb-2 break-words">{contest.role}</h3>
             <p className="text-sm font-medium text-text-sub max-w-lg mx-auto">
               Selecione a banca que organizará a prova. A nossa inteligência vai mapear os
               assuntos mais recorrentes dessa banca para este edital, mostrando os 20%

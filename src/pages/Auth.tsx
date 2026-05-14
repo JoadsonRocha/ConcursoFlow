@@ -77,6 +77,8 @@ export default function Auth() {
       if (err.code === 'auth/invalid-email') msg = 'E-mail inválido';
       if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
       if (err.code === 'auth/network-request-failed') msg = 'Erro de conexão. Verifique sua internet.';
+      if (err.code === 'auth/too-many-requests') msg = 'Muitas tentativas. Tente novamente mais tarde.';
+      if (err.code === 'auth/user-disabled') msg = 'Usuário desativado.';
       
       setError(msg);
     } finally {

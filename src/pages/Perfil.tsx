@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle } from 'lucide-react';
+import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
-import { getStorage, ref, uploadString, getDownloadURL, uploadBytes } from 'firebase/storage';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { auth, db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
@@ -24,6 +24,16 @@ export default function Perfil() {
   const [isPro, setIsPro] = useState(profile?.userPlan === 'pro');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const toggleTour = async () => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { tourCompleted: !profile?.tourCompleted });
+    } catch (err) {
+      console.error("Erro ao atualizar tour:", err);
+    }
+  };
 
   if (!user) return null;
 
@@ -357,25 +367,45 @@ export default function Perfil() {
               </button>
             </div>
 
-            {/* Notification Setting */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
-              <div className="space-y-1 text-center sm:text-left">
-                <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
-                  <Bell className="w-4 h-4 text-primary" />
-                  Notificações por Email
-                </div>
-                <div className="text-xs text-text-sub">Receba atualizações importantes sobre seu progresso.</div>
-              </div>
-              <button 
-                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                className={cn(
-                  "px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-[0.98]",
-                  notificationsEnabled ? "bg-primary text-white" : "bg-white text-text-sub border border-border"
-                )}
-              >
-                {notificationsEnabled ? 'Ativado' : 'Desativado'}
-              </button>
-            </div>
+             {/* Notification Setting */}
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+               <div className="space-y-1 text-center sm:text-left">
+                 <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
+                   <Bell className="w-4 h-4 text-primary" />
+                   Notificações por Email
+                 </div>
+                 <div className="text-xs text-text-sub">Receba atualizações importantes sobre seu progresso.</div>
+               </div>
+               <button 
+                 onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                 className={cn(
+                   "px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-[0.98]",
+                   notificationsEnabled ? "bg-primary text-white" : "bg-white text-text-sub border border-border"
+                 )}
+               >
+                 {notificationsEnabled ? 'Ativado' : 'Desativado'}
+               </button>
+             </div>
+
+             {/* Tour Setting */}
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+               <div className="space-y-1 text-center sm:text-left">
+                 <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
+                   <PlayCircle className="w-4 h-4 text-primary" />
+                   Guia Inicial
+                 </div>
+                 <div className="text-xs text-text-sub">Mostrar novamente o tour de instruções.</div>
+               </div>
+               <button 
+                 onClick={toggleTour}
+                 className={cn(
+                   "px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-[0.98]",
+                   !profile?.tourCompleted ? "bg-primary text-white" : "bg-white text-text-sub border border-border"
+                 )}
+               >
+                 {!profile?.tourCompleted ? 'Ativado' : 'Desativado'}
+               </button>
+             </div>
 
             {/* Logout Action */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
