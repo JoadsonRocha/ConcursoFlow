@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Contest, Subject, Topic } from '../types';
 import { cn } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
+import ProModal from '../components/ProModal';
 import { 
   CheckCircle2, 
   Circle, 
@@ -17,7 +19,11 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { generateStudySummary } from '../services/gemini';
 
-export default function Subjects({ contest, onUpdate }: { contest: Contest, onUpdate: (contest: Contest) => void }) {
+import { CopyPlus } from 'lucide-react';
+export default function Subjects({ contest, contests, onUpdate }: { contest: Contest, contests?: Contest[], onUpdate: (contest: Contest) => void }) {
+  const { profile } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'Tudo' | 'Gerais' | 'Específicos'>('Tudo');
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
@@ -25,6 +31,9 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [activeErrorNote, setActiveErrorNote] = useState<{ subId: string, topicId: string, note: string } | null>(null);
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeSourceContestId, setMergeSourceContestId] = useState<string>('');
+  const [selectedSubjectsToMerge, setSelectedSubjectsToMerge] = useState<string[]>([]);
 
   const filteredSubjects = contest.subjects.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -32,12 +41,12 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
     return matchesSearch && matchesFilter;
   });
 
-  const handleAiAsk = (e: React.MouseEvent, subId: string, topicId: string, topicName: string) => {
+  const handleAiAsk = (e: React.MouseEvent, subjectName: string, topicId: string, topicName: string) => {
     e.stopPropagation();
-    setSelectedTopic({ subId, topicId, topicName });
+    setSelectedTopic({ subId: subjectName, topicId, topicName }); // abusing subId to store name for UI
     setAiSummary(null);
     setIsLoadingAi(true);
-    generateStudySummary(subId, topicName).then(summary => {
+    generateStudySummary(subjectName, topicName).then(summary => {
       setAiSummary(summary);
       setIsLoadingAi(false);
     }).catch(() => {
@@ -59,6 +68,35 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
     });
     
     onUpdate({ ...contest, subjects: newSubjects });
+  };
+
+  const handleMergeSubjects = () => {
+    if (!contests || !mergeSourceContestId || selectedSubjectsToMerge.length === 0) return;
+    
+    const sourceContest = contests.find(c => c.id === mergeSourceContestId);
+    if (!sourceContest) return;
+
+    const subjectsToAdd = sourceContest.subjects.filter(s => selectedSubjectsToMerge.includes(s.id));
+    
+    // Create deep copies to avoid reference issues and generate new IDs
+    const newSubjects = subjectsToAdd.map(sub => ({
+      ...sub,
+      id: `sub-${Math.random().toString(36).substr(2, 9)}`,
+      topics: sub.topics?.map(t => ({
+        ...t,
+        id: `top-${Math.random().toString(36).substr(2, 9)}`,
+        completed: false // Reset progress when merging
+      }))
+    }));
+
+    onUpdate({
+      ...contest,
+      subjects: [...contest.subjects, ...newSubjects]
+    });
+    
+    setShowMergeModal(false);
+    setMergeSourceContestId('');
+    setSelectedSubjectsToMerge([]);
   };
 
   return (
@@ -106,6 +144,27 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
               </button>
             ))}
           </div>
+
+          {contests && contests.length > 1 && (
+            <button
+              onClick={() => {
+                if (profile?.userPlan !== 'pro') {
+                  setShowProModal(true);
+                  return;
+                }
+                setShowMergeModal(true);
+              }}
+              className="flex items-center gap-2 bg-white border border-border px-5 py-3 hover:bg-slate-50 transition-colors rounded-xl text-text-main text-sm font-bold uppercase tracking-wider self-start relative"
+            >
+              {profile?.userPlan !== 'pro' && (
+                <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10">
+                  PRO
+                </div>
+              )}
+              <CopyPlus className="w-4 h-4 text-primary" />
+              Mesclar Disciplinas
+            </button>
+          )}
         </div>
       </header>
 
@@ -240,6 +299,13 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
                                   </div>
                                   
                                   <div className="flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => handleAiAsk(e, sub.name, topic.id, topic.name)}
+                                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all flex items-center justify-center border border-border bg-white hover:border-primary hover:text-primary text-text-sub shrink-0"
+                                      title="Resumo Estratégico AI"
+                                    >
+                                      <BrainCircuit className={cn("w-4 h-4", selectedTopic?.topicId === topic.id && "animate-pulse")} />
+                                    </button>
                                     <button 
                                       onClick={() => setActiveErrorNote({ subId: sub.id, topicId: topic.id, note: topic.errorNote || '' })}
                                       className={cn(
@@ -383,6 +449,112 @@ export default function Subjects({ contest, onUpdate }: { contest: Contest, onUp
           </div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showMergeModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+              className="absolute inset-0 bg-[#0f172a]/40 backdrop-blur-sm" 
+              onClick={() => setShowMergeModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.98, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.98, opacity: 0 }} 
+              className="w-full max-w-2xl bg-white border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh] relative z-10"
+            >
+              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl text-primary">
+                    <CopyPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl text-text-main font-bold tracking-tight">Mesclar Disciplinas</h3>
+                    <p className="text-xs font-bold text-text-sub uppercase tracking-wider">Importar de outro edital</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowMergeModal(false)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-text-sub hover:text-text-main">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-2">1. Selecione o Edital de Origem</label>
+                    <select 
+                      className="w-full bg-white border border-border rounded-xl px-4 py-3.5 text-sm text-text-main outline-none focus:ring-4 ring-primary/10 transition-all font-medium"
+                      value={mergeSourceContestId}
+                      onChange={(e) => {
+                        setMergeSourceContestId(e.target.value);
+                        setSelectedSubjectsToMerge([]);
+                      }}
+                    >
+                      <option value="">-- Escolha um Edital --</option>
+                      {contests?.filter(c => c.id !== contest.id).map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {mergeSourceContestId && (
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold text-text-sub uppercase tracking-wider mb-2">2. Selecione as Disciplinas</label>
+                      <div className="bg-slate-50 border border-border rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                        {contests?.find(c => c.id === mergeSourceContestId)?.subjects.map(sub => {
+                          const isSelected = selectedSubjectsToMerge.includes(sub.id);
+                          return (
+                            <div 
+                              key={sub.id}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedSubjectsToMerge(selectedSubjectsToMerge.filter(id => id !== sub.id));
+                                } else {
+                                  setSelectedSubjectsToMerge([...selectedSubjectsToMerge, sub.id]);
+                                }
+                              }}
+                              className="flex justify-between items-center p-4 border-b border-border hover:bg-white transition-colors cursor-pointer last:border-0"
+                            >
+                              <div className="flex flex-col gap-1">
+                                <span className="text-sm font-bold text-text-main">{sub.name}</span>
+                                <span className="text-xs text-text-sub uppercase tracking-wider">{sub.category} • {sub.topics?.length || 0} tópicos</span>
+                              </div>
+                              <div className={cn(
+                                "w-6 h-6 rounded border flex items-center justify-center transition-all",
+                                isSelected ? "bg-primary border-primary" : "border-slate-300"
+                              )}>
+                                {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-border flex justify-end gap-3 bg-white">
+                <button 
+                  onClick={() => setShowMergeModal(false)}
+                  className="px-6 py-3 border border-border text-text-main rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleMergeSubjects}
+                  disabled={selectedSubjectsToMerge.length === 0}
+                  className="px-6 py-3 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  Importar {selectedSubjectsToMerge.length > 0 && `(${selectedSubjectsToMerge.length})`}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Mesclar Disciplinas" />
     </div>
   );
 }

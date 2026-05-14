@@ -7,7 +7,6 @@ import {
   Download, 
   CheckCircle2, 
   BrainCircuit, 
-  Sparkles,
   ChevronLeft,
   Clock,
   BookOpen,
@@ -15,7 +14,8 @@ import {
   Users,
   PenTool,
   Loader2,
-  Target
+  Target,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
@@ -30,7 +30,7 @@ interface CronogramaProps {
 }
 
 export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [activeWeek, setActiveWeek] = useState(1);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -58,6 +58,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
         dailyGoalQuestions: contest.dailyGoalQuestions || 0,
         ownerId: user.uid,
         ownerName: user.displayName || user.email?.split('@')[0] || 'Concurseiro',
+        ownerIsCreator: !!profile?.isCreator,
         isPublic: true,
         likesCount: 0,
         createdAt: serverTimestamp(),
@@ -152,25 +153,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects });
   };
 
-  const exportText = () => {
-    if (!schedule.length) return;
-    let text = `Cronograma de Estudos: ${contest.role}\n\n`;
-    schedule.forEach(d => {
-      text += `DIA ${d.dayNumber} [${d.completed ? 'CONCLUÍDO' : 'PENDENTE'}]\n`;
-      text += `ESPECÍFICOS: ${d.specificTopic}\n`;
-      text += `GERAIS: ${d.generalTopic}\n`;
-      text += `QUESTÕES: ${d.questionGoal} | REVISÃO: ${d.revisionTask}\n`;
-      text += `-----------------------------------\n\n`;
-    });
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cronograma-${contest.role.toLowerCase().replace(/\s+/g, '-')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   if (schedule.length === 0) {
     return (
       <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 py-10">
@@ -222,7 +204,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
+              <Zap className="w-4 h-4" />
               Gerar Cronograma
             </>
           )}
@@ -266,13 +248,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
            </button>
 
            <div className="flex gap-2">
-             <button 
-              onClick={exportText}
-              className="p-3.5 bg-white border border-border rounded-xl text-text-sub hover:text-primary transition-all shadow-sm"
-              title="Baixar Backup"
-             >
-               <Download className="w-5 h-5" />
-             </button>
              <button 
               onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: undefined }) }}
               className="p-3.5 bg-red-500/5 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
@@ -363,11 +338,11 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
               </div>
               <div className="p-4 pt-0">
                 <button 
-                  onClick={() => toggleDay(dayIdx)}
+                  onClick={(e) => { e.stopPropagation(); toggleDay(dayIdx)}}
                   className={cn(
                     "w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border shadow-sm",
                     d.completed 
-                      ? "bg-accent/5 text-accent border-accent/20 hover:bg-accent hover:text-white" 
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600" 
                       : "bg-white text-text-main border-border hover:bg-primary hover:text-white hover:border-primary active:scale-95"
                   )}
                 >

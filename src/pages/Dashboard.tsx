@@ -9,12 +9,14 @@ import {
   Clock, 
   ArrowRight,
   Target,
-  Sparkles,
+  Zap,
+  Star,
   CheckCircle2,
   ChevronDown,
   Plus,
   PencilLine,
-  Trash2
+  Trash2,
+  PieChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
@@ -29,6 +31,82 @@ interface DashboardProps {
   onSwitchContest: (contest: Contest) => void;
   onDelete?: (id: string) => void;
 }
+
+const ContestSelectorItem = ({ 
+  c, 
+  currentContestId, 
+  onSwitchContest, 
+  onDelete, 
+  onClose 
+}: { 
+  c: Contest, 
+  currentContestId: string, 
+  onSwitchContest: (c: Contest) => void, 
+  onDelete?: (id: string) => void,
+  onClose: () => void
+}) => {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  
+  return (
+    <div className="group relative flex items-center pr-2">
+      <button
+        onClick={() => {
+          onSwitchContest(c);
+          onClose();
+        }}
+        className={cn(
+          "flex-1 px-5 py-4 flex flex-col items-start gap-1 transition-all hover:bg-slate-50 border-l-4",
+          currentContestId === c.id ? "border-primary bg-primary/5" : "border-transparent"
+        )}
+      >
+        <span className={cn("text-[11px] font-black uppercase tracking-tight", currentContestId === c.id ? "text-primary" : "text-text-main")}>
+          {c.role}
+        </span>
+        <span className="text-[9px] font-medium text-text-sub uppercase tracking-wider opacity-60">
+          {c.name}
+        </span>
+      </button>
+      {onDelete && (
+        <div className="flex items-center">
+          {confirmDelete ? (
+            <div className="flex items-center gap-1 animate-in fade-in zoom-in duration-200">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(c.id);
+                  setConfirmDelete(false);
+                }}
+                className="px-2 py-1 bg-red-500 text-white text-[8px] font-bold rounded-md hover:bg-red-600"
+              >
+                CONFIRMAR
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete(false);
+                }}
+                className="p-1 text-text-sub hover:text-text-main"
+              >
+                <Plus className="w-3 h-3 rotate-45" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmDelete(true);
+              }}
+              className="p-3 text-text-sub hover:text-red-500 opacity-40 sm:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50"
+              title="Excluir Edital"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest, onDelete }) => {
   const { user } = useAuth();
@@ -65,7 +143,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   }, [contest?.examDate]);
 
   const calculateProgress = (subs: Subject[]) => {
-    const total = subs.reduce((acc, s) => acc + s.totalTopics, 0);
+    const total = subs.reduce((acc, s) => acc + (s.totalTopics || s.topics?.length || 0), 0);
     const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
     return { 
       total, 
@@ -76,8 +154,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   const prioritySubjects = [...(contest?.subjects || [])]
     .sort((a, b) => {
-      const weights = { 'Muito Alta': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
-      return weights[b.incidence] - weights[a.incidence];
+      const weights: any = { 'Muito Alta': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
+      return (weights[b.incidence || 'Baixa'] || 1) - (weights[a.incidence || 'Baixa'] || 1);
     })
     .slice(0, 3);
 
@@ -133,9 +211,43 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   };
   const streakDays = calculateStreak();
 
-  const todayTask = contest?.schedule?.find(day => !day.completed);
+  const todayTaskIncomplete = contest?.schedule?.find(day => !day.completed);
+  
+  // Calculate todayDayNumber based on start time derived from contest ID
+  const startDate = contest.scheduleStartDate ? new Date(contest.scheduleStartDate) : new Date(parseInt(contest.id.split('-')[1]));
+  const today = new Date();
+  const diffDays = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  // dayNumber 1 is the first day (offset 0)
+  const todayDayNumber = Math.max(1, diffDays);
+
+  const todayTask = contest?.schedule?.find(day => day.dayNumber === todayDayNumber) || todayTaskIncomplete;
+  
   const isDefaultContest = !contest || !contest.ownerId;
   const todayHistory = contest?.dailyHistory?.find(h => h.date === new Date().toISOString().split('T')[0]);
+
+  const [showSimilarityModal, setShowSimilarityModal] = useState(false);
+  const [selectedContestsForComparison, setSelectedContestsForComparison] = useState<string[]>([]);
+
+  const calculateSimilarity = (c1: Contest, c2: Contest) => {
+    if (!c1 || !c2) return 0;
+    
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w\s]/gi, '')
+      .trim();
+
+    const t1 = new Set(c1.subjects.flatMap(s => (s.topics || []).map(t => normalize(t.name))));
+    const t2 = new Set(c2.subjects.flatMap(s => (s.topics || []).map(t => normalize(t.name))));
+    
+    if (t1.size === 0) return 0;
+    
+    let intersection = 0;
+    t1.forEach(topic => {
+      if (t2.has(topic)) intersection++;
+    });
+    
+    return Math.round((intersection / t1.size) * 100);
+  };
 
   const handleSavePerformance = async () => {
     if (!contest) return;
@@ -149,8 +261,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           return {
             ...day,
             completed: true,
-            actualHours: typeof logForm.hours === 'number' ? logForm.hours : 0,
-            actualQuestions: typeof logForm.questions === 'number' ? logForm.questions : 0
+            actualHours: typeof logForm.hours === 'number' ? logForm.hours : (contest.dailyGoalHours || 0),
+            actualQuestions: typeof logForm.questions === 'number' ? logForm.questions : (contest.dailyGoalQuestions || 0)
           };
         }
         return day;
@@ -190,8 +302,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     const today = new Date().toISOString().split('T')[0];
     const newHistoryEntry = { 
       date: today, 
-      hours: typeof logForm.hours === 'number' ? logForm.hours : 0, 
-      questions: typeof logForm.questions === 'number' ? logForm.questions : 0 
+      hours: typeof logForm.hours === 'number' ? logForm.hours : (contest.dailyGoalHours || 0), 
+      questions: typeof logForm.questions === 'number' ? logForm.questions : (contest.dailyGoalQuestions || 0) 
     };
 
     let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
@@ -224,7 +336,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         <motion.div 
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 4 }}
-          className="w-24 h-24 bg-white border border-primary/20 rounded-3xl flex items-center justify-center shadow-xl"
+          className="w-24 h-24 bg-white border border-primary/20 rounded-2xl flex items-center justify-center shadow-xl"
         >
           <BrandLogo showText={false} size="lg" />
         </motion.div>
@@ -237,7 +349,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </p>
         </div>
         <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md">
-          <Link to="/configuracoes" className="flex-1 bg-primary text-white py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-lg">
+          <Link id="tour-importar-dashboard" to="/configuracoes" className="flex-1 bg-primary text-white py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-lg">
             IMPORTAR EDITAL
           </Link>
           <Link to="/comunidade" className="flex-1 bg-white border border-border text-text-main px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all">
@@ -250,19 +362,20 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-0.5">
+      <header className="flex flex-row items-start md:items-center justify-between gap-2 md:gap-4">
+        <div className="space-y-0.5 flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub">Painel de Performance</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub truncate hidden sm:inline-block">Painel de Performance</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub truncate sm:hidden">Painel</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-display text-text-main tracking-tight font-bold truncate">
             Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Estudante'}</span>
           </h2>
-          <p className="text-text-sub text-xs font-medium">
+          <p className="text-text-sub text-[10px] md:text-xs font-medium truncate">
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <div className="mt-2 min-h-[16px]">
+          <div className="mt-2 min-h-[16px] hidden sm:block">
             {todayHistory && (todayHistory.hours > 0 || todayHistory.questions > 0) && (
               <div className="flex gap-3 text-[10px] font-bold text-text-sub uppercase tracking-wider animate-in fade-in slide-in-from-left-2">
                 {todayHistory.hours > 0 && (
@@ -282,10 +395,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </div>
         </div>
 
-        <div className="flex items-stretch gap-2">
+        <div className="flex items-stretch gap-2 shrink-0">
           <button 
             onClick={() => setShowLogModal(true)}
-            className="flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20 group border border-transparent"
+            className="hidden md:flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20 group border border-transparent"
           >
             <PencilLine className="w-4 h-4 text-white" />
             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Registrar</span>
@@ -294,15 +407,15 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           <div className="relative">
             <button 
               onClick={() => setIsSelectorOpen(!isSelectorOpen)}
-              className="h-full flex items-center gap-3 bg-white border border-border px-5 py-3 rounded-2xl hover:border-primary/30 transition-all shadow-sm group min-w-[180px] md:min-w-[200px] justify-between"
+              className="h-full flex items-center gap-2 md:gap-3 bg-white border border-border px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl hover:border-primary/30 transition-all shadow-sm group min-w-[140px] md:min-w-[200px] justify-between"
             >
-            <div className="flex flex-col items-start text-left">
-              <span className="text-[9px] font-bold text-primary uppercase tracking-widest leading-none mb-1">Meus Concursos</span>
-              <span className="text-xs font-black text-text-main uppercase tracking-tight truncate max-w-[150px]">
+            <div className="flex flex-col items-start text-left max-w-[100px] md:max-w-none">
+              <span className="text-[8px] md:text-[9px] font-bold text-primary uppercase tracking-widest leading-none mb-1">Meus Concursos</span>
+              <span className="text-[9px] md:text-[11px] font-black text-text-main uppercase tracking-tight truncate w-full">
                 {contest.role || 'Selecionar Cargo'}
               </span>
             </div>
-            <ChevronDown className={cn("w-4 h-4 text-text-sub transition-transform", isSelectorOpen ? "rotate-180" : "")} />
+            <ChevronDown className={cn("w-3 h-3 md:w-4 md:h-4 text-text-sub flex-shrink-0 transition-transform", isSelectorOpen ? "rotate-180" : "")} />
           </button>
 
           <AnimatePresence>
@@ -323,49 +436,35 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                       <div className="p-6 text-center text-xs text-text-sub font-bold uppercase italic tracking-widest">Nenhum cargo salvo</div>
                     ) : (
                       contests.map((c) => (
-                        <div key={c.id} className="group relative flex items-center pr-2">
-                          <button
-                            onClick={() => {
-                              onSwitchContest(c);
-                              setIsSelectorOpen(false);
-                            }}
-                            className={cn(
-                              "flex-1 px-5 py-4 flex flex-col items-start gap-1 transition-all hover:bg-slate-50 border-l-4",
-                              contest.id === c.id ? "border-primary bg-primary/5" : "border-transparent"
-                            )}
-                          >
-                            <span className={cn("text-xs font-black uppercase tracking-tight", contest.id === c.id ? "text-primary" : "text-text-main")}>
-                              {c.role}
-                            </span>
-                            <span className="text-[10px] font-medium text-text-sub uppercase tracking-wider opacity-60">
-                              {c.name}
-                            </span>
-                          </button>
-                          {onDelete && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (window.confirm('Deseja realmente excluir este edital?')) {
-                                  onDelete(c.id);
-                                }
-                              }}
-                              className="p-3 text-text-sub hover:text-red-500 opacity-40 sm:opacity-0 group-hover:opacity-100 transition-all rounded-xl hover:bg-red-50"
-                              title="Excluir Edital"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                        <ContestSelectorItem 
+                          key={c.id} 
+                          c={c} 
+                          currentContestId={contest.id} 
+                          onSwitchContest={onSwitchContest} 
+                          onDelete={onDelete} 
+                          onClose={() => setIsSelectorOpen(false)} 
+                        />
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t border-border bg-slate-50/30">
+                  <div className="p-3 border-t border-border bg-slate-50/30 space-y-2">
+                    {contests.length > 1 && (
+                      <button 
+                        onClick={() => {
+                          setShowSimilarityModal(true);
+                          setIsSelectorOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl text-[9px] font-black text-indigo-600 uppercase tracking-widest hover:bg-indigo-100 transition-all shadow-sm"
+                      >
+                       <Zap className="w-3 h-3" /> Comparar Similaridade
+                      </button>
+                    )}
                     <Link 
                       to="/configuracoes" 
                       onClick={() => setIsSelectorOpen(false)}
                       className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-border rounded-xl text-[10px] font-black text-text-main uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
                     >
-                      <Sparkles className="w-3.5 h-3.5 text-primary" /> Gerenciar Concursos
+                    <Target className="w-3.5 h-3.5 text-primary" /> Gerenciar Concursos
                     </Link>
                   </div>
                 </motion.div>
@@ -378,33 +477,40 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
 
       {/* Main Countdown Card */}
-      <div className="rise-card bg-primary text-white p-6 md:p-8 relative overflow-hidden shadow-lg border-none rounded-3xl group">
+      <div className="rise-card bg-primary text-white p-6 md:p-8 relative overflow-hidden shadow-lg border-none rounded-2xl group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary/90 transition-transform duration-700 group-hover:scale-105"></div>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
         <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/20 blur-3xl rounded-full"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
-          <div className="text-center md:text-left space-y-1 md:flex-1 w-full">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white mb-2">
+          <div className="text-center md:text-left space-y-3 md:flex-1 w-full">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-white">
               <Calendar className="w-3 h-3" />
               Data da Prova
             </div>
             <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm">{contest.name}</h2>
+            
+            <div className="text-sm font-bold text-white/90">
+              {new Date(contest.examDate).toLocaleDateString('pt-BR')}
+            </div>
+           
           </div>
           
-          <div className="flex justify-center items-center gap-4 md:gap-6 bg-black/10 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm w-full md:w-auto">
-            {[
-              { label: 'DIAS', value: timeLeft.days },
-              { label: 'HORAS', value: timeLeft.hours },
-              { label: 'MIN', value: timeLeft.minutes },
-              { label: 'SEG', value: timeLeft.seconds }
-            ].map((unit, i) => (
-              <div key={i} className="text-center min-w-[3.5rem] md:min-w-[4rem]">
-                <div className="text-3xl md:text-4xl font-display tracking-tighter font-black text-white">{unit.value}</div>
-                <div className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/60 mt-1">{unit.label}</div>
-              </div>
-            ))}
-          </div>
+          {new Date(contest.examDate).getTime() >= Date.now() && (
+            <div className="flex justify-center items-center gap-4 md:gap-6 bg-black/10 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm w-full md:w-auto">
+              {[
+                { label: 'DIAS', value: timeLeft.days },
+                { label: 'HORAS', value: timeLeft.hours },
+                { label: 'MIN', value: timeLeft.minutes },
+                { label: 'SEG', value: timeLeft.seconds }
+              ].map((unit, i) => (
+                <div key={i} className="text-center min-w-[3.5rem] md:min-w-[4rem]">
+                  <div className="text-3xl md:text-4xl font-display tracking-tighter font-black text-white">{unit.value}</div>
+                  <div className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/60 mt-1">{unit.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -431,14 +537,11 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
       {/* Progress Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center justify-between px-1 pt-2">
            <h3 className="text-xs font-display text-text-main uppercase font-bold tracking-wider flex items-center gap-2">
-              <div className="w-1 h-3 bg-primary rounded-full"></div>
-              Progresso
+              <div className="w-1 h-3 bg-secondary rounded-full"></div>
+              Progresso do Ranking
            </h3>
-           <Link to="/materias" className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1 hover:underline">
-             Detalhes <ChevronRight className="w-3 h-3" />
-           </Link>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -501,27 +604,47 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
              Meta de Hoje
           </h3>
           <div className="rise-card p-4 md:p-6 flex flex-col items-center text-center space-y-5 bg-gradient-to-b from-white to-slate-50 border border-border shadow-sm">
-            {todayTask ? (
+            {todayTask && !todayTask.completed ? (
               <div className="space-y-4 w-full">
                 <div className="space-y-3 w-full">
                   <p className="text-[9px] font-bold uppercase tracking-widest text-text-sub">Planejamento para agora</p>
                   
                   <div className="space-y-2 text-left w-full">
                     {todayTask.generalTopic && (
-                      <div className="p-3 bg-white rounded-xl border border-border/60 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-colors">
-                         <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1.5 mb-1 opacity-70">
-                            <div className="w-1 h-1 bg-slate-400 rounded-full" /> Geral
-                         </span>
-                         <div className="text-[11px] font-bold text-text-main leading-tight line-clamp-2">{todayTask.generalTopic}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-3 bg-white rounded-xl border border-border/60 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-colors">
+                           <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1.5 mb-1 opacity-70">
+                              <div className="w-1 h-1 bg-slate-400 rounded-full" /> Geral
+                           </span>
+                           <div className="text-[11px] font-bold text-text-main leading-tight line-clamp-2">{todayTask.generalTopic}</div>
+                        </div>
+                        <button 
+                          onClick={() => handleSavePerformance()}
+                          className="w-10 h-10 shrink-0 bg-white border border-border rounded-xl flex items-center justify-center text-border hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm group"
+                          title="Marcar como Estudado"
+                        >
+                          <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
+                        </button>
                       </div>
                     )}
 
                     {todayTask.specificTopic && (
-                      <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group hover:bg-primary/10 transition-colors">
-                         <span className="text-[8px] font-bold uppercase text-primary tracking-widest flex items-center gap-1.5 mb-1">
-                            <div className="w-1 h-1 bg-primary rounded-full" /> Específico
-                         </span>
-                         <div className="text-xs font-bold text-text-main leading-tight italic line-clamp-2">{todayTask.specificTopic}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-3 bg-primary/5 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group hover:bg-primary/10 transition-colors">
+                           <span className="text-[8px] font-bold uppercase text-primary tracking-widest flex items-center gap-1.5 mb-1">
+                              <div className="w-1 h-1 bg-primary rounded-full" /> Específico
+                           </span>
+                           <div className="text-xs font-bold text-text-main leading-tight italic line-clamp-2">{todayTask.specificTopic}</div>
+                        </div>
+                        {!todayTask.generalTopic && (
+                          <button 
+                            onClick={() => handleSavePerformance()}
+                            className="w-10 h-10 shrink-0 bg-white border border-border rounded-xl flex items-center justify-center text-border hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm group"
+                            title="Marcar como Estudado"
+                          >
+                            <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -595,7 +718,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
              
               <div className="grid grid-cols-2 gap-2 mt-1">
                  <Link to="/microaprendizado" className="rise-card p-2 text-center border-border/60 hover:border-primary/40 transition-all flex flex-col items-center gap-1">
-                   <Sparkles className="w-3 h-3 text-primary" />
+                   <Star className="w-3 h-3 text-primary" />
                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Revisão</span>
                  </Link>
                  <Link to="/comunidade" className="rise-card p-2 text-center border-border/60 hover:border-accent/40 transition-all flex flex-col items-center gap-1">
@@ -607,6 +730,138 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         </div>
 
       </div>
+
+      {/* Relatórios Section */}
+      <div className="space-y-4 pt-8">
+        <div className="flex items-center justify-between px-1">
+           <h3 className="text-xs font-display text-text-main uppercase font-bold tracking-wider flex items-center gap-2">
+              <div className="w-1 h-3 bg-primary rounded-full"></div>
+              Relatórios e Análises
+           </h3>
+           <Link to="/pareto" className="text-xs font-bold text-accent uppercase tracking-wider flex items-center gap-1 hover:underline">
+             Ver Dashboard Completo <ChevronRight className="w-3 h-3" />
+           </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pb-4">
+          <Link to="/pareto" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-accent/40 transition-all group overflow-hidden relative">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-accent/5 rounded-full blur-xl group-hover:bg-accent/10 transition-all" />
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent border border-accent/20">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Pareto 80/20</h4>
+              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Foco nos conteúdos estratégicos</p>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-accent uppercase tracking-widest">
+              Analisar Banca <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+
+          <Link to="/materias" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-primary/40 transition-all group overflow-hidden relative">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-all" />
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Edital Vertical</h4>
+              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Sua evolução em cada tópico</p>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-primary uppercase tracking-widest">
+              Ver Detalhes <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
+
+          <button 
+            onClick={() => setShowSimilarityModal(true)}
+            className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-indigo-400/40 transition-all group overflow-hidden relative text-left"
+          >
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-all" />
+            <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+              <Zap className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Similaridade</h4>
+              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Compare este com outros editais</p>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-indigo-500 uppercase tracking-widest">
+              Analisar agora <ArrowRight className="w-3 h-3" />
+            </div>
+          </button>
+
+          <div className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-secondary/40 transition-all group overflow-hidden relative">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-secondary/5 rounded-full blur-xl group-hover:bg-secondary/10 transition-all" />
+            <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary border border-secondary/20">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Metas e Recordes</h4>
+              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Foco no seu alto desempenho</p>
+            </div>
+            <button 
+              onClick={() => setShowLogModal(true)}
+              className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-secondary uppercase tracking-widest hover:underline"
+            >
+              Registrar Agora <Plus className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Similarity Modal */}
+      <AnimatePresence>
+        {showSimilarityModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }} 
+              className="rise-card w-full max-w-md p-8 bg-white border border-border space-y-6"
+            >
+              <div className="text-center space-y-2">
+                 <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto text-indigo-500 mb-2">
+                    <Zap className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-display font-bold text-text-main">Análise de Similaridade</h3>
+                 <p className="text-xs text-text-sub">Veja o quanto outros editais cobrem o conteúdo deste.</p>
+              </div>
+
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                {contests.filter(c => c.id !== contest.id).length === 0 ? (
+                  <p className="text-center text-xs text-text-sub font-medium py-10 uppercase tracking-widest">Importe outros editais para comparar</p>
+                ) : (
+                  contests.filter(c => c.id !== contest.id).map(other => {
+                    const similarity = calculateSimilarity(contest, other);
+                    return (
+                      <div key={other.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-colors">
+                        <div className="overflow-hidden pr-4">
+                          <div className="text-[10px] font-black text-text-main uppercase tracking-tight truncate">{other.role}</div>
+                          <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{other.name}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className={cn(
+                            "text-lg font-black font-display leading-none",
+                            similarity > 70 ? "text-green-500" : similarity > 40 ? "text-indigo-500" : "text-text-sub"
+                          )}>
+                            {similarity}%
+                          </div>
+                          <div className="text-[8px] font-black uppercase text-text-sub tracking-widest mt-1">Match</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="pt-2">
+                <button onClick={() => setShowSimilarityModal(false)} className="w-full bg-slate-100 text-text-main py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-colors shadow-sm">
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Log Modal */}
       <AnimatePresence>

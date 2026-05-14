@@ -38,8 +38,10 @@ export interface Contest {
   subjects: Subject[];
   dailyGoalHours?: number;
   dailyGoalQuestions?: number;
+  dailyContentVolume?: number;
   schedule?: ScheduleDay[];
   dailyHistory?: { date: string, hours: number, questions: number }[];
+  scheduleStartDate?: string;
   ownerId?: string;
   ownerName?: string;
   likesCount?: number;
@@ -48,6 +50,7 @@ export interface Contest {
   paretoAnalyzed?: boolean;
   createdAt?: any;
   updatedAt?: any;
+  ownerIsCreator?: boolean;
 }
 
 export interface UserProgress {

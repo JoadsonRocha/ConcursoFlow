@@ -5,7 +5,7 @@ import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Be
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { getStorage, ref, uploadString, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
+import { auth, db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
 const storage = getStorage(db.app);
@@ -20,6 +20,8 @@ export default function Perfil() {
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isCreator, setIsCreator] = useState(profile?.isCreator || false);
+  const [isPro, setIsPro] = useState(profile?.userPlan === 'pro');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -88,6 +90,8 @@ export default function Perfil() {
         concursoFoco,
         nivelAtual,
         fraseStatus,
+        isCreator,
+        userPlan: isPro ? 'pro' : 'free',
         updatedAt: new Date()
       });
       
@@ -106,11 +110,11 @@ export default function Perfil() {
   };
 
   const handlePasswordReset = async () => {
-    if (!user.email) return;
+    if (!user?.email) return;
     setResetLoading(true);
     setMessage(null);
     try {
-      await sendPasswordResetEmail(user.auth, user.email);
+      await sendPasswordResetEmail(auth, user.email);
       setMessage({ type: 'success', text: 'E-mail de redefinição de senha enviado!' });
     } catch (err) {
       setMessage({ type: 'error', text: 'Erro ao enviar e-mail. Tente novamente mais tarde.' });
@@ -265,6 +269,50 @@ export default function Perfil() {
                   </div>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between p-6 bg-slate-50 border border-border rounded-2xl">
+                <div>
+                  <h4 className="text-sm font-bold text-text-main mb-1">Selo Criador de Conteúdo</h4>
+                  <p className="text-xs text-text-sub max-w-sm">
+                    Ative seu selo de Criador. No futuro, isso permitirá vender mapas mentais, resumos e flashcards na Comunidade.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreator(!isCreator)}
+                  className={cn(
+                    "w-14 h-8 rounded-full transition-colors relative shrink-0",
+                    isCreator ? "bg-primary" : "bg-slate-300"
+                  )}
+                >
+                  <div className={cn(
+                    "w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow-sm",
+                    isCreator ? "left-7" : "left-1"
+                  )} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between p-6 bg-slate-50 border border-border rounded-2xl">
+                <div>
+                  <h4 className="text-sm font-bold text-text-main mb-1">Simular Plano PRO</h4>
+                  <p className="text-xs text-text-sub max-w-sm">
+                    Apenas para desenvolvimento. Ativa as funcionalidades como Importação e Mescla de Editais.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPro(!isPro)}
+                  className={cn(
+                    "w-14 h-8 rounded-full transition-colors relative shrink-0",
+                    isPro ? "bg-accent" : "bg-slate-300"
+                  )}
+                >
+                  <div className={cn(
+                    "w-6 h-6 bg-white rounded-full absolute top-1 transition-all shadow-sm",
+                    isPro ? "left-7" : "left-1"
+                  )} />
+                </button>
+              </div>
+
             </div>
 
             <button 

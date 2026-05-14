@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { BarChart2, Info, Building2, Target, Loader2, Sparkles, AlertCircle, BookOpen, BookOpenCheck } from 'lucide-react';
+import { BarChart2, Info, Building2, Target, Loader2, Zap, TrendingUp, AlertCircle, BookOpen, BookOpenCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Contest } from '../types';
 
@@ -157,7 +157,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               )}
               onClick={handleAnalyze}
             >
-              <Sparkles className="w-5 h-5" />
+              <Zap className="w-5 h-5" />
               Gerar Análise Pareto
             </button>
           </div>
@@ -208,7 +208,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
             <div className="bg-white border-2 border-primary/20 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6 border-b border-border pb-4">
                 <div className="w-10 h-10 rounded-xl bg-green-500/10 text-green-600 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
+                  <TrendingUp className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-black text-text-main uppercase tracking-tight text-lg">Top 20% (Alta Incidência)</h3>

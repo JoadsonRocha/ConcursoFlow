@@ -22,6 +22,17 @@ const config = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
 };
 
+// Validate config
+if (process.env.NODE_ENV !== 'production') {
+  const missingFields = Object.entries(config)
+    .filter(([key, value]) => !value && key !== 'measurementId')
+    .map(([key]) => key);
+
+  if (missingFields.length > 0) {
+    console.warn(`⚠️ Firebase config is missing: ${missingFields.join(', ')}. Certifique-se de que o projeto Firebase foi provisionado.`);
+  }
+}
+
 const databaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId;
 
 const app = initializeApp(config);

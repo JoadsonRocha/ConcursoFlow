@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { X, Save, Share2, AlertCircle, Sparkles, Wand2, Loader2, Check } from 'lucide-react';
+import { X, Save, Share2, AlertCircle, Zap, Wand2, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateFlashcards, GeneratedFlashcard } from '../services/geminiService';
 
@@ -14,9 +14,9 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
   const [mode, setMode] = useState<'manual' | 'ai'>('ai');
   const [front, setFront] = useState('');
   const [back, setBack] = useState('');
+  const [description, setDescription] = useState('');
   const [aiTopic, setAiTopic] = useState('');
   const [generatedCards, setGeneratedCards] = useState<GeneratedFlashcard[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.name || '');
   const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -28,7 +28,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       const cardData = {
         front,
         back,
-        subjectName: selectedSubject,
+        description,
         ownerId: auth.currentUser.uid,
         ownerName: auth.currentUser.displayName || 'Estudante',
         isPublic,
@@ -73,7 +73,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       const batch = generatedCards.map(card => {
         const data = {
           ...card,
-          subjectName: selectedSubject,
+          description,
           ownerId: auth.currentUser!.uid,
           ownerName: auth.currentUser!.displayName || 'Estudante',
           isPublic,
@@ -90,7 +90,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
         generatedCards.forEach(card => {
           const data = {
             ...card,
-            subjectName: selectedSubject,
+            description,
             ownerId: auth.currentUser!.uid,
             ownerName: auth.currentUser!.displayName || 'Estudante',
             isPublic,
@@ -129,7 +129,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                 onClick={() => setMode('ai')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${mode === 'ai' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'}`}
                >
-                 <Sparkles className="w-3 h-3" />
+                 <Zap className="w-3 h-3" />
                  Gerar com IA
                  <span className="bg-primary/10 text-primary text-[8px] px-1.5 py-0.5 rounded-full ml-1">Recomendado</span>
                </button>
@@ -167,6 +167,16 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                   className="w-full bg-slate-50 border border-border rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all resize-none h-24"
                 />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-text-sub uppercase tracking-widest ml-1">Descrição (Opcional)</label>
+                <input 
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Artigo 5º da CF, Atos Administrativos..."
+                  className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
@@ -190,6 +200,16 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
                       </button>
                     </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-text-sub uppercase tracking-widest ml-1">Descrição do Lote (Opcional)</label>
+                    <input 
+                      type="text"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Ex: Revisão Final, Concurso X..."
+                      className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                    />
                   </div>
                   <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex gap-3">
                      <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -215,21 +235,11 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-text-sub uppercase tracking-widest ml-1">Matéria</label>
-              <select 
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full bg-slate-50 border border-border rounded-xl px-4 py-2.5 text-xs outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-              </select>
-            </div>
-            <div className="flex flex-col justify-end">
+          <div className="flex justify-end">
+            <div className="w-1/2">
               <button 
                 onClick={() => setIsPublic(!isPublic)}
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all ${isPublic ? 'bg-primary/10 border-primary text-primary' : 'bg-slate-50 border-border text-text-sub '}`}
+                className={`w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border transition-all ${isPublic ? 'bg-primary/10 border-primary text-primary' : 'bg-slate-50 border-border text-text-sub '}`}
               >
                 <Share2 className="w-4 h-4" />
                 <span className="text-[10px] font-bold uppercase">{isPublic ? 'Público' : 'Privado'}</span>

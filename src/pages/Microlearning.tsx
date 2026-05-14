@@ -20,8 +20,8 @@ import {
   Share2,
   X,
   Trash2,
-  Sparkles,
-  BookOpen
+  BookOpen,
+  Globe
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -33,8 +33,10 @@ import FlashcardDeck from '../components/FlashcardDeck';
 import SVGMapCreator from '../components/SVGMapCreator';
 import SVGMapViewer from '../components/SVGMapViewer';
 import { Node, Edge } from 'reactflow';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Microlearning({ contest }: { contest: Contest }) {
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>('selection');
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
@@ -200,6 +202,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           description: publishForm.description,
           isPublic: true,
           ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          ownerIsCreator: !!profile?.isCreator,
           publishedAt: serverTimestamp(),
         });
         setPreviewMindMap((prev: any) => ({ ...prev, isPublic: true }));
@@ -211,6 +214,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           subjectName: item.subject || 'Geral',
           ownerId: auth.currentUser.uid,
           ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          ownerIsCreator: !!profile?.isCreator,
           likesCount: 0,
           clonesCount: 0,
           title: publishForm.title,
@@ -274,7 +278,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           >
             <div className="flex justify-between items-center gap-4">
               <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-3 py-1 bg-accent/10 rounded-full border border-accent/20">
-                {previewFlashcard.subject || 'Flashcard'}
+                {previewFlashcard.description || previewFlashcard.subjectName || previewFlashcard.subject || 'Flashcard'}
               </span>
               <button onClick={() => setPreviewFlashcard(null)} className="p-2 rounded-xl hover:bg-slate-100 transition-colors"><X /></button>
             </div>
@@ -304,7 +308,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 }}
                 className="flex-1 bg-indigo-50 text-indigo-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
                >
-                 <Sparkles className="w-3.5 h-3.5" />
+                 <Globe className="w-3.5 h-3.5" />
                  Compartilhar na Comunidade
                </button>
                <button 
@@ -350,7 +354,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                     }}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-600/20"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Globe className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline text-[9px]">Publicar na Comunidade</span>
                   </button>
                 ) : (
@@ -565,10 +569,10 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="text-center flex-1 min-w-0">
-              <h2 className="text-xl font-display font-bold text-text-main italic truncate">{previewFlashcard.front}</h2>
-              <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{previewFlashcard.subject || 'Flashcard'}</p>
-            </div>
+              <div className="text-center flex-1 min-w-0">
+                <h2 className="text-xl font-display font-bold text-text-main italic truncate">{previewFlashcard.front}</h2>
+                <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{previewFlashcard.description || previewFlashcard.subjectName || previewFlashcard.subject || 'Flashcard'}</p>
+              </div>
             <button 
               onClick={() => {
                 setPublishType('flashcard');
@@ -579,7 +583,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
               className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
               title="Publicar na Comunidade"
             >
-              <Sparkles className="w-5 h-5" />
+              <Globe className="w-5 h-5" />
             </button>
           </header>
 
@@ -657,7 +661,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                   className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                   title="Publicar na Comunidade"
                 >
-                  <Sparkles className="w-5 h-5" />
+                  <Share2 className="w-5 h-5" />
                 </button>
               )}
             </div>
@@ -778,7 +782,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                         className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
                         title="Publicar na Comunidade"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Globe className="w-3.5 h-3.5" />
                       </button>
                       <button 
                         onClick={(e) => {
@@ -794,7 +798,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                   
                   <div className="flex-1 space-y-2">
                     <div className="text-[10px] font-bold text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-md inline-block">
-                      {card.subject || 'Geral'}
+                      {card.description || card.subjectName || card.subject || 'Geral'}
                     </div>
                     <h4 className="text-sm font-bold text-text-main line-clamp-2">{card.front}</h4>
                     <p className="text-[11px] text-text-sub italic line-clamp-2 leading-relaxed">{card.back}</p>
@@ -850,7 +854,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                           }}
                           className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
                         >
-                          <Sparkles className="w-3 h-3" />
+                          <Share2 className="w-3 h-3" />
                         </button>
                         <button 
                           onClick={(e) => deleteMindMap(e, m.id)}
@@ -989,7 +993,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                                 className="p-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"
                                 title="Publicar na Comunidade"
                               >
-                                <Sparkles className="w-3.5 h-3.5" />
+                                <Share2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                             <button 

@@ -93,34 +93,51 @@ export const generateMindMap = async (subject: string) => {
   }
 };
 
-export const generateSVGMap = async (prompt: string, quantity: number = 3) => {
+export const generateSVGMap = async (title: string, prompt: string, quantity: number = 3) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `VOCÊ É UM PROFESSOR DE CONCURSOS ESTRATEGISTA, ESPECIALISTA EM REVISÕES POR MAPAS MENTAIS DE ALTO IMPACTO.
-      Seu objetivo é criar uma "ESQUEMATIZAÇÃO TÁTICA PROFISSIONAL" (Mapa Mental de Elite) sobre o tema: "${prompt}".
+      contents: `VOCÊ É UM DESIGNER INSTRUCIONAL DE ELITE E PROFESSOR ESTRATEGISTA DE CONCURSOS.
+      Seu objetivo é criar um MAPA MENTAL INFOGRÁFICO (SVG) de altíssimo nível.
       
-      DIRETRIZ DE ENGENHARIA DE REVISÃO: Pensamento de Professor Especialista.
+      TEMA CENTRAL (Obrigatório): "${title}"
+      DESCRIÇÃO/FOCO: "${prompt}"
       
-      DIRETRIZES DE DESIGN TÁTICO:
-      1. PERSONA: Mentor de elite para concursos de alto nível (Auditor, Juiz, Promotor, Analista).
-      2. PROFUNDIDADE: Detalhado, técnico e exaustivo nos pontos de incidência (Doutrina, Lei e Jurisprudência).
-      3. ESTRUTURA DO MAPA:
-         - TEMA CENTRAL: Destaque visual impactante.
-         - RAMIFICAÇÕES DE 1º NÍVEL: Grandes blocos, classificações e regimes.
-         - RAMIFICAÇÕES DE 2º NÍVEL: Exceções, Prazos, Quóruns, e as "Entrelinhas" das bancas (FGV, FCC, CEBRASPE).
-         - MNEMÔNICOS: Inclua gatilhos de memorização visual e mnemônicos operacionais.
+      ESTILO VISUAL: "Modern Academic High-Impact".
       
-      REQUISITOS VISUAIS E TÉCNICOS (SVG):
-      - MARCA D'ÁGUA OBRIGATÓRIA: Adicione o texto "STRATIS PLANNER" no fundo do SVG, com opacidade baixíssima (fill="rgba(0,0,0,0.05)" ou opacity="0.08"), servindo como fundo protetor.
-      - Design limpo, proporção A4 vertical (viewBox="0 0 800 1131").
-      - Use cores contrastantes e hierarquia visual clara (temas principais com fontes maiores/negrito).
-      - Todo texto deve estar dentro de tags <text> com fontes perfeitamente legíveis.
-      - Use linhas e setas dinâmicas para guiar o fluxo de raciocínio.
-      - O SVG deve ser profissional, elegante e funcional.
+      DIRETRIZ CRÍTICA DE CONTEÚDO:
+      - O conteúdo DEVE ser estritamente relacionado ao Tema Central e à Descrição fornecidos.
+      - NÃO gere conteúdos genéricos ou aleatórios.
+      - Se o tema for "Direito Administrativo", o conteúdo deve ser sobre isso.
+      - Se a descrição pedir "Atos Administrativos", foque EXCLUSIVAMENTE em Atos Administrativos dentro de Direito Administrativo.
+      
+      DIRETRIZES DE DESIGN (CSS/SVG STYLE):
+      - CORES: Use uma paleta profissional (Azul Marinho #1e293b, Ouro #fbbf24, Carmim #e11d48, Verde Esmeralda #059669).
+      - TIPOGRAFIA: Títulos em negrito (font-weight: 800), subtítulos médios, detalhes finos.
+      - FORMAS E TEXTO: 
+        * TEMA CENTRAL: Retângulo arredondado com sombra e borda grossa.
+        * RAMOS SECUNDÁRIOS: Pílulas (capsule shape) coloridas.
+        * DETALHES/RESUMOS: Retângulos brancos com bordas coloridas finas.
+        * ANTI-OVERFLOW: O texto deve estar centralizado e SEMPRE caber dentro da forma. Se o texto for longo, aumente a largura da forma proporcionalmente ou use múltiplas linhas (<tspan>). NUNCA deixe o texto sair das bordas.
+      - CONECTORES VETORIAIS: 
+        * OBRIGATORIEDADE: Todo card (secundário ou detalhe) DEVE obrigatoriamente ter uma linha (<line>) ou curva (<path>) visível conectando-o ao seu card pai ou ao tema central.
+        * ESTILO: Use curvas suaves (Bezier) ou linhas retas com gradientes sutis.
+      - MARCA D'ÁGUA OBRIGATÓRIA: Inclua o texto "STRATISPLANNER - Inteligência Estratégica para Concursos" em fonte PEQUENA e DISCRETA, posicionado obrigatoriamente na PARTE INFERIOR (Rodapé) de cada SVG (ex: y="1110"). Use opacidade baixíssima (fill-opacity="0.05").
+      
+      DIRETRIZES DE CONTEÚDO (CONCURSOS):
+      1. NÚCLEO DURO: A lei seca e os conceitos "pedra de toque" do tema "${title}".
+      2. GATILHOS DE MEMÓRIA: Crie e destaque MNEMÔNICOS reais e eficazes para o tema.
+      3. CAI EM PROVA (DICA DE BANCA): Destaque o que as principais bancas mais cobram sobre "${title}".
+      4. ALERTA DE PEGADINHA: Crie um box vermelho "NÃO CONFUNDIR" para termos similares do tema.
+      5. JURISPRUDÊNCIA: Cite brevemente informativos do STF/STJ se aplicável ao tema.
+      
+      REQUISITOS TÉCNICOS:
+      - Formato: A4 Vertical (viewBox="0 0 800 1131").
+      - Use <defs> para filtros de sombra (drop-shadow) se possível.
+      - Organizacional: Centralize o tema e ramifique de forma síncrona.
       
       SAÍDA:
-      Divida o conteúdo em exatamente ${quantity} SVG(s) independentes e lógicos. Retorne um array JSON com exatamente ${quantity} strings de código SVG.`,
+      Divida em exatamente ${quantity} mapas lógicos que se complementam ou detalham partes diferentes do tema. Retorne um array JSON com ${quantity} strings de código SVG.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {

@@ -3,14 +3,16 @@ import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Contest } from '../types';
-import { Users, Heart, Download, Search, Filter, Calendar, Award, Sparkles, User as UserIcon, X, ChevronRight, BookOpen, Lightbulb, Share2 } from 'lucide-react';
+import { Users, Heart, Download, Search, Filter, Calendar, Award, User as UserIcon, X, ChevronRight, BookOpen, Lightbulb, Share2, Layers, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import SVGMapViewer from '../components/SVGMapViewer';
+import ProModal from '../components/ProModal';
 import { toast } from 'sonner';
 
-export default function Comunidade({ onImport }: { onImport: (contest: Contest) => void }) {
-  const { user } = useAuth();
+export default function Comunidade({ onImport, contests }: { onImport: (contest: Contest) => void, contests?: Contest[] }) {
+  const { user, profile } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'contests' | 'flashcards' | 'mindmaps'>('contests');
   const [sharedContests, setSharedContests] = useState<Contest[]>([]);
   const [sharedFlashcards, setSharedFlashcards] = useState<any[]>([]);
@@ -135,6 +137,10 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
 
   const handleClone = async (contest: Contest) => {
     if (!user) return;
+    if (profile?.userPlan !== 'pro' && contests && contests.length >= 1) {
+      setShowProModal(true);
+      return;
+    }
     try {
       const clonedContest = {
         ...contest,
@@ -239,7 +245,7 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
               activeTab === 'mindmaps' ? "bg-white text-indigo-500 shadow-sm" : "text-text-sub hover:text-text-main"
             )}
           >
-            <Sparkles className="w-4 h-4" />
+            <Layers className="w-4 h-4" />
             Mapas
           </button>
         </div>
@@ -307,7 +313,10 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                       <h4 className="text-xl font-display text-text-main leading-tight truncate font-bold group-hover:text-primary transition-colors italic">{contest.role}</h4>
                       <div className="flex items-center gap-2 pt-1">
                          <UserIcon className="w-3.5 h-3.5 text-text-sub/50" />
-                         <span className="text-xs font-bold text-text-sub uppercase tracking-wider truncate">Por {contest.ownerName || 'Estrategista'}</span>
+                         <span className="text-xs font-bold text-text-sub uppercase tracking-wider truncate flex items-center gap-1">
+                           Por {contest.ownerName || 'Estrategista'}
+                           {contest.ownerIsCreator && <Award className="w-3.5 h-3.5 text-primary" />}
+                         </span>
                       </div>
                     </div>
                     <button 
@@ -400,7 +409,10 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                      <p className="text-xs font-bold text-text-main line-clamp-3 italic mb-4">"{f.front}"</p>
                   </div>
                   <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
-                     <span className="text-[8px] font-medium text-text-sub uppercase">Por {f.ownerName}</span>
+                     <span className="text-[8px] font-medium text-text-sub uppercase flex items-center gap-1">
+                       Por {f.ownerName}
+                       {f.ownerIsCreator && <Award className="w-3 h-3 text-accent" />}
+                     </span>
                      <button 
                       onClick={() => handleCloneFlashcard(f)}
                       className="flex items-center gap-2 px-3 py-2 bg-accent/10 text-accent rounded-lg hover:bg-accent transition-all hover:text-white font-bold text-[9px] uppercase tracking-wider"
@@ -419,7 +431,7 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
           filteredMindMaps.length === 0 ? (
             <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-slate-50 border-border">
               <div className="w-24 h-24 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] flex items-center justify-center shadow-sm">
-                <Sparkles className="w-10 h-10 text-indigo-500/40" />
+                <Layers className="w-10 h-10 text-indigo-500/40" />
               </div>
               <div className="space-y-3">
                 <h3 className="text-2xl font-display text-text-main italic font-bold">Sem Mapas Mentais</h3>
@@ -454,10 +466,13 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                     </div>
                     <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
                        <div className="flex items-center gap-2">
-                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600 shrink-0">
                            {m.ownerName?.[0]?.toUpperCase() || 'E'}
                          </div>
-                         <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px]">{m.ownerName || 'Estrategista'}</span>
+                         <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px] flex items-center gap-1">
+                           {m.ownerName || 'Estrategista'}
+                           {m.ownerIsCreator && <Award className="w-3 h-3 text-indigo-500 shrink-0" />}
+                         </span>
                        </div>
                        
                        <div className="flex items-center gap-2">
@@ -504,7 +519,10 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                   <p className="text-xs font-bold text-primary uppercase tracking-wider italic">{previewContest.name}</p>
                   <h3 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold italic">{previewContest.role}</h3>
                   <div className="flex items-center gap-3 pt-1">
-                    <span className="text-xs font-bold text-text-sub uppercase tracking-wider bg-slate-100 border border-border px-4 py-1.5 rounded-full italic">Originado por {previewContest.ownerName || 'Estrategista'}</span>
+                    <span className="text-xs font-bold text-text-sub uppercase tracking-wider bg-slate-100 border border-border px-4 py-1.5 rounded-full italic flex items-center gap-1">
+                      Originado por {previewContest.ownerName || 'Estrategista'}
+                      {(previewContest as any).ownerIsCreator && <Award className="w-3.5 h-3.5 text-primary" />}
+                    </span>
                   </div>
                 </div>
                 <button 
@@ -531,7 +549,7 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
                   <div className="flex items-center justify-between border-b border-border pb-4">
                     <h4 className="text-xs font-bold text-text-sub uppercase tracking-wider">Módulos de Estudo</h4>
                     <div className="flex items-center gap-2 text-[10px] font-bold text-primary uppercase tracking-wider bg-primary/5 px-4 py-1.5 rounded-full border border-primary/10">
-                      <Sparkles className="w-3 h-3" />
+                      <Star className="w-3 h-3" />
                       Sugestões do App
                     </div>
                   </div>
@@ -615,13 +633,15 @@ export default function Comunidade({ onImport }: { onImport: (contest: Contest) 
               <div className="flex-1 bg-slate-50 border border-border rounded-xl overflow-hidden min-h-[400px]">
                 <SVGMapViewer svgData={previewMindMap.svgData || []} />
               </div>
-              <div className="text-xs font-bold text-text-sub uppercase tracking-widest text-center">
+              <div className="text-xs font-bold text-text-sub uppercase tracking-widest text-center flex items-center justify-center gap-1">
                 Por {previewMindMap.ownerName || 'Estrategista'}
+                {previewMindMap.ownerIsCreator && <Award className="w-3.5 h-3.5 text-indigo-500" />}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Múltiplos Editais" />
     </div>
   );
 }

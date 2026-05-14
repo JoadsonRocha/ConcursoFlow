@@ -4,7 +4,6 @@ import {
   Mail, 
   Lock, 
   User as UserIcon, 
-  Sparkles,
   ArrowLeft,
   ChevronRight
 } from 'lucide-react';
@@ -55,12 +54,30 @@ export default function Auth() {
     } catch (err: any) {
       console.error(err);
       let msg = 'Erro ao processar autenticação';
+      
+      // Try to parse Firestore error if it's a JSON string
+      try {
+        if (typeof err.message === 'string' && err.message.startsWith('{')) {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error?.includes('permission-denied') || parsed.error?.includes('insufficient permissions')) {
+            msg = 'Erro de permissão no Banco de Dados. Tente novamente em instantes.';
+          } else {
+            msg = parsed.error || msg;
+          }
+        }
+      } catch (e) {
+        // Not a JSON error
+      }
+
       if (err.code === 'auth/user-not-found') msg = 'Usuário não encontrado';
       if (err.code === 'auth/wrong-password') msg = 'Senha incorreta';
+      if (err.code === 'auth/invalid-credential') msg = 'E-mail ou senha incorretos';
       if (err.code === 'auth/email-already-in-use') msg = 'Este e-mail já está em uso';
       if (err.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres';
       if (err.code === 'auth/invalid-email') msg = 'E-mail inválido';
       if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
+      if (err.code === 'auth/network-request-failed') msg = 'Erro de conexão. Verifique sua internet.';
+      
       setError(msg);
     } finally {
       setLoading(false);

@@ -27,12 +27,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ className = '', showText =
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-xl">
           <defs>
             <linearGradient id="logoGradientTop" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#22d3ee" />
+              <stop offset="0%" stopColor="#0D81F3" />
               <stop offset="100%" stopColor="#0ea5e9" />
             </linearGradient>
             <linearGradient id="logoGradientBottom" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#6d28d9" />
+              <stop offset="0%" stopColor="#040919" />
+              <stop offset="100%" stopColor="#1e3a8a" />
             </linearGradient>
             <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="3" result="blur" />

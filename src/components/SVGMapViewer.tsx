@@ -24,8 +24,11 @@ export default function SVGMapViewer({ svgData = [] }: SVGMapViewerProps) {
           <Maximize className="w-5 h-5" />
         </button>
         {svgData.map((svg, index) => (
-          <div key={index} className="bg-white rounded-none shadow-xl w-full max-w-3xl shrink-0 aspect-[1/1.414] flex items-center justify-center transform transition-all duration-300">
-            <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+          <div key={index} className="flex flex-col items-center gap-2 w-full max-w-3xl">
+            <div className="bg-white rounded-none shadow-xl w-full shrink-0 aspect-[1/1.414] flex items-center justify-center transform transition-all duration-300">
+              <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 opacity-40 uppercase tracking-[0.2em] italic">Stratis Planner • IA Generativa</span>
           </div>
         ))}
       </div>
@@ -49,8 +52,11 @@ export default function SVGMapViewer({ svgData = [] }: SVGMapViewerProps) {
             </div>
             <div className="flex-1 overflow-y-auto p-4 md:p-12 flex flex-col items-center gap-12 bg-slate-950">
               {svgData.map((svg, index) => (
-                <div key={index} className="bg-white w-full max-w-5xl shrink-0 aspect-[1/1.414] flex items-center justify-center shadow-2xl">
-                  <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+                <div key={index} className="flex flex-col items-center gap-4 w-full max-w-5xl">
+                  <div className="bg-white w-full shrink-0 aspect-[1/1.414] flex items-center justify-center shadow-2xl">
+                    <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 opacity-60 uppercase tracking-[0.2em] italic">Stratis Planner • IA Generativa</span>
                 </div>
               ))}
             </div>

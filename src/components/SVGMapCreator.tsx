@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Save, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react';
+import { X, Save, Image as ImageIcon, Zap, Loader2 } from 'lucide-react';
 import { generateSVGMap } from '../services/gemini';
 import { toast } from 'sonner';
 
@@ -19,10 +19,14 @@ export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => voi
   };
 
   const generateWithAI = async () => {
-    if (!prompt || loading) return;
+    if (!prompt.trim() || !title.trim() || loading) {
+      if (!title.trim()) toast.error('Dê um título ao seu mapa mental.');
+      else if (!prompt.trim()) toast.error('Descreva o que deseja no mapa mental.');
+      return;
+    }
     setLoading(true);
     try {
-      const newSvgs = await generateSVGMap(prompt, quantity || 1);
+      const newSvgs = await generateSVGMap(title, prompt, quantity || 1);
       setSvgs(newSvgs);
     } catch (e) {
       console.error(e);
@@ -80,7 +84,7 @@ export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => voi
                   disabled={loading} 
                   className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 sm:py-2.5 bg-indigo-600 text-white shadow-md shadow-indigo-600/20 rounded-xl font-bold text-xs uppercase tracking-widest disabled:opacity-50 hover:bg-indigo-700 transition-colors"
                 >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {loading ? "Gerando..." : "Gerar"}
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} {loading ? "Gerando..." : "Gerar"}
                 </button>
               </div>
             </div>

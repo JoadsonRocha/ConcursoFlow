@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { BrainCircuit, Upload, Sparkles, AlertCircle, CheckCircle2, Calendar, FileText, Loader2, Plus, Trash2, Save, Wand2 } from 'lucide-react';
+import { BrainCircuit, Upload, AlertCircle, CheckCircle2, Calendar, FileText, Loader2, Plus, Trash2, Save, Wand2, Target, Settings as SettingsIcon } from 'lucide-react';
 import { parseEdital, generateSchedule } from '../services/gemini';
 import { Contest, Subject } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import * as pdfjs from 'pdfjs-dist';
+import { useAuth } from '../contexts/AuthContext';
+import ProModal from '../components/ProModal';
 
 // Configure worker - Use a more stable CDN link
 const PDFJS_VERSION = '5.7.284';
@@ -13,20 +15,79 @@ pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@$
 interface SettingsProps {
   onImport: (contest: Contest) => void;
   onDelete: (id: string) => void;
+  onSwitchContest: (contest: Contest) => void;
   contests: Contest[];
   currentContest: Contest | null;
 }
 
-export default function Settings({ onImport, onDelete, contests, currentContest }: SettingsProps) {
+const SavedContestItem = ({ 
+  c, 
+  currentContest, 
+  onDelete 
+}: { 
+  c: Contest, 
+  currentContest: Contest | null, 
+  onDelete: (id: string) => void 
+}) => {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  
+  return (
+    <div key={c.id} className={cn(
+      "p-4 bg-white border rounded-2xl flex items-center justify-between transition-all group",
+      currentContest?.id === c.id ? "border-primary/40 shadow-sm" : "border-border hover:border-primary/20"
+    )}>
+      <div className="overflow-hidden">
+        <div className="text-xs font-black text-text-main uppercase tracking-tight truncate">{c.role}</div>
+        <div className="text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{c.name}</div>
+      </div>
+      {confirmDelete ? (
+        <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+          <button
+            onClick={() => {
+              onDelete(c.id);
+              setConfirmDelete(false);
+            }}
+            className="px-3 py-1.5 bg-red-500 text-white text-[10px] font-bold rounded-lg hover:bg-red-600 uppercase tracking-wider"
+          >
+            Confirmar
+          </button>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            className="p-1.5 text-text-sub hover:text-text-main"
+          >
+            <Plus className="w-4 h-4 rotate-45" />
+          </button>
+        </div>
+      ) : (
+        <button 
+          onClick={() => setConfirmDelete(true)}
+          className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-40 sm:opacity-0 group-hover:opacity-100"
+          title="Excluir"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default function Settings({ onImport, onDelete, onSwitchContest, contests, currentContest }: SettingsProps) {
+  const { profile } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('');
+  
   const [activeTab, setActiveTab] = useState<'ai' | 'manual'>('ai');
   const [rawText, setRawText] = useState('');
   const [manualContestName, setManualContestName] = useState('');
   const [manualRole, setManualRole] = useState('');
   const [dailyHours, setDailyHours] = useState<number | ''>(2);
   const [dailyQuestions, setDailyQuestions] = useState<number | ''>(20);
+  const [dailyContentVolume, setDailyContentVolume] = useState<number | ''>(1);
+  const [scheduleStartDate, setScheduleStartDate] = useState('');
   const [examDate, setExamDate] = useState('2026-06-27');
   const [autoSchedule, setAutoSchedule] = useState(true);
   const [scheduleWeeks, setScheduleWeeks] = useState(4);
+  const [isManagerOpen, setIsManagerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [extractingPdf, setExtractingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +96,15 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
 
   // Manual Creation State
   const [manualSubjects, setManualSubjects] = useState<Subject[]>([
-    { id: '1', name: 'Português', category: 'Gerais', incidence: 'Muito Alta', topics: [{ id: '1-1', name: 'Interpretação de Texto', completed: false }] }
+    { 
+      id: '1', 
+      name: 'Português', 
+      category: 'Gerais', 
+      incidence: 'Muito Alta', 
+      totalTopics: 1,
+      completedTopics: 0,
+      topics: [{ id: '1-1', name: 'Interpretação de Texto', completed: false, revision: false, questions: false }] 
+    }
   ]);
 
   const addManualSubject = () => {
@@ -45,7 +114,9 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
       name: '', 
       category: 'Gerais', 
       incidence: 'Média', 
-      topics: [{ id: `${newId}-1`, name: '', completed: false }] 
+      totalTopics: 1,
+      completedTopics: 0,
+      topics: [{ id: `${newId}-1`, name: '', completed: false, revision: false, questions: false }] 
     }]);
   };
 
@@ -61,7 +132,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
     setManualSubjects(manualSubjects.map(s => {
       if (s.id !== subId) return s;
       const newTopicId = `top-${Date.now()}`;
-      return { ...s, topics: [...(s.topics || []), { id: newTopicId, name: '', completed: false }] };
+      return { ...s, topics: [...(s.topics || []), { id: newTopicId, name: '', completed: false, revision: false, questions: false }] };
     }));
   };
 
@@ -128,6 +199,12 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
       return;
     }
     
+    if (profile?.userPlan !== 'pro' && contests.length >= 1) {
+      setProFeatureName('Múltiplos Editais');
+      setShowProModal(true);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -163,6 +240,8 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
         examDate: examDate,
         dailyGoalHours: Number(dailyHours) || 0,
         dailyGoalQuestions: Number(dailyQuestions) || 0,
+        dailyContentVolume: Number(dailyContentVolume) || 1,
+        scheduleStartDate: scheduleStartDate || undefined,
         schedule: schedule,
       };
       
@@ -181,12 +260,12 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500 pb-20">
       <header className="space-y-4 text-center md:text-left">
-        <div className="flex items-center justify-center md:justify-start gap-3 text-primary/80 font-bold text-xs uppercase tracking-wider">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
+        <div className="flex items-center justify-center md:justify-start gap-2.5 text-primary/80 font-bold text-xs uppercase tracking-wider">
           Arquitetura de Estudos
+          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
         </div>
         <h1 className="text-2xl md:text-5xl font-display text-text-main tracking-tight font-bold">
-          Configuração <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Manual</span> ou <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-primary">Automática</span>
+          Importar <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Edital</span>
         </h1>
         <p className="text-text-sub text-[11px] md:text-base border-l-2 border-primary/30 pl-4 max-w-2xl">
           Personalize sua jornada de estudos. Use nosso sistema para extrair informações do edital ou configure cada detalhe manualmente.
@@ -196,31 +275,38 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
       {/* Existing Contests Management */}
       {contests.length > 0 && (
         <section className="space-y-4">
-          <h2 className="text-xs font-bold text-text-sub uppercase tracking-widest px-1">Meus Editais Salvos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {contests.map((c) => (
-              <div key={c.id} className={cn(
-                "p-4 bg-white border rounded-2xl flex items-center justify-between transition-all group",
-                currentContest?.id === c.id ? "border-primary/40 shadow-sm" : "border-border hover:border-primary/20"
-              )}>
-                <div className="overflow-hidden">
-                  <div className="text-xs font-black text-text-main uppercase tracking-tight truncate">{c.role}</div>
-                  <div className="text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{c.name}</div>
-                </div>
-                <button 
-                  onClick={() => {
-                    if (window.confirm('Excluir este edital permanentemente?')) {
-                      onDelete(c.id);
-                    }
-                  }}
-                  className="p-2 text-text-sub hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-40 sm:opacity-0 group-hover:opacity-100"
-                  title="Excluir"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold text-text-sub uppercase tracking-widest">Meu Edital Ativo</h2>
+            <button 
+              onClick={() => setIsManagerOpen(!isManagerOpen)}
+              className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-widest hover:underline"
+            >
+              <SettingsIcon className="w-4 h-4" />
+              {isManagerOpen ? 'Ocultar' : 'Gerenciar Editais'}
+            </button>
           </div>
+          <select
+            className="w-full bg-white border border-border rounded-2xl p-5 text-sm font-bold text-text-main appearance-none outline-none focus:border-primary/50 transition-all cursor-pointer"
+            value={currentContest?.id || ''}
+            onChange={(e) => {
+              const selected = contests.find(c => c.id === e.target.value);
+              if (selected) onSwitchContest(selected);
+            }}
+          >
+            {contests.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} - {c.role}
+              </option>
+            ))}
+          </select>
+
+          {isManagerOpen && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2">
+              {contests.map((c) => (
+                <SavedContestItem key={c.id} c={c} currentContest={currentContest} onDelete={onDelete} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -233,18 +319,18 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
             activeTab === 'ai' ? "bg-white text-slate-950 shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
-          <Sparkles className="w-4 h-4 cursor-default" />
-          Automático
+          <Target className="w-4 h-4 cursor-default" />
+          Importar Edital (IA)
         </button>
         <button
           onClick={() => setActiveTab('manual')}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all",
+            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
             activeTab === 'manual' ? "bg-white text-slate-950 shadow-lg" : "text-slate-500 hover:text-slate-300"
           )}
         >
           <Wand2 className="w-4 h-4 cursor-default" />
-          Configuração Manual
+          Criar Manualmente
         </button>
       </div>
 
@@ -277,6 +363,25 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
                 value={dailyQuestions}
                 onChange={(e) => setDailyQuestions(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Conteúdo por Dia</label>
+              <input 
+                type="number" 
+                className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                value={dailyContentVolume}
+                onChange={(e) => setDailyContentVolume(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Ex: 1"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Data Início Cronograma</label>
+              <input 
+                type="date" 
+                className="w-full bg-slate-50 border border-border rounded-2xl p-5 text-sm text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                value={scheduleStartDate}
+                onChange={(e) => setScheduleStartDate(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -329,8 +434,8 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           <section className="bg-white border border-border p-8 md:p-10 rounded-2xl space-y-10 animate-in slide-in-from-bottom-5 duration-500 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-sm">
-                  <Sparkles className="w-7 h-7" />
+                <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center text-primary shadow-sm">
+                  <Target className="w-6 h-6" />
                  </div>
                 <div className="space-y-0.5">
                   <h2 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">Análise de Edital</h2>
@@ -340,10 +445,22 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
 
               <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
               <button 
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (profile?.userPlan !== 'pro') {
+                    setProFeatureName('Importação de Edital via PDF');
+                    setShowProModal(true);
+                    return;
+                  }
+                  fileInputRef.current?.click();
+                }}
                 disabled={extractingPdf}
-                className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-sm font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
+                className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-white rounded-2xl text-sm font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md relative"
               >
+                {profile?.userPlan !== 'pro' && (
+                   <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10">
+                     PRO
+                   </div>
+                )}
                 {extractingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                 Importar Edital (PDF)
               </button>
@@ -543,6 +660,7 @@ export default function Settings({ onImport, onDelete, contests, currentContest 
           </button>
         </div>
       </div>
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName={proFeatureName} />
     </div>
   );
 }

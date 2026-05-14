@@ -8,17 +8,18 @@ import {
   BrainCircuit, 
   Menu,
   LogOut,
-  Sparkles,
   User as UserIcon,
   Trash2,
   Users,
   Target,
   FileUp,
-  MessageCircle
+  MessageCircle,
+  Compass
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
 import { motion, AnimatePresence } from 'motion/react';
+import { Joyride, STATUS, Step } from 'react-joyride';
 import Subjects from './pages/Subjects';
 import Microlearning from './pages/Microlearning';
 import Configuracoes from './pages/Configuracoes';
@@ -32,6 +33,7 @@ import CookiePolicy from './pages/CookiePolicy';
 import Perfil from './pages/Perfil';
 import Auth from './pages/Auth';
 import Pareto from './pages/Pareto';
+import Explorar from './pages/Explorar';
 import BrandLogo from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
@@ -40,8 +42,9 @@ import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
 import Dashboard from './pages/Dashboard';
 
-const SidebarItem = ({ to, icon: Icon, label, active, collapsed }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string }) => (
   <Link 
+    id={id}
     to={to} 
     className={cn(
       "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-[11px] font-bold uppercase tracking-wider",
@@ -71,7 +74,40 @@ export default function App() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [migrated, setMigrated] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [runTour, setRunTour] = useState(false);
   const location = useLocation();
+
+  const tourSteps: Step[] = [
+    {
+      target: '#tour-importar-dashboard, #tour-importar',
+      content: 'Comece importando o seu edital PDF ou colando o conteúdo para que o Stratis Planner organize seus estudos.',
+      placement: 'auto',
+    },
+    {
+      target: '#tour-painel',
+      content: 'Aqui no Painel, você acompanha o seu progresso, metas diárias e desempenho geral.',
+    },
+    {
+      target: '#tour-edital',
+      content: 'Gerencie todas as matérias e tópicos do seu edital, e marque o que já concluiu.',
+    },
+    {
+      target: '#tour-cronograma',
+      content: 'Nós geramos um cronograma automático e inteligente baseado no que você precisa estudar.',
+    },
+    {
+      target: '#tour-pareto',
+      content: 'A Análise de Pareto indica quais matérias caem mais na sua prova, otimizando seu esforço.',
+    },
+    {
+      target: '#tour-revisao',
+      content: 'Nossa IA gera Flashcards e Mapas Mentais instantâneos para facilitar sua revisão.',
+    },
+    {
+      target: '#tour-comunidade',
+      content: 'Neste espaço, você pode compartilhar e baixar resumos e recursos criados por outros concurseiros.',
+    }
+  ];
 
   useEffect(() => {
     const handleResize = () => {
@@ -113,8 +149,7 @@ export default function App() {
         setCurrentContest(inSync);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, contests.length, authLoading]); // Added authLoading to wait, removed currentContest to avoid loop
+  }, [profile, contests, authLoading]); // Added contests to ensure sync works on data changes
 
   // Firestore Sync & Migration
   useEffect(() => {
@@ -200,6 +235,35 @@ export default function App() {
     return () => unsubscribe();
   }, [user, migrated]);
 
+  // Check for tour after initial loading
+  useEffect(() => {
+    if (user && profile && !authLoading && !dataLoading) {
+      if (!profile.tourCompleted) {
+        setRunTour(true);
+      }
+    }
+  }, [user, profile, authLoading, dataLoading]);
+
+  const handleJoyrideCallback = async (data: any) => {
+    const { status } = data;
+    const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+    
+    if (finishedStatuses.includes(status)) {
+      setRunTour(false);
+      if (user) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            tourCompleted: true,
+            updatedAt: serverTimestamp()
+          });
+        } catch (e) {
+          console.error("Error updating tour status: ", e);
+        }
+      }
+    }
+  };
+
   const handleImportEdital = async (newContest: Contest) => {
     if (!user) return;
     try {
@@ -274,10 +338,22 @@ export default function App() {
   const handleDeleteContest = async (id: string) => {
     if (!user) return;
     try {
-      // Optimistic update
-      setContests(prev => prev.filter(c => c.id !== id));
+      // Find remaining contests
+      const remaining = contests.filter(c => c.id !== id);
+      
+      // Update state
+      setContests(remaining);
       if (currentContest?.id === id) {
-        setCurrentContest(null);
+        setCurrentContest(remaining.length > 0 ? remaining[0] : null);
+        
+        // Update user profile preference if needed
+        if (profile) {
+          const userRef = doc(db, 'users', user.uid);
+          await updateDoc(userRef, {
+            currentContestId: remaining.length > 0 ? remaining[0].id : null,
+            updatedAt: serverTimestamp()
+          });
+        }
       }
 
       const docRef = doc(db, 'users', user.uid, 'contests', id);
@@ -290,12 +366,12 @@ export default function App() {
     }
   };
 
-  if (authLoading || (user && dataLoading)) {
+  if (authLoading || (user && dataLoading) || (user && !currentContest && contests.length > 0)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">
-          {authLoading ? "Autenticando..." : "Sincronizando seus Cronogramas..."}
+          {authLoading ? "Autenticando..." : "Sincronizando seus Dados..."}
         </div>
       </div>
     );
@@ -315,6 +391,19 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-bg font-sans overflow-hidden relative">
+      {user && profile && React.createElement(Joyride as any, {
+          steps: tourSteps,
+          run: runTour,
+          continuous: true,
+          locale: { back: 'Voltar', close: 'Fechar', last: 'Finalizar', next: 'Próximo', skip: 'Pular Tour' },
+          styles: {
+            options: {
+              primaryColor: '#0ea5e9',
+              zIndex: 1000,
+            }
+          },
+          callback: handleJoyrideCallback
+        })}
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
@@ -339,13 +428,14 @@ export default function App() {
           <div>
             {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-1">
-              <SidebarItem to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
@@ -354,6 +444,7 @@ export default function App() {
 
         <div className="mt-auto pt-6 border-t border-border">
           <Link 
+            id="tour-importar"
             to="/configuracoes"
             className={cn(
               "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-[11px] font-bold uppercase tracking-wider",
@@ -478,14 +569,15 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={setCurrentContest} onDelete={handleDeleteContest} />} />
-              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} />} />
+              <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} onSwitchContest={setCurrentContest} />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} />} />
+              <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />
               <Route path="/feedback" element={<Feedback />} />
+              <Route path="/explorar" element={<Explorar />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookiePolicy />} />

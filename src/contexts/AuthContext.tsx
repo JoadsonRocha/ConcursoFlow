@@ -33,29 +33,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userRef = doc(db, 'users', user.uid);
           
           if (unsubProfile) unsubProfile();
-          unsubProfile = onSnapshot(userRef, (userDoc) => {
+          unsubProfile = onSnapshot(userRef, async (userDoc) => {
             if (!userDoc.exists()) {
               const newProfile: any = {
                 email: user.email,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-                currentContestId: null
+                currentContestId: null,
+                tourCompleted: false
               };
               if (user.displayName) newProfile.displayName = user.displayName;
               if (user.photoURL) newProfile.photoURL = user.photoURL;
 
-              setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid));
-              setProfile(newProfile);
+              try {
+                await setDoc(userRef, newProfile, { merge: true });
+                setProfile(newProfile);
+              } catch (err) {
+                console.error("Erro ao criar perfil inicial:", err);
+                // We still set a local profile so the user can use the app
+                setProfile(newProfile);
+                handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid);
+              }
             } else {
               setProfile(userDoc.data());
             }
-            setLoading(false); // Set loading false ONLY after profile snapshot is received
+            setLoading(false); 
           }, (err) => {
-             console.error("Erro ao carregar perfil:", err);
-             setLoading(false); // Also set false on error to avoid infinite loading
+             console.error("Erro no observador de perfil:", err);
+             setLoading(false); 
           });
         } catch (err) {
-          console.error("Erro ao carregar perfil:", err);
+          console.error("Erro na inicialização do perfil:", err);
           setLoading(false);
         }
       } else {
@@ -88,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       displayName: name,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      currentContestId: null
+      currentContestId: null,
+      tourCompleted: false
     };
     await setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + res.user.uid));
     setProfile(newProfile);

@@ -9,7 +9,8 @@ interface Flashcard {
   id: string;
   front: string;
   back: string;
-  subjectName: string;
+  subjectName?: string;
+  description?: string;
   interval: number;
   ease: number;
   nextReview: any;
@@ -104,9 +105,11 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
             <div className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">Restam {cards.length - currentIndex - 1}</div>
           </div>
         </div>
-        <div className="text-[10px] font-bold text-text-sub bg-slate-50 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest">
-            {currentCard.subjectName}
-        </div>
+        {(currentCard.subjectName || currentCard.description) && (
+          <div className="text-[10px] font-bold text-text-sub bg-slate-50 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest truncate max-w-[200px]">
+              {currentCard.subjectName || currentCard.description}
+          </div>
+        )}
       </header>
 
       <div className="relative h-80 md:h-96 group" style={{ perspective: 1000 }}>
