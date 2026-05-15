@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
 import { 
@@ -76,6 +76,13 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(true);
   const [runTour, setRunTour] = useState(false);
   const location = useLocation();
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [location]);
 
   const tourSteps: Step[] = [
     {
@@ -460,7 +467,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 h-screen overflow-y-auto bg-bg relative scroll-smooth">
+      <main ref={mainRef} className="flex-1 h-screen overflow-y-auto bg-bg relative scroll-smooth">
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
@@ -572,7 +579,7 @@ export default function App() {
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} currentContest={currentContest} contests={contests} onDelete={handleDeleteContest} onSwitchContest={setCurrentContest} />} />
+              <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />

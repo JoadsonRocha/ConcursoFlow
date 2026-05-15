@@ -14,6 +14,7 @@ export default function Perfil() {
   const { user, profile, logout } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || user?.photoURL || '');
+  const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '');
   const [concursoFoco, setConcursoFoco] = useState(profile?.concursoFoco || '');
   const [nivelAtual, setNivelAtual] = useState(profile?.nivelAtual || 'Iniciante');
   const [fraseStatus, setFraseStatus] = useState(profile?.fraseStatus || '');
@@ -97,6 +98,7 @@ export default function Perfil() {
       await updateDoc(doc(db, 'users', user.uid), {
         displayName,
         photoURL: finalPhotoURL,
+        phoneNumber,
         concursoFoco,
         nivelAtual,
         fraseStatus,
@@ -230,6 +232,20 @@ export default function Perfil() {
                     onChange={(e) => setDisplayName(e.target.value)}
                     className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
                     placeholder="Seu nome"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Telefone / WhatsApp</label>
+                <div className="relative group">
+                  <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="w-full bg-slate-50 border border-border rounded-2xl py-4 pl-12 pr-6 text-sm text-text-main focus:bg-white focus:border-primary/50 outline-none transition-all placeholder:text-text-sub/50"
+                    placeholder="Ex: (95) 99999-9999"
                   />
                 </div>
               </div>

@@ -15,7 +15,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const [showProModal, setShowProModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'contests' | 'flashcards' | 'mindmaps'>('contests');
   const [sharedContests, setSharedContests] = useState<Contest[]>([]);
-  const [sharedFlashcards, setSharedFlashcards] = useState<any[]>([]);
+  const [sharedDecks, setSharedDecks] = useState<any[]>([]);
   const [sharedMindMaps, setSharedMindMaps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,14 +43,14 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       return () => unsubscribe();
     } else if (activeTab === 'flashcards') {
       const q = query(
-        collection(db, 'shared_flashcards')
+        collection(db, 'shared_decks')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const docs = snapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id
         }));
-        setSharedFlashcards(docs);
+        setSharedDecks(docs);
         setLoading(false);
       });
       return () => unsubscribe();
@@ -112,26 +112,35 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
     }
   };
 
-  const handleCloneFlashcard = async (card: any) => {
+  const handleCloneDeck = async (deck: any) => {
     if (!user) return;
     try {
-      const clonedCard = {
-        ...card,
-        ownerId: user.uid,
-        isPublic: false,
-        likesCount: 0,
-        nextReview: serverTimestamp(),
-        interval: 0,
-        ease: 2.5,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-      delete clonedCard.id;
-      await addDoc(collection(db, 'users', user.uid, 'flashcards'), clonedCard);
-      toast.success(`Flashcard de ${card.subjectName} adicionado!`);
+      const batch = deck.cards.map((card: any) => {
+        const clonedCard = {
+          ...card,
+          ownerId: user.uid,
+          isPublic: false,
+          likesCount: 0,
+          nextReview: serverTimestamp(),
+          interval: 0,
+          ease: 2.5,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        return addDoc(collection(db, 'users', user.uid, 'flashcards'), clonedCard);
+      });
+      
+      await Promise.all(batch);
+      
+      // Update clones count
+      await updateDoc(doc(db, 'shared_decks', deck.id), {
+        clonesCount: increment(1)
+      });
+
+      toast.success(`Deck "${deck.title}" com ${deck.cards.length} cards adicionado!`);
     } catch (err) {
-      console.error("Erro ao clonar flashcard:", err);
-      toast.error("Erro ao clonar flashcard.");
+      console.error("Erro ao clonar deck:", err);
+      toast.error("Erro ao clonar conjunto de cards.");
     }
   };
 
@@ -190,9 +199,9 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
     return matchesSearch && matchesFilter;
   });
 
-  const filteredFlashcards = sharedFlashcards.filter(f => {
-    const matchesSearch = f.front.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          f.subjectName.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredDecks = sharedDecks.filter(d => {
+    const matchesSearch = d.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (d.description && d.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
 
@@ -371,54 +380,58 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
           </div>
         )
       ) : activeTab === 'flashcards' ? (
-        /* Flashcards List */
-        filteredFlashcards.length === 0 ? (
+        /* Flashcards Deck List */
+        filteredDecks.length === 0 ? (
           <div className="rise-card p-24 text-center space-y-8 flex flex-col items-center bg-slate-50 border-border">
             <div className="w-24 h-24 bg-accent/5 border border-accent/10 rounded-[2rem] flex items-center justify-center shadow-sm">
-              <Lightbulb className="w-10 h-10 text-accent/40" />
+              <Layers className="w-10 h-10 text-accent/40" />
             </div>
             <div className="space-y-3">
-              <h3 className="text-2xl font-display text-text-main italic font-bold">Sem Flashcards</h3>
-              <p className="text-slate-500 text-sm font-medium italic">Seja o primeiro a compartilhar seus cartões de estudo.</p>
+              <h3 className="text-2xl font-display text-text-main italic font-bold">Sem Conjuntos de Flashcards</h3>
+              <p className="text-slate-500 text-sm font-medium italic">Seja o primeiro a compartilhar um lote de cartões de estudo.</p>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-20">
             <AnimatePresence mode="popLayout">
-              {filteredFlashcards.map((f) => (
+              {filteredDecks.map((d) => (
                 <motion.div
-                  key={f.id}
+                  key={d.id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="group relative bg-white border border-border rounded-2xl p-5 hover:border-accent/30 transition-all flex flex-col"
+                  className="group relative bg-white border border-border rounded-2xl p-5 hover:border-accent/30 transition-all flex flex-col hover:shadow-lg"
                 >
                   <div className="flex justify-between items-start mb-4">
-                     <span className="text-[9px] font-bold text-accent uppercase tracking-widest bg-accent/5 px-2 py-1 rounded-lg border border-accent/10">
-                        {f.subjectName}
-                     </span>
+                     <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-bold text-accent uppercase tracking-widest bg-accent/5 px-2 py-1 rounded-lg border border-accent/10 w-fit">
+                            Deck de Flashcards
+                        </span>
+                        <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">{d.cards?.length || 0} Cartões</span>
+                     </div>
                      <button 
-                      onClick={(e) => handleLike(f.id, 'shared_flashcards', e)}
+                      onClick={(e) => handleLike(d.id, 'shared_decks', e)}
                       className="text-text-sub hover:text-red-500 transition-colors flex items-center gap-1"
                      >
-                       <Heart className={cn("w-3.5 h-3.5", f.likesCount > 0 && "fill-red-500 text-red-500")} />
-                       <span className="text-[10px] font-bold">{f.likesCount || 0}</span>
+                       <Heart className={cn("w-3.5 h-3.5", d.likesCount > 0 && "fill-red-500 text-red-500")} />
+                       <span className="text-[10px] font-bold">{d.likesCount || 0}</span>
                      </button>
                   </div>
-                  <div className="space-y-2 flex-1">
-                     <p className="text-xs font-bold text-text-main line-clamp-3 italic mb-4">"{f.front}"</p>
+                  <div className="space-y-2 flex-1 mb-6">
+                     <h3 className="text-sm font-bold text-text-main line-clamp-1 italic">{d.title}</h3>
+                     {d.description && <p className="text-xs text-text-sub line-clamp-2 leading-relaxed">{d.description}</p>}
                   </div>
                   <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
                      <span className="text-[8px] font-medium text-text-sub uppercase flex items-center gap-1">
-                       Por {f.ownerName}
-                       {f.ownerIsCreator && <Award className="w-3 h-3 text-accent" />}
+                       Por {d.ownerName}
+                       {d.ownerIsCreator && <Award className="w-3 h-3 text-accent" />}
                      </span>
                      <button 
-                      onClick={() => handleCloneFlashcard(f)}
+                      onClick={() => handleCloneDeck(d)}
                       className="flex items-center gap-2 px-3 py-2 bg-accent/10 text-accent rounded-lg hover:bg-accent transition-all hover:text-white font-bold text-[9px] uppercase tracking-wider"
                      >
                         <Download className="w-3 h-3" />
-                        Obter Card
+                        Salvar Lote
                      </button>
                   </div>
                 </motion.div>

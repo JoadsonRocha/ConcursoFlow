@@ -87,21 +87,19 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       });
 
       if (isPublic) {
-        generatedCards.forEach(card => {
-          const data = {
-            ...card,
-            description,
-            ownerId: auth.currentUser!.uid,
-            ownerName: auth.currentUser!.displayName || 'Estudante',
-            isPublic,
-            nextReview: serverTimestamp(),
-            interval: 0,
-            ease: 2.5,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          };
-          batch.push(addDoc(collection(db, 'shared_flashcards'), data));
-        });
+        const deckData = {
+          title: aiTopic || description || 'Lote de Flashcards',
+          description,
+          cards: generatedCards,
+          ownerId: auth.currentUser!.uid,
+          ownerName: auth.currentUser!.displayName || 'Estudante',
+          isPublic,
+          likesCount: 0,
+          clonesCount: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        batch.push(addDoc(collection(db, 'shared_decks'), deckData));
       }
 
       await Promise.all(batch);

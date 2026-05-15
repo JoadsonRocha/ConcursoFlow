@@ -493,7 +493,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
                     >
                       <option value="">-- Escolha um Edital --</option>
                       {contests?.filter(c => c.id !== contest.id).map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c.id} value={c.id}>{c.role}</option>
                       ))}
                     </select>
                   </div>

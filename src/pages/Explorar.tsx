@@ -30,6 +30,31 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { contentData, type ContentItem } from '../constants/content';
 
+const ImageWithFallback = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  return (
+    <div className={cn("relative overflow-hidden bg-slate-100", className)}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center animate-pulse bg-slate-200">
+           <Layout className="w-8 h-8 text-slate-300" />
+        </div>
+      )}
+      <img
+        src={error ? 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=500&auto=format&fit=crop' : src}
+        alt={alt}
+        className={cn("w-full h-full object-cover transition-opacity duration-500", loading ? "opacity-0" : "opacity-100")}
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setError(true);
+          setLoading(false);
+        }}
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+};
 export default function Explorar() {
   const [activeTab, setActiveTab] = useState<'all' | 'tutorial' | 'dica'>('all');
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
@@ -119,10 +144,10 @@ export default function Explorar() {
                     }}
                   >
                     <div className="lg:col-span-8 h-[350px] lg:h-[550px] overflow-hidden relative">
-                      <img 
+                      <ImageWithFallback 
                         src={contentData[0].image}
-                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         alt="Featured"
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
                     </div>
@@ -208,11 +233,10 @@ export default function Explorar() {
                       }}
                     >
                       <div className="relative aspect-[16/11] rounded-2xl overflow-hidden mb-8 shadow-sm group-hover:shadow-xl transition-all">
-                        <img 
+                        <ImageWithFallback 
                           src={item.image}
                           alt={item.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className={cn(
@@ -364,7 +388,7 @@ export default function Explorar() {
 
               <div className="max-w-6xl mx-auto px-6 mb-24">
                 <div className="relative aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl">
-                  <img src={selectedItem.image} className="w-full h-full object-cover" alt="Cover" referrerPolicy="no-referrer" />
+                  <ImageWithFallback src={selectedItem.image} alt="Cover" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/10" />
                 </div>
               </div>
@@ -482,10 +506,10 @@ export default function Explorar() {
                    </div>
 
                    <div className="relative rounded-3xl overflow-hidden aspect-[4/5] bg-primary group cursor-pointer">
-                        <img 
-                            src="https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=2070&auto=format&fit=crop" 
-                            className="w-full h-full object-cover opacity-40 mix-blend-overlay group-hover:scale-110 transition-transform duration-700" 
-                            alt="CTA"
+                        <ImageWithFallback 
+                             src="https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=2070&auto=format&fit=crop" 
+                             alt="CTA"
+                             className="w-full h-full object-cover opacity-40 mix-blend-overlay group-hover:scale-110 transition-transform duration-700"
                         />
                         <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
                             <h4 className="text-2xl font-display font-black leading-tight mb-4">Torne-se uma Máquina de Estudos.</h4>
@@ -520,7 +544,7 @@ export default function Explorar() {
                       }}
                     >
                       <div className="aspect-[16/10] w-full overflow-hidden rounded-3xl mb-6 shadow-sm">
-                        <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" alt="Related" />
+                        <ImageWithFallback src={item.image} alt="Related" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
                       </div>
                       <div className="flex items-center gap-3 mb-3">
                          <span className="text-[9px] font-black uppercase tracking-widest text-primary">{item.category}</span>
