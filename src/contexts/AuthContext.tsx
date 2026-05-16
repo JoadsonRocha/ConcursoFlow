@@ -39,7 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         flashcardUsage: 0,
         mindmapUsage: 0,
         importUsage: 0,
-        lastUsageReset: serverTimestamp()
+        lastUsageReset: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
       await updateDoc(userRef, resetData);
     }
@@ -87,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Force PRO mode
               if (data.userPlan !== 'pro') {
                 data.userPlan = 'pro';
-                updateDoc(userRef, { userPlan: 'pro' }).catch(console.error);
+                updateDoc(userRef, { userPlan: 'pro', updatedAt: serverTimestamp() }).catch(console.error);
               }
               setProfile(data);
               // Background check for reset

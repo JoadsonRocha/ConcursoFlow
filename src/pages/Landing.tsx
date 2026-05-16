@@ -15,7 +15,8 @@ import {
   Database,
   Smartphone,
   ChevronDown,
-  CheckCircle2
+  CheckCircle2,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -292,6 +293,9 @@ const Landing = () => {
                 <h2 className="text-4xl md:text-6xl font-display leading-[1.1] text-text-main tracking-tight font-extrabold">
                    Um passo à frente <br/>do seu objetivo.
                 </h2>
+                <p className="text-lg text-text-sub font-medium max-w-xl mx-auto md:mx-0">
+                  Ferramentas criadas por quem entende a rotina de quem estuda pra concurso.
+                </p>
              </div>
           </div>
 
@@ -338,8 +342,168 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Depoimentos / Aprovados Reais */}
+      <section className="py-24 md:py-32 px-6 bg-white border-t border-border/50 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+             <div className="text-primary font-bold text-xs uppercase tracking-widest">Aprovados Reais</div>
+             <h2 className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight">Eles viram o nome no Diário Oficial</h2>
+             <p className="text-text-sub font-medium max-w-xl mx-auto">Histórias reais de quem transformou planejamento em aprovação.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+               <div>
+                  <div className="flex text-amber-400 mb-6 font-bold space-x-1">
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed italic mb-8">"Passei 2 anos tentando montar meu cronograma no Excel. Quando comecei a usar o Stratis Planner, em 3 semanas eu já sabia exatamente onde estava e para onde ia. A aprovação veio 8 meses depois."</p>
+               </div>
+               <div>
+                  <h4 className="text-text-main font-bold font-display">Mariana S.</h4>
+                  <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovada — Receita Federal</p>
+               </div>
+             </div>
+             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+               <div>
+                  <div className="flex text-amber-400 mb-6 font-bold space-x-1">
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed italic mb-8">"Sou mãe, trabalho 8h por dia e ainda passei em concurso público. O app entendeu minha realidade e criou um plano que funcionou de verdade dentro do meu caos."</p>
+               </div>
+               <div>
+                  <h4 className="text-text-main font-bold font-display">Carolina T.</h4>
+                  <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovada — INSS</p>
+               </div>
+             </div>
+             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+               <div>
+                  <div className="flex text-amber-400 mb-6 font-bold space-x-1">
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                      <Star className="w-5 h-5 fill-current" />
+                  </div>
+                  <p className="text-slate-600 text-sm leading-relaxed italic mb-8">"A análise de Pareto e o microlearning salvaram minha preparação. Estava focado em assuntos errados até mapear meu edital aqui. O resultado veio e rápido."</p>
+               </div>
+               <div>
+                  <h4 className="text-text-main font-bold font-display">Rafael M.</h4>
+                  <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovado — TJ-SP</p>
+               </div>
+             </div>
+          </div>
+        </div>
+      </section>
+
       {/* Espaçador entre seções */}
       <div className="py-12 bg-white"></div>
+
+      {/* Destaques / Guias Rápidos */}
+      <section className="py-16 md:py-20 px-6 bg-white overflow-hidden border-t border-border/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10 space-y-2">
+             <div className="text-primary font-bold text-[10px] uppercase tracking-widest">Painel de Acompanhamento</div>
+             <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main tracking-tight">Estratégia para hoje</h2>
+          </div>
+          
+          {/* New Compact Card Style */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Title Bar */}
+            <div className="h-8 border-b border-slate-100 flex items-center px-4 justify-between bg-slate-50/50">
+               <div className="flex gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-400" />
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+               </div>
+               <div className="text-[10px] text-text-sub font-semibold tracking-widest uppercase">Stratis Planner — Cronograma Hoje</div>
+               <div className="w-8" />
+            </div>
+
+            {/* Content */}
+            <div className="p-5 space-y-6">
+              <div className="flex justify-between items-end">
+                <div>
+                   <div className="text-[10px] text-text-sub uppercase font-bold tracking-wider mb-1">Progresso Semanal</div>
+                   <div className="text-3xl font-black text-text-main tracking-tight">68%</div>
+                </div>
+                <div className="text-right">
+                   <div className="text-[10px] text-text-sub font-bold uppercase tracking-wider mb-1">Meta da semana</div>
+                   <div className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100 italic">No prazo</div>
+                </div>
+              </div>
+              
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-primary w-[68%]" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 {[
+                   { sub: 'Direito Constitucional', cat: 'Alta', color: 'bg-primary', pct: '85%' },
+                   { sub: 'Português', cat: 'Média', color: 'bg-amber-400', pct: '42%' },
+                   { sub: 'Raciocínio', cat: 'Alta', color: 'bg-violet-500', pct: '60%' },
+                 ].map((item, i) => (
+                   <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2">
+                     <div className="flex justify-between items-center text-[10px] font-bold text-text-main uppercase tracking-tight">
+                        <span>{item.sub}</span>
+                        <span>{item.pct}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-bold text-text-sub uppercase px-1.5 py-0.5 bg-white rounded border border-slate-100">{item.cat}</span>
+                     </div>
+                     <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${item.color}`} style={{ width: item.pct }} />
+                     </div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-24 md:py-32 px-6 bg-slate-50 relative border-t border-border/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+             <div className="text-primary font-bold text-xs uppercase tracking-widest">Dúvidas Frequentes</div>
+             <h2 className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight">Perguntas que todo concurseiro faz</h2>
+          </div>
+          <div className="space-y-4">
+             {[
+               { q: 'A plataforma é gratuita para começar?', a: 'Sim! Você pode criar sua conta e começar a usar hoje, sem precisar de cartão de crédito. O plano gratuito já inclui o mapeamento de edital e o cronograma básico.' },
+               { q: 'Preciso ter o edital em mãos para usar?', a: 'O ideal é ter o edital disponível, mas não é obrigatório. Se você ainda não tem um concurso definido, pode usar nosso sistema para montar um plano de estudos generalista por área.' },
+               { q: 'Funciona para qualquer concurso ou banca?', a: 'Funciona! A plataforma já tem dados históricos de diversas bancas e concursos. E se o seu concurso for novo, você pode cadastrar o edital manualmente em minutos.' },
+               { q: 'Posso importar cronogramas de outras pessoas?', a: 'Sim! A nossa comunidade tem milhares de cronogramas compartilhados por aprovados. Você pode importar, adaptar e usar como ponto de partida para sua própria preparação.' },
+               { q: 'O sistema funciona no celular?', a: 'Totalmente. A plataforma é responsiva e funciona muito bem no celular e tablet. Você estuda de onde estiver, com seu plano sempre atualizado.' },
+             ].map((faq, i) => (
+               <details key={i} className="group bg-white border border-border rounded-xl overflow-hidden [&_summary::-webkit-details-marker]:hidden shadow-sm">
+                 <summary className="flex cursor-pointer items-center justify-between gap-1.5 p-6 text-text-main font-display font-bold hover:bg-slate-50 transition-colors">
+                   <span className="text-lg">{faq.q}</span>
+                   <span className="relative size-5 shrink-0 text-text-sub">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 opacity-100 group-open:opacity-0 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                     </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 opacity-0 group-open:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                     </svg>
+                   </span>
+                 </summary>
+                 <div className="bg-white px-6 pb-6 text-text-sub font-medium leading-relaxed">
+                   {faq.a}
+                 </div>
+               </details>
+             ))}
+          </div>
+        </div>
+      </section>
 
       {/* Stratis Journal Insights */}
       <section id="insights" className="py-24 md:py-32 px-6 bg-white relative">

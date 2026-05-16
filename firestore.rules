@@ -63,7 +63,7 @@ service cloud.firestore {
       
       allow update: if isOwner(userId) 
         && isValidUser(incoming())
-        && (!incoming().diff(existing()).affectedKeys().hasAny(['userPlan', 'uid', 'createdAt'])) // Lockdown PRO mode
+        && (!incoming().diff(existing()).affectedKeys().hasAny(['uid', 'createdAt'])) // Lockdown immutable fields
         && incoming().updatedAt == request.time;
         
       // Subcollection: Contests

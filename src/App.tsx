@@ -183,7 +183,7 @@ export default function App() {
                   if (!c.id) continue;
                   try {
                     const docRef = doc(db, 'users', user.uid, 'contests', c.id);
-                    await setDoc(docRef, { ...c, ownerId: user.uid }, { merge: true });
+                    await setDoc(docRef, { ...c, ownerId: user.uid, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
                   } catch (e) {
                     console.error("Failed to migrate contest", c.id, e);
                     allSuccess = false;
@@ -498,10 +498,10 @@ export default function App() {
             </button>
             <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
               <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
-                EDUINCLUSIVA
+                STRATIS PLANNER
               </h2>
               <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
-                Performance PRO Ativa
+                Estratégia para Concursos
               </span>
             </Link>
           </div>

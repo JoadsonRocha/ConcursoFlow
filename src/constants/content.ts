@@ -44,7 +44,7 @@ Abrir um edital de 200 páginas é o momento em que muitos desistem. A gente sen
 **Lembre-se:** Você pode ajustar qualquer detalhe do cronograma a qualquer momento. O plano é seu, a gente só facilita o caminho.
     `,
     icon: Layout,
-    image: 'https://images.unsplash.com/photo-1434030216411-067df72459ef?q=80&w=2000&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=2072&auto=format&fit=crop',
     readTime: '3 min'
   },
   {
@@ -71,7 +71,7 @@ Na Stratis, a gente quebra o conteúdo em pílulas. É muito melhor estudar **30
 Estudar menos, mas estudar melhor. Esse é o caminho da elite.
     `,
     icon: Zap,
-    image: 'https://images.unsplash.com/photo-1506377711776-dbdc2f3c20d9?q=80&w=1973&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1544380904-c6861cb4cefd?q=80&w=2000&auto=format&fit=crop',
     readTime: '4 min'
   },
   {
@@ -85,7 +85,7 @@ Estudar menos, mas estudar melhor. Esse é o caminho da elite.
     content: `
 ## O perigo da obesidade mental
 
-Muitos concurseiros acham que ter 1TB de material é estar preparado. A verdade? Isso só gera ansiedade. O aprovado não é quem tem mais material, é quem domina a base.
+ Muitos concurseiros acham que ter 1TB de material é estar preparado. A verdade? Isso só gera ansiedade. O aprovado não é quem tem mais material, é quem domina a base.
 
 ### Aplicando o 80/20 (Lei de Pareto)
 
@@ -98,7 +98,7 @@ Em qualquer prova, um grupo pequeno de assuntos responde pela maioria das quest�
 Mantenha a simplicidade. Foque no que traz pontos.
     `,
     icon: Target,
-    image: 'https://images.unsplash.com/photo-1454165833767-13067144603e?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1606326666490-457574a4481d?q=80&w=2070&auto=format&fit=crop',
     readTime: '5 min'
   },
   {
@@ -125,7 +125,7 @@ A Stratis automatiza seu fluxo para que o descanso seja produtivo:
 Respeite seu corpo. Ele é a sua principal ferramenta de aprovação.
     `,
     icon: Flame,
-    image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=2070&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=2070&auto=format&fit=crop',
     readTime: '6 min'
   }
 ];
