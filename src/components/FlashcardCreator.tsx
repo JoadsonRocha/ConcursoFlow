@@ -4,13 +4,18 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { X, Save, Share2, AlertCircle, Zap, Wand2, Loader2, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateFlashcards, GeneratedFlashcard } from '../services/geminiService';
+import { useAuth } from '../contexts/AuthContext';
+import ProModal from './ProModal';
 
 interface FlashcardCreatorProps {
   onClose: () => void;
   subjects: { id: string, name: string }[];
+  currentCount: number;
 }
 
-export default function FlashcardCreator({ onClose, subjects }: FlashcardCreatorProps) {
+export default function FlashcardCreator({ onClose, subjects, currentCount }: FlashcardCreatorProps) {
+  const { profile, updateProfile, isPro } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
   const [mode, setMode] = useState<'manual' | 'ai'>('ai');
   const [front, setFront] = useState('');
   const [back, setBack] = useState('');
@@ -23,6 +28,20 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
 
   const handleManualSave = async () => {
     if (!front || !back || !auth.currentUser) return;
+    
+    // Limit check
+    if (isPro) {
+      if ((profile?.flashcardUsage || 0) >= 300) {
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      if (currentCount >= 20) {
+        setShowProModal(true);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const cardData = {
@@ -40,6 +59,12 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       };
 
       await addDoc(collection(db, 'users', auth.currentUser.uid, 'flashcards'), cardData);
+      
+      // Update usage
+      await updateProfile({
+        flashcardUsage: (profile?.flashcardUsage || 0) + 1
+      });
+
       if (isPublic) {
         await addDoc(collection(db, 'shared_flashcards'), cardData);
       }
@@ -68,6 +93,15 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
 
   const handleSaveAllGenerated = async () => {
     if (!auth.currentUser || generatedCards.length === 0) return;
+    
+    const limit = isPro ? 300 : 20;
+    const currentUsage = isPro ? (profile?.flashcardUsage || 0) : currentCount;
+
+    if (currentUsage + generatedCards.length > limit) {
+      setShowProModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const batch = generatedCards.map(card => {
@@ -103,6 +137,9 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
       }
 
       await Promise.all(batch);
+
+      // Update usage - MOVED TO SERVER
+      
       setSuccess(true);
       setTimeout(() => onClose(), 1500);
     } catch (error) {
@@ -114,6 +151,7 @@ export default function FlashcardCreator({ onClose, subjects }: FlashcardCreator
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Flashcards Ilimitados" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

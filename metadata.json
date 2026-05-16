@@ -1,6 +1,8 @@
 {
-  "name": "Stratis Planner - Inteligência para concursos",
-  "description": "Sistema avançado de edital verticalizado, cronograma inteligente e performance cognitiva para alta aprovação.",
+  "name": "EDUINCLUSIVA - Stratis Planner",
+  "description": "Sistema avançado para concursos com foco em inclusão e produtividade PRO.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

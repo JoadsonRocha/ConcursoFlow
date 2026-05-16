@@ -1,25 +1,23 @@
-# Security Specification for Stratis
+# Firestore Security Specification - Stratis Planner
 
 ## Data Invariants
-1. A user can only read and write their own profile (`/users/{userId}`).
-2. A user can only read and write contests within their own user document (`/users/{userId}/contests/{contestId}`).
-3. IDs must be valid (max 128 chars, alphanumeric + hyphens).
-4. Timestamps must be handled by the server.
-5. `email` in the user profile must match the authenticated user's email.
+1. Users can only read and write their own profile data.
+2. Users can only manage contests they own (under their uid path).
+3. Users cannot modify their `userPlan` or `uid` fields.
+4. Community data (shared_contests, shared_flashcards) is read-only for public, write-only for owners.
+5. All IDs must be valid strings.
+6. Timestamps must be validated against `request.time`.
 
 ## The "Dirty Dozen" Payloads (Denial Tests)
-1. Write to another user's profile.
-2. Write a contest to another user's contests subcollection.
-3. Create a user profile with an email that doesn't match `request.auth.token.email`.
-4. Create a document with an ID longer than 128 characters.
-5. Create a document with an ID containing malicious characters.
-6. Skip `updatedAt` during an update.
-7. Modify `createdAt` after creation.
-8. Update a user profile without being signed in.
-9. Delete a contest that belongs to another user.
-10. Update a contest field with an invalid type (e.g., `dailyGoalHours` as a string).
-11. Update a contest with an excessively large payload (not directly testable in rules logic but prevented by size checks).
-12. Attempt to read all users without specific IDs.
-
-## Test Runner (Logic Verification)
-(Simplified representation - the actual rules will be built based on these invariants)
+1. Setting `userPlan` to 'admin' manually.
+2. Modifying another user's contest by guessing the ID.
+3. Creating a contest with a huge string as name (Resource Exhaustion).
+4. Updating `createdAt` timestamp.
+5. Deleting a shared contest that belongs to someone else.
+6. Injecting a malicious script into the `displayName`.
+7. Accessing PII (email) of other users.
+8. Creating a user profile for a different UID.
+9. Rapidly creating 1000 contests (Rate limiting hint).
+10. Bypassing mandatory fields in Contest creation.
+11. Updating a Contest's `ownerId`.
+12. Listing all users.

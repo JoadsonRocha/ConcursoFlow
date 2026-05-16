@@ -11,17 +11,37 @@ import ProModal from '../components/ProModal';
 import { toast } from 'sonner';
 
 export default function Comunidade({ onImport, contests }: { onImport: (contest: Contest) => void, contests?: Contest[] }) {
-  const { user, profile } = useAuth();
+  const { user, profile, updateProfile, isPro } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('');
   const [activeTab, setActiveTab] = useState<'contests' | 'flashcards' | 'mindmaps'>('contests');
   const [sharedContests, setSharedContests] = useState<Contest[]>([]);
   const [sharedDecks, setSharedDecks] = useState<any[]>([]);
   const [sharedMindMaps, setSharedMindMaps] = useState<any[]>([]);
+  const [personalFlashcardsCount, setPersonalFlashcardsCount] = useState(0);
+  const [personalMapsCount, setPersonalMapsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('Todos');
   const [previewContest, setPreviewContest] = useState<Contest | null>(null);
   const [previewMindMap, setPreviewMindMap] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubFlash = onSnapshot(collection(db, 'users', user.uid, 'flashcards'), (snap) => {
+      setPersonalFlashcardsCount(snap.docs.length);
+    });
+
+    const unsubMaps = onSnapshot(query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid)), (snap) => {
+      setPersonalMapsCount(snap.docs.length);
+    });
+
+    return () => {
+      unsubFlash();
+      unsubMaps();
+    };
+  }, [user]);
 
   useEffect(() => {
     setLoading(true);
@@ -114,6 +134,22 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
 
   const handleCloneDeck = async (deck: any) => {
     if (!user) return;
+    
+    // Limit check
+    if (isPro) {
+      if (((profile?.flashcardUsage || 0) + deck.cards.length) > 300) {
+        setProFeatureName('Limite mensal de 300 Flashcards');
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      if ((personalFlashcardsCount + deck.cards.length) > 20) {
+        setProFeatureName('Flashcards (Máx: 20)');
+        setShowProModal(true);
+        return;
+      }
+    }
+
     try {
       const batch = deck.cards.map((card: any) => {
         const clonedCard = {
@@ -131,6 +167,11 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       });
       
       await Promise.all(batch);
+
+      // Update usage
+      await updateProfile({
+        flashcardUsage: (profile?.flashcardUsage || 0) + deck.cards.length
+      });
       
       // Update clones count
       await updateDoc(doc(db, 'shared_decks', deck.id), {
@@ -146,10 +187,22 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
 
   const handleClone = async (contest: Contest) => {
     if (!user) return;
-    if (profile?.userPlan !== 'pro' && contests && contests.length >= 1) {
-      setShowProModal(true);
-      return;
+    
+    // Limit check
+    if (isPro) {
+      if ((profile?.importUsage || 0) >= 10) {
+        setProFeatureName('Limite de 10 Importações/mês');
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      if (contests && contests.length >= 1) {
+        setProFeatureName('Múltiplos Editais');
+        setShowProModal(true);
+        return;
+      }
     }
+
     try {
       const clonedContest = {
         ...contest,
@@ -160,6 +213,14 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
         updatedAt: new Date().toISOString()
       };
       onImport(clonedContest);
+
+      // Update usage if PRO
+      if (isPro) {
+         await updateProfile({
+           importUsage: (profile?.importUsage || 0) + 1
+         });
+      }
+
       toast.success(`${contest.role} adicionado aos seus estudos!`);
     } catch (err) {
       console.error("Erro ao clonar:", err);
@@ -169,6 +230,22 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
 
   const handleCloneMindMap = async (map: any) => {
     if (!user) return;
+    
+    // Limit check
+    if (isPro) {
+      if ((profile?.mindmapUsage || 0) >= 50) {
+        setProFeatureName('Limite de 50 Mapas/mês');
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      if (personalMapsCount >= 3) {
+        setProFeatureName('Mapas Mentais (Máx: 3)');
+        setShowProModal(true);
+        return;
+      }
+    }
+
     try {
       const clonedMap = {
         title: `${map.title} (Clone)`,
@@ -180,6 +257,12 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, 'mindmaps'), clonedMap);
+
+      // Update usage
+      await updateProfile({
+        mindmapUsage: (profile?.mindmapUsage || 0) + 1
+      });
+
       toast.success(`Mapa "${map.title}" adicionado aos seus estudos!`);
       
       // Increment clones count on original
@@ -212,72 +295,70 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
 
   return (
     <div className="w-full px-4 md:px-8 overflow-hidden space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
-      <header className="flex flex-wrap justify-between items-center gap-4 lg:gap-8 border-b border-border pb-8">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3 text-primary font-bold text-[9px] uppercase tracking-widest">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm"></div>
-            Comunidade
+      <header className="flex flex-col gap-4 border-b border-border pb-4 md:pb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6">
+          <div className="space-y-1">
+            <h1 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold">
+              Materiais <span className="text-primary italic">Compartilhados</span>
+            </h1>
+            <p className="text-text-sub text-[10px] md:text-xs font-medium leading-relaxed max-w-xl hidden sm:block">
+              Encontre cronogramas e flashcards compartilhados por outros estudantes para acelerar sua aprovação. Ao salvar um item, ele vai para sua biblioteca e continua disponível para a comunidade.
+            </p>
           </div>
-          <h1 className="text-lg md:text-2xl font-display text-text-main tracking-tight font-bold">
-            Materiais <span className="text-primary italic">Compartilhados</span>
-          </h1>
-          <p className="text-text-sub text-[10px] md:text-xs font-medium leading-relaxed max-w-xl">
-            Encontre cronogramas e flashcards compartilhados por outros estudantes para acelerar sua aprovação. Ao salvar um item, ele vai para sua biblioteca e continua disponível para a comunidade.
-          </p>
+
+          <div className="flex w-full lg:w-auto bg-slate-100 p-1 rounded-xl sm:rounded-2xl border border-border">
+            <button 
+              onClick={() => setActiveTab('contests')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
+                activeTab === 'contests' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
+              )}
+            >
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Editais
+            </button>
+            <button 
+              onClick={() => setActiveTab('flashcards')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
+                activeTab === 'flashcards' ? "bg-white text-accent shadow-sm" : "text-text-sub hover:text-text-main"
+              )}
+            >
+              <Lightbulb className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Cards
+            </button>
+            <button 
+              onClick={() => setActiveTab('mindmaps')}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 sm:px-6 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
+                activeTab === 'mindmaps' ? "bg-white text-indigo-500 shadow-sm" : "text-text-sub hover:text-text-main"
+              )}
+            >
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Mapas
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row bg-slate-100 p-1 rounded-2xl border border-border w-full gap-1">
-          <button 
-            onClick={() => setActiveTab('contests')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-              activeTab === 'contests' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
-            )}
-          >
-            <BookOpen className="w-4 h-4" />
-            Editais
-          </button>
-          <button 
-            onClick={() => setActiveTab('flashcards')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-              activeTab === 'flashcards' ? "bg-white text-accent shadow-sm" : "text-text-sub hover:text-text-main"
-            )}
-          >
-            <Lightbulb className="w-4 h-4" />
-            Flashcards
-          </button>
-          <button 
-            onClick={() => setActiveTab('mindmaps')}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap",
-              activeTab === 'mindmaps' ? "bg-white text-indigo-500 shadow-sm" : "text-text-sub hover:text-text-main"
-            )}
-          >
-            <Layers className="w-4 h-4" />
-            Mapas
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-          <div className="relative group flex-1 min-w-[200px] sm:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
+          <div className="relative group w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-sub group-focus-within:text-primary transition-colors" />
             <input 
               type="text"
               placeholder={activeTab === 'contests' ? "Localizar cargo ou instituição..." : "Localizar assunto ou tópico..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-100 border border-border rounded-xl py-3.5 pl-12 pr-6 text-xs text-text-main placeholder:text-text-sub focus:ring-2 ring-primary/10 transition-all outline-none"
+              className="w-full bg-slate-100 border border-border rounded-xl py-2.5 sm:py-3.5 pl-10 pr-4 text-xs text-text-main placeholder:text-text-sub focus:ring-2 ring-primary/10 transition-all outline-none"
             />
           </div>
           {activeTab === 'contests' && (
-            <div className="relative min-w-[180px]">
+            <div className="relative w-full sm:w-auto min-w-[150px]">
               <select 
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full bg-slate-100 border border-border rounded-xl py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-text-sub outline-none cursor-pointer hover:bg-slate-200 transition-all appearance-none"
+                className="w-full bg-slate-100 border border-border rounded-xl py-2.5 sm:py-3.5 px-4 sm:px-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-text-sub outline-none cursor-pointer hover:bg-slate-200 transition-all appearance-none"
               >
-                <option value="Todos">Todas as Áreas</option>
+                <option value="Todos">Todas Áreas</option>
                 <option value="Analista">Analista</option>
                 <option value="Técnico">Técnico</option>
                 <option value="Auditor">Auditor</option>
@@ -654,7 +735,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
           </div>
         )}
       </AnimatePresence>
-      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Múltiplos Editais" />
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName={proFeatureName || "Funcionalidade PRO"} />
     </div>
   );
 }

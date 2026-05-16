@@ -21,7 +21,8 @@ import {
   X,
   Trash2,
   BookOpen,
-  Globe
+  Globe,
+  Layers
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,7 +37,7 @@ import { Node, Edge } from 'reactflow';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Microlearning({ contest }: { contest: Contest }) {
-  const { profile } = useAuth();
+  const { profile, isPro } = useAuth();
   const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>('selection');
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
@@ -49,7 +50,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   const [showCreator, setShowCreator] = useState(false);
   const [showMindMapCreator, setShowMindMapCreator] = useState(false);
   const [mapToDelete, setMapToDelete] = useState<string | null>(null);
-  const [flashcardToDelete, setFlashcardToDelete] = useState<string | null>(null);
+  const [flashcardToDelete, setFlashcardToDelete] = useState<string | string[] | null>(null);
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [personalMindMaps, setPersonalMindMaps] = useState<any[]>([]);
   const [isLibraryLoading, setIsLibraryLoading] = useState(true);
@@ -138,12 +139,19 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   const confirmDeleteFlashcard = async () => {
     if (!flashcardToDelete || !auth.currentUser) return;
     try {
-      await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'flashcards', flashcardToDelete));
+      if (Array.isArray(flashcardToDelete)) {
+        await Promise.all(flashcardToDelete.map(id => 
+          deleteDoc(doc(db, 'users', auth.currentUser!.uid, 'flashcards', id))
+        ));
+        toast.success("Coleção removida!");
+      } else {
+        await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'flashcards', flashcardToDelete));
+        toast.success("Flashcard removido!");
+      }
       setFlashcardToDelete(null);
-      toast.success("Flashcard removido!");
     } catch (err) {
       console.error("Erro ao apagar flashcard:", err);
-      toast.error("Erro ao apagar flashcard.");
+      toast.error("Erro ao apagar.");
     }
   };
 
@@ -176,11 +184,16 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   };
 
   const publishItem = async () => {
-    console.log("Publishing item...", { publishType, previewMindMap: !!previewMindMap, previewFlashcard: !!previewFlashcard, publishForm });
-    if (!auth.currentUser) {
-      console.error("No user logged in.");
+    if (!auth.currentUser) return;
+    
+    if (!isPro) {
+      setShowPublishModal(false);
+      toast.error("Funcionalidade PRO", {
+        description: "Publicar na comunidade é exclusivo para assinantes PRO."
+      });
       return;
     }
+
     const item = publishType === 'map' ? previewMindMap : previewFlashcard;
     if (!item) {
       console.warn("Item not found for publishing.");
@@ -286,7 +299,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             <div className="space-y-6 flex-1 overflow-y-auto pr-2">
               <div className="space-y-3">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Frente / Pergunta</span>
-                <p className="text-lg font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front}"</p>
+                <p className="text-lg font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}"</p>
               </div>
               
               <div className="h-px bg-slate-100 w-full" />
@@ -294,7 +307,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
               <div className="space-y-3">
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verso / Resposta</span>
                 <p className="text-base text-slate-600 leading-relaxed font-medium">
-                  {previewFlashcard.back}
+                  {previewFlashcard.back.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}
                 </p>
               </div>
             </div>
@@ -387,12 +400,14 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           >
             <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-display font-bold text-slate-800 mb-2">
-              {mapToDelete ? 'Apagar Mapa Mental' : 'Remover Flashcard'}
+              {mapToDelete ? 'Apagar Mapa Mental' : Array.isArray(flashcardToDelete) ? 'Remover Coleção' : 'Remover Flashcard'}
             </h3>
             <p className="text-slate-500 text-sm mb-6">
               {mapToDelete 
                 ? 'Tem certeza que deseja apagar este mapa permanentemente?' 
-                : 'Este flashcard será removido da sua coleção de estudos.'}
+                : Array.isArray(flashcardToDelete)
+                  ? 'Tem certeza que deseja apagar todos os flashcards desta coleção?'
+                  : 'Este flashcard será removido da sua coleção de estudos.'}
             </p>
             
             <div className="flex gap-3 mt-8">
@@ -592,15 +607,15 @@ export default function Microlearning({ contest }: { contest: Contest }) {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Frente / Pergunta</span>
-                  <p className="text-xl font-display font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front}"</p>
+                  <p className="text-xl font-display font-bold text-slate-800 italic leading-relaxed">"{previewFlashcard.front.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}"</p>
                 </div>
                 
                 <div className="h-px bg-slate-100 w-full" />
 
                 <div className="space-y-3">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Verso / Resposta</span>
-                  <p className="text-base text-slate-600 leading-relaxed font-medium">
-                    {previewFlashcard.back}
+                  <p className="text-base text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">
+                    {previewFlashcard.back.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}
                   </p>
                 </div>
               </div>
@@ -754,54 +769,56 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest animate-pulse">Sincronizando Biblioteca...</p>
           </div>
         ) : librarySubTab === 'flashcards' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {flashcards.length === 0 ? (
               <div className="col-span-full py-20 text-center text-text-sub text-xs font-bold uppercase tracking-widest border-2 border-dashed border-border rounded-3xl">
                 Você ainda não criou flashcards
               </div>
             ) : (
-              flashcards.map(card => (
+              Object.entries(flashcards.reduce((acc: any, card: any) => {
+                const groupName = card.description || card.subjectName || card.subject || 'Flashcards Gerais';
+                if (!acc[groupName]) acc[groupName] = [];
+                acc[groupName].push(card);
+                return acc;
+              }, {})).map(([groupName, groupCards]: [string, any]) => (
                 <div 
-                  key={card.id} 
-                  onClick={() => setPreviewFlashcard(card)}
-                  className="p-5 bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-all group cursor-pointer flex flex-col h-full"
+                  key={groupName} 
+                  onClick={() => setStudyModeCards(groupCards)}
+                  className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
                 >
-                  <div className="flex justify-between items-start gap-4 mb-4">
-                    <div className="w-10 h-10 bg-accent/5 rounded-xl flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
-                      <BrainCircuit className="w-5 h-5" />
+                  <div className="aspect-square bg-white rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100 shadow-inner">
+                    <div className="absolute inset-0 flex items-center justify-center bg-accent/5 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <Layers className="w-8 h-8 text-accent opacity-50" />
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPublishType('flashcard');
-                          setPreviewFlashcard(card);
-                          setPublishForm({ title: card.front, description: '' });
-                          setShowPublishModal(true);
-                        }}
-                        className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                        title="Publicar na Comunidade"
-                      >
-                        <Globe className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFlashcardToDelete(card.id);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="absolute inset-x-0 bottom-0 py-2 bg-gradient-to-t from-black/20 to-transparent flex justify-center">
+                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">{groupCards.length} Cards</span>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-primary/5 backdrop-blur-[1px]">
+                      <div className="bg-white/90 p-2 rounded-full shadow-sm text-primary flex items-center gap-1 px-3">
+                        <Play className="w-3 h-3 fill-current" />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">Estudar</span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex-1 space-y-2">
-                    <div className="text-[10px] font-bold text-accent uppercase tracking-widest px-2 py-0.5 bg-accent/10 rounded-md inline-block">
-                      {card.description || card.subjectName || card.subject || 'Geral'}
+                  <div className="space-y-1">
+                    <h4 className="text-[10px] font-bold text-text-main truncate uppercase tracking-tight leading-tight" title={groupName}>{groupName}</h4>
+                    <div className="flex items-center justify-between gap-1 border-t border-border mt-2 pt-2">
+                       <p className="text-[8px] text-text-sub font-bold uppercase tracking-widest italic truncate flex-1">
+                        Coleção
+                      </p>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFlashcardToDelete(groupCards.map((c: any) => c.id));
+                          }}
+                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                          title="Apagar Coleção"
+                        >
+                          <Trash2 className="w-4 h-4 md:w-3 md:h-3" />
+                        </button>
+                      </div>
                     </div>
-                    <h4 className="text-sm font-bold text-text-main line-clamp-2">{card.front}</h4>
-                    <p className="text-[11px] text-text-sub italic line-clamp-2 leading-relaxed">{card.back}</p>
                   </div>
                 </div>
               ))
@@ -843,7 +860,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                        <p className="text-[8px] text-text-sub font-bold uppercase tracking-widest italic truncate">
                         {m.isPublic ? 'Comunidade' : 'Privado'}
                       </p>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -852,15 +869,17 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                             setPublishForm({ title: m.title, description: '' });
                             setShowPublishModal(true);
                           }}
-                          className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                          className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                          title="Publicar Mapa"
                         >
-                          <Share2 className="w-3 h-3" />
+                          <Share2 className="w-4 h-4 md:w-3 md:h-3" />
                         </button>
                         <button 
                           onClick={(e) => deleteMindMap(e, m.id)}
-                          className="p-1 text-slate-400 hover:text-red-500 rounded-md transition-all"
+                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                          title="Apagar Mapa"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-4 h-4 md:w-3 md:h-3" />
                         </button>
                       </div>
                     </div>
@@ -878,7 +897,13 @@ export default function Microlearning({ contest }: { contest: Contest }) {
     return (
       <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
         {allModals}
-        {showCreator && <FlashcardCreator onClose={() => setShowCreator(false)} subjects={contest.subjects || []} />}
+        {showCreator && (
+          <FlashcardCreator 
+            onClose={() => setShowCreator(false)} 
+            subjects={contest.subjects || []} 
+            currentCount={flashcards.length}
+          />
+        )}
         <header className="space-y-2">
           <div className="flex items-center gap-3 text-primary font-bold text-[9px] uppercase tracking-widest">
             <div className="w-1 h-1 rounded-full bg-primary shadow-sm"></div>
@@ -1018,7 +1043,13 @@ export default function Microlearning({ contest }: { contest: Contest }) {
           </div>
         </div>
         
-        {showMindMapCreator && <SVGMapCreator onClose={() => setShowMindMapCreator(false)} saveMap={saveMindMap} />}
+        {showMindMapCreator && (
+          <SVGMapCreator 
+            onClose={() => setShowMindMapCreator(false)} 
+            saveMap={saveMindMap} 
+            currentCount={personalMindMaps.length}
+          />
+        )}
 
         <div className="space-y-6">
           {/* Main Content would be here */}

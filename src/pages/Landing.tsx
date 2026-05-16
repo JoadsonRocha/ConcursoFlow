@@ -14,7 +14,8 @@ import {
   Award,
   Database,
   Smartphone,
-  ChevronDown
+  ChevronDown,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -129,7 +130,7 @@ const Landing = () => {
           
           <div className="flex items-center gap-4 md:gap-10">
             <div className="hidden lg:flex items-center gap-10">
-              {['Benefícios', 'Funcionalidades'].map((item) => (
+              {['Benefícios', 'Funcionalidades', 'Insights'].map((item) => (
                 <a 
                   key={item} 
                   href={`#${item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} 
@@ -186,7 +187,7 @@ const Landing = () => {
                to="/auth"
                className="flex-1 bg-primary text-white flex items-center justify-center gap-2 rounded-xl py-4 md:py-5 text-xs md:text-sm font-bold tracking-widest uppercase shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all"
             >
-              Começar Grátis
+              Acessar Plataforma
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
             <button 
@@ -336,6 +337,9 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Espaçador entre seções */}
+      <div className="py-12 bg-white"></div>
 
       {/* Stratis Journal Insights */}
       <section id="insights" className="py-24 md:py-32 px-6 bg-white relative">

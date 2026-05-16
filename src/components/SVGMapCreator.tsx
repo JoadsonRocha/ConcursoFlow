@@ -2,8 +2,12 @@ import { useState } from 'react';
 import { X, Save, Image as ImageIcon, Zap, Loader2 } from 'lucide-react';
 import { generateSVGMap } from '../services/gemini';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import ProModal from './ProModal';
 
-export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => void, saveMap: (svgData: string[], title: string) => void }) {
+export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onClose: () => void, saveMap: (svgData: string[], title: string) => void, currentCount: number }) {
+  const { profile, updateProfile, isPro } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
   const [title, setTitle] = useState('');
   const [svgs, setSvgs] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -19,6 +23,17 @@ export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => voi
   };
 
   const generateWithAI = async () => {
+    if (isPro) {
+      if ((profile?.mindmapUsage || 0) >= 50) {
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      if (currentCount >= 3) {
+        setShowProModal(true);
+        return;
+      }
+    }
     if (!prompt.trim() || !title.trim() || loading) {
       if (!title.trim()) toast.error('Dê um título ao seu mapa mental.');
       else if (!prompt.trim()) toast.error('Descreva o que deseja no mapa mental.');
@@ -36,8 +51,28 @@ export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => voi
     }
   };
 
+  const handleSave = async () => {
+    // Re-check just in case
+    if (isPro) {
+      if ((profile?.mindmapUsage || 0) >= 50) {
+        setShowProModal(true);
+        return;
+      }
+    } else if (currentCount >= 3) {
+      setShowProModal(true);
+      return;
+    }
+    saveMap(svgs, title);
+    
+    // Update usage
+    await updateProfile({
+      mindmapUsage: (profile?.mindmapUsage || 0) + 1
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex justify-center items-end sm:items-center sm:p-4">
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Mapas Mentais Ilimitados" />
       <div className="bg-white w-full max-w-5xl h-[95vh] sm:h-[85vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-300">
         <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-border">
           <input 
@@ -48,7 +83,7 @@ export default function SVGMapCreator({ onClose, saveMap }: { onClose: () => voi
           />
           <div className="flex gap-2 items-center shrink-0">
             <button 
-              onClick={() => saveMap(svgs, title)} 
+              onClick={handleSave} 
               disabled={svgs.length === 0}
               className="flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 bg-primary text-white rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-110 transition-all active:scale-95"
             >

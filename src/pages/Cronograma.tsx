@@ -15,7 +15,8 @@ import {
   PenTool,
   Loader2,
   Target,
-  Zap
+  Zap,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
@@ -23,6 +24,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import ProModal from '../components/ProModal';
 
 interface CronogramaProps {
   contest: Contest;
@@ -30,11 +32,13 @@ interface CronogramaProps {
 }
 
 export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
-  const { user, profile } = useAuth();
+  const { user, profile, isPro } = useAuth();
   const [activeWeek, setActiveWeek] = useState(1);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [weeksCount, setWeeksCount] = useState(4);
+  const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('');
 
   const schedule = contest.schedule || [];
   const maxDay = schedule.length > 0 ? Math.max(...schedule.map(d => d.dayNumber)) : 0;
@@ -87,6 +91,12 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   };
 
   const handleGenerate = async () => {
+    if (!isPro && weeksCount > 4) {
+      setProFeatureName('Cronogramas de Longo Prazo (> 4 Semanas)');
+      setShowProModal(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const subjectsSummary = contest.subjects.map(s => 
@@ -178,20 +188,32 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
         <div className="space-y-6">
           <label className="text-xs font-bold text-text-sub uppercase tracking-wider">Alcance do Plano (Semanas)</label>
           <div className="grid grid-cols-2 gap-3">
-             {[2, 4, 8, 12].map(w => (
-               <button 
-                key={w}
-                onClick={() => setWeeksCount(w)}
-                className={cn(
-                  "px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border",
-                  weeksCount === w 
-                    ? "bg-primary border-primary text-white shadow-sm scale-105" 
-                    : "bg-slate-50 border-border text-text-sub hover:border-primary/30"
-                )}
-               >
-                 {w} Semanas
-               </button>
-             ))}
+             {[2, 4, 8, 12].map(w => {
+               const isDisabled = !isPro && w > 4;
+               return (
+                <button 
+                 key={w}
+                 onClick={() => {
+                   if (isDisabled) {
+                     setProFeatureName(`Cronogramas de ${w} Semanas`);
+                     setShowProModal(true);
+                   } else {
+                     setWeeksCount(w);
+                   }
+                 }}
+                 className={cn(
+                   "px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border relative flex items-center justify-center gap-2",
+                   weeksCount === w 
+                     ? "bg-primary border-primary text-white shadow-sm scale-105" 
+                     : "bg-slate-50 border-border text-text-sub hover:border-primary/30",
+                   isDisabled && "opacity-60 grayscale-[0.5]"
+                 )}
+                >
+                  {w} Semanas
+                  {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
+                </button>
+               );
+             })}
           </div>
         </div>
 
@@ -210,6 +232,12 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
           )}
         </button>
       </section>
+
+      <ProModal 
+        isOpen={showProModal} 
+        onClose={() => setShowProModal(false)} 
+        featureName={proFeatureName} 
+      />
       </div>
     );
   }
@@ -261,20 +289,32 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
       {/* Week Selector */}
       <div className="flex bg-slate-100 border border-border p-1.5 rounded-2xl gap-2 overflow-x-auto no-scrollbar shadow-inner">
-        {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => (
-          <button
-            key={w}
-            onClick={() => setActiveWeek(w)}
-            className={cn(
-              "px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0",
-              activeWeek === w 
-                ? "bg-white text-text-main shadow-sm border border-border" 
-                : "text-text-sub hover:text-text-main"
-            )}
-          >
-            Semana {w}
-          </button>
-        ))}
+        {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => {
+          const isDisabled = !isPro && w > 4;
+          return (
+            <button
+              key={w}
+              onClick={() => {
+                if (isDisabled) {
+                  setProFeatureName(`Acesso à Semana ${w}`);
+                  setShowProModal(true);
+                } else {
+                  setActiveWeek(w);
+                }
+              }}
+              className={cn(
+                "px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0 flex items-center gap-2",
+                activeWeek === w 
+                  ? "bg-white text-text-main shadow-sm border border-border" 
+                  : "text-text-sub hover:text-text-main",
+                isDisabled && "opacity-50"
+              )}
+            >
+              Semana {w}
+              {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -353,11 +393,16 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
           );
         })}
       </div>
+      <ProModal 
+        isOpen={showProModal} 
+        onClose={() => setShowProModal(false)} 
+        featureName={proFeatureName} 
+      />
     </div>
   );
 }
 
-function ShieldCheck({ className }: { className?: string }) {
+export function ShieldCheck({ className }: { className?: string }) {
   return (
     <svg 
       className={className} 

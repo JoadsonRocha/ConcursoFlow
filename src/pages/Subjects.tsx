@@ -21,8 +21,9 @@ import { generateStudySummary } from '../services/gemini';
 
 import { CopyPlus } from 'lucide-react';
 export default function Subjects({ contest, contests, onUpdate }: { contest: Contest, contests?: Contest[], onUpdate: (contest: Contest) => void }) {
-  const { profile } = useAuth();
+  const { profile, updateProfile, isPro } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('Funcionalidade PRO');
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'Tudo' | 'Gerais' | 'Específicos'>('Tudo');
@@ -43,12 +44,32 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
 
   const handleAiAsk = (e: React.MouseEvent, subjectName: string, topicId: string, topicName: string) => {
     e.stopPropagation();
+    
+    // Check usage limits
+    if (isPro) {
+      if ((profile?.summaryUsage || 0) >= 50) {
+        setProFeatureName('Limite de 50 Resumos atingido');
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      // Free users: original 10 per contest limit
+      if ((contest.summaryUsage || 0) >= 10) {
+        setProFeatureName('Resumos Estratégicos (Máx: 10)');
+        setShowProModal(true);
+        return;
+      }
+    }
+
     setSelectedTopic({ subId: subjectName, topicId, topicName }); // abusing subId to store name for UI
     setAiSummary(null);
     setIsLoadingAi(true);
-    generateStudySummary(subjectName, topicName).then(summary => {
+    generateStudySummary(subjectName, topicName).then(async (summary) => {
       setAiSummary(summary);
       setIsLoadingAi(false);
+      
+      // Update global usage - MOVED TO SERVER
+      
     }).catch(() => {
       setAiSummary("Erro ao gerar resumo.");
       setIsLoadingAi(false);
@@ -148,7 +169,8 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
           {contests && contests.length > 1 && (
             <button
               onClick={() => {
-                if (profile?.userPlan !== 'pro') {
+                if (!isPro) {
+                  setProFeatureName('Mesclar Disciplinas');
                   setShowProModal(true);
                   return;
                 }
@@ -156,7 +178,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
               }}
               className="flex items-center gap-2 bg-white border border-border px-5 py-3 hover:bg-slate-50 transition-colors rounded-xl text-text-main text-sm font-bold uppercase tracking-wider self-start relative"
             >
-              {profile?.userPlan !== 'pro' && (
+              {!isPro && (
                 <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10">
                   PRO
                 </div>
@@ -376,7 +398,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
                 ) : (
                   <div className="prose max-w-none text-text-sub text-sm leading-relaxed">
                     <div className="whitespace-pre-wrap font-medium border-l-2 border-primary/20 pl-6">
-                      {aiSummary}
+                      {aiSummary?.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}
                     </div>
                   </div>
                 )}
@@ -554,7 +576,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
           </div>
         )}
       </AnimatePresence>
-      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Mesclar Disciplinas" />
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName={proFeatureName} />
     </div>
   );
 }

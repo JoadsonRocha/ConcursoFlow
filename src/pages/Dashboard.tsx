@@ -482,7 +482,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                   className="absolute right-0 mt-3 w-72 bg-white border border-border rounded-2xl shadow-2xl z-50 overflow-hidden"
                 >
                   <div className="p-4 border-b border-border bg-slate-50/50">
-                    <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Trocar de Plano</span>
+                    <span className="text-[10px] font-black text-text-sub uppercase tracking-[0.2em]">Trocar de Edital</span>
                   </div>
                   <div className="max-h-64 overflow-y-auto no-scrollbar py-2">
                     {contests.length === 0 ? (

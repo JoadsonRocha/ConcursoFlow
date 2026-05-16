@@ -47,6 +47,10 @@ export interface Contest {
   likesCount?: number;
   isPublic?: boolean;
   banca?: string;
+  summaryUsage?: number;
+  flashcardUsage?: number;
+  mindmapUsage?: number;
+  importUsage?: number;
   paretoAnalyzed?: boolean;
   createdAt?: any;
   updatedAt?: any;
@@ -63,4 +67,31 @@ export interface UserProgress {
     hours: number;
     questions: number;
   }[];
+}
+
+export interface Profile {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  userPlan?: 'free' | 'pro' | 'monthly' | 'annual';
+  subscriptionId?: string;
+  currentContestId?: string | null;
+  tourCompleted?: boolean;
+  createdAt: any;
+  updatedAt: any;
+  
+  // Custom Profile fields
+  phoneNumber?: string;
+  concursoFoco?: string;
+  nivelAtual?: string;
+  fraseStatus?: string;
+  isCreator?: boolean;
+  
+  // Usage tracking
+  lastUsageReset?: any; // Timestamp
+  summaryUsage?: number;
+  flashcardUsage?: number;
+  mindmapUsage?: number;
+  importUsage?: number;
 }

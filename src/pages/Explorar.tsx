@@ -137,13 +137,13 @@ export default function Explorar() {
                   className="mb-20"
                 >
                   <div 
-                    className="group relative grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-3xl overflow-hidden bg-white border border-border shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer"
+                    className="group relative grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl overflow-hidden bg-white border border-border shadow-xl hover:shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer"
                     onClick={() => {
                         window.scrollTo(0,0);
                         setSelectedItem(contentData[0]);
                     }}
                   >
-                    <div className="lg:col-span-8 h-[350px] lg:h-[550px] overflow-hidden relative">
+                    <div className="lg:col-span-7 h-[250px] lg:h-[400px] overflow-hidden relative">
                       <ImageWithFallback 
                         src={contentData[0].image}
                         alt="Featured"
@@ -151,29 +151,29 @@ export default function Explorar() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
                     </div>
-                    <div className="lg:col-span-4 p-10 md:p-14 flex flex-col justify-center bg-white border-l border-border">
-                      <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-primary/10 rounded-xl">
-                          <TrendingUp className="w-4 h-4 text-primary" />
+                    <div className="lg:col-span-5 p-6 md:p-10 flex flex-col justify-center bg-white border-l border-border">
+                      <div className="flex items-center gap-2 mb-6">
+                        <div className="p-1.5 bg-primary/10 rounded-lg">
+                          <TrendingUp className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <span className="text-[10px] text-text-sub font-black uppercase tracking-widest">Post em Destaque</span>
+                        <span className="text-[9px] text-text-sub font-black uppercase tracking-widest">Post em Destaque</span>
                       </div>
-                      <h2 className="text-3xl md:text-4xl font-display font-bold text-text-main leading-[1.1] mb-8 group-hover:text-primary transition-colors">
+                      <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main leading-tight mb-4 group-hover:text-primary transition-colors line-clamp-3">
                         {contentData[0].title}
                       </h2>
-                      <p className="text-text-sub text-sm leading-relaxed mb-10 font-medium">
+                      <p className="text-text-sub text-xs leading-relaxed mb-6 font-medium line-clamp-3">
                         {contentData[0].excerpt}
                       </p>
-                      <div className="flex items-center justify-between border-t border-border pt-8 mt-4">
+                      <div className="flex items-center justify-between border-t border-border pt-6 mt-auto">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-primary font-bold shadow-inner">JR</div>
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-primary font-bold shadow-inner text-[10px]">JR</div>
                           <div>
-                            <p className="text-[10px] font-black text-text-main uppercase tracking-widest">{contentData[0].author}</p>
-                            <p className="text-[9px] text-text-sub font-bold uppercase">{contentData[0].date}</p>
+                            <p className="text-[9px] font-black text-text-main uppercase tracking-widest">{contentData[0].author}</p>
+                            <p className="text-[8px] text-text-sub font-bold uppercase">{contentData[0].date}</p>
                           </div>
                         </div>
-                        <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center group-hover:bg-primary group-hover:border-primary group-hover:text-white transition-all">
-                          <ChevronRight className="w-4 h-4" />
+                        <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center group-hover:bg-primary group-hover:border-primary group-hover:text-white transition-all">
+                          <ChevronRight className="w-3.5 h-3.5" />
                         </div>
                       </div>
                     </div>
@@ -216,7 +216,7 @@ export default function Explorar() {
               </div>
 
               {/* Content Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-6">
                 <AnimatePresence mode="popLayout">
                   {filteredItems.map((item, index) => (
                     <motion.article
@@ -226,53 +226,55 @@ export default function Explorar() {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ delay: index * 0.1 }}
-                      className="group flex flex-col cursor-pointer"
+                      className="group flex flex-col cursor-pointer bg-white rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-all duration-300"
                       onClick={() => {
                           window.scrollTo(0,0);
                           setSelectedItem(item);
                       }}
                     >
-                      <div className="relative aspect-[16/11] rounded-2xl overflow-hidden mb-8 shadow-sm group-hover:shadow-xl transition-all">
+                      <div className="relative aspect-[16/9] overflow-hidden">
                         <ImageWithFallback 
                           src={item.image}
                           alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className={cn(
-                          "absolute top-5 left-5 p-3 rounded-2xl text-white shadow-xl backdrop-blur-md border border-white/20",
+                          "absolute top-3 left-3 p-2 rounded-xl text-white shadow-lg backdrop-blur-md border border-white/20",
                           item.category === 'tutorial' ? "bg-secondary/80" : "bg-accent/80"
                         )}>
-                          <item.icon className="w-5 h-5" />
+                          <item.icon className="w-4 h-4" />
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className={cn(
-                          "text-[10px] font-black uppercase tracking-[0.2em]",
-                          item.category === 'tutorial' ? "text-secondary" : "text-accent"
-                        )}>
-                          {item.category === 'tutorial' ? 'Manual' : 'Inside Strategy'}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                        <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">{item.readTime}</span>
-                      </div>
-                      
-                      <h3 className="text-2xl font-display font-bold text-text-main mb-5 leading-snug group-hover:text-primary transition-colors">
-                        {item.title}
-                      </h3>
-                      
-                      <p className="text-sm text-text-sub font-medium leading-relaxed mb-8 line-clamp-3">
-                        {item.excerpt}
-                      </p>
+                      <div className="p-5 sm:p-6 flex flex-col flex-grow">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase tracking-[0.2em]",
+                            item.category === 'tutorial' ? "text-secondary" : "text-accent"
+                          )}>
+                            {item.category === 'tutorial' ? 'Manual' : 'Inside Strategy'}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-slate-300" />
+                          <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{item.readTime}</span>
+                        </div>
+                        
+                        <h3 className="text-lg sm:text-xl font-display font-bold text-text-main mb-3 leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                          {item.title}
+                        </h3>
+                        
+                        <p className="text-xs text-text-sub font-medium leading-relaxed mb-6 line-clamp-2">
+                          {item.excerpt}
+                        </p>
 
-                      <div className="mt-auto flex items-center justify-between border-t border-border pt-6">
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-black text-primary">JR</div>
-                           <span className="text-[10px] font-black text-text-main uppercase tracking-widest">{item.author}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                          Ler Mais <ArrowRight className="w-3.5 h-3.5" />
+                        <div className="mt-auto flex items-center justify-between border-t border-border pt-4">
+                          <div className="flex items-center gap-2">
+                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-black text-primary">JR</div>
+                             <span className="text-[9px] font-black text-text-main uppercase tracking-widest">{item.author}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[9px] font-black text-primary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                            Ler Mais <ArrowRight className="w-3 h-3" />
+                          </div>
                         </div>
                       </div>
                     </motion.article>
@@ -533,25 +535,25 @@ export default function Explorar() {
                         Ver todos os posts
                     </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   {contentData.filter(i => i.id !== selectedItem.id).slice(0, 3).map((item) => (
                     <div 
                       key={item.id} 
-                      className="group cursor-pointer"
+                      className="group cursor-pointer bg-white border border-border p-4 rounded-2xl hover:shadow-xl transition-all"
                       onClick={() => {
                         window.scrollTo(0, 0);
                         setSelectedItem(item);
                       }}
                     >
-                      <div className="aspect-[16/10] w-full overflow-hidden rounded-3xl mb-6 shadow-sm">
-                        <ImageWithFallback src={item.image} alt="Related" className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" />
+                      <div className="aspect-[16/9] w-full overflow-hidden rounded-xl mb-4 shadow-sm">
+                        <ImageWithFallback src={item.image} alt="Related" className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" />
                       </div>
-                      <div className="flex items-center gap-3 mb-3">
-                         <span className="text-[9px] font-black uppercase tracking-widest text-primary">{item.category}</span>
-                         <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{item.readTime}</span>
+                      <div className="flex items-center gap-2 mb-2">
+                         <span className="text-[8px] font-black uppercase tracking-widest text-primary">{item.category}</span>
+                         <span className="text-[8px] font-bold text-text-sub uppercase tracking-wider">{item.readTime}</span>
                       </div>
-                      <h5 className="text-xl font-display font-bold text-text-main group-hover:text-primary transition-colors leading-[1.2] mb-4">{item.title}</h5>
-                      <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-sub group-hover:text-primary transition-colors">Abrir Artigo <ArrowRight className="w-3 h-3" /></span>
+                      <h5 className="text-sm font-display font-bold text-text-main group-hover:text-primary transition-colors leading-snug mb-3 line-clamp-2">{item.title}</h5>
+                      <span className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-sub group-hover:text-primary transition-colors">Abrir Artigo <ArrowRight className="w-3 h-3" /></span>
                     </div>
                   ))}
                 </div>

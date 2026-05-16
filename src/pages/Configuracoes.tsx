@@ -22,7 +22,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onImport, contests }: SettingsProps) {
-  const { profile } = useAuth();
+  const { profile, updateProfile, isPro } = useAuth();
   const navigate = useNavigate();
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
@@ -97,10 +97,19 @@ export default function Settings({ onImport, contests }: SettingsProps) {
       return;
     }
     
-    if (profile?.userPlan !== 'pro' && contests.length >= 1) {
-      setProFeatureName('Múltiplos Editais');
-      setShowProModal(true);
-      return;
+    if (isPro) {
+      if ((profile?.importUsage || 0) >= 10) {
+        setProFeatureName('Limite de 10 Importações/mês');
+        setShowProModal(true);
+        return;
+      }
+    } else {
+      // Free users: original 1 contest limit
+      if (contests.length >= 1) {
+        setProFeatureName('Múltiplos Editais');
+        setShowProModal(true);
+        return;
+      }
     }
     
     setLoading(true);
@@ -179,6 +188,9 @@ export default function Settings({ onImport, contests }: SettingsProps) {
        };
        
        await onImport(dynamicContest);
+       
+       // Update usage if not PRO - MOVED TO SERVER
+
        setRawText('');
        setManualContestName('');
        setManualRole('');
@@ -196,7 +208,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-500 pb-10">
+    <div className="max-w-4xl mx-auto space-y-3 animate-in fade-in duration-500 pb-4">
       <header className="flex flex-row items-center justify-between gap-2">
         <div>
           <h1 className="text-xl md:text-3xl font-display text-text-main tracking-tight font-bold">
@@ -215,53 +227,58 @@ export default function Settings({ onImport, contests }: SettingsProps) {
       </header>
 
       {/* Mode Switcher */}
-      <div className="flex bg-slate-900/5 !mb-0 border border-border p-1.5 rounded-[1.5rem] shadow-sm max-w-md">
+          <div className="flex bg-slate-900/5 !mb-0 border border-border p-1.5 rounded-[1.5rem] shadow-sm max-w-md">
         <button
           onClick={() => { setActiveTab('ai'); setRawText(''); }}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all",
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all relative group",
             activeTab === 'ai' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
           )}
         >
-          <Target className="w-4 h-4 cursor-default" />
+          {!isPro && (
+             <div className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
+               PRO
+             </div>
+          )}
+          <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
           Importar PDF (IA)
         </button>
         <button
           onClick={() => { setActiveTab('manual'); setRawText(''); }}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all",
+            "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
             activeTab === 'manual' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
           )}
         >
-          <Wand2 className="w-4 h-4 cursor-default" />
+          <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
           Colar Texto
         </button>
       </div>
       
-      <div className="space-y-4 mt-4">
+      <div className="space-y-3 mt-3">
           {stage === 'import' && (
             <>
-              <section className="bg-white border border-border p-3 rounded-xl space-y-3 animate-in slide-in-from-bottom-5 duration-500 shadow-sm">
+              <section className="bg-white border border-border p-3 rounded-xl space-y-2 animate-in slide-in-from-bottom-5 duration-500 shadow-sm">
                 {activeTab === 'manual' && (
                   <>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center text-primary shadow-sm">
-                          <Target className="w-5 h-5" />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center text-primary shadow-sm">
+                          <Target className="w-4 h-4" />
                         </div>
                         <div className="space-y-0.5">
-                          <h2 className="text-lg font-display text-text-main tracking-tight font-bold">Importação Manual</h2>
-                          <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Detalhes do concurso e conteúdo</p>
+                          <h2 className="text-base font-display text-text-main tracking-tight font-bold">Importação Manual</h2>
+                          <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest">Detalhes do concurso e conteúdo</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
+                        <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
-                          className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
+                          className="w-full bg-slate-50 border border-border rounded-lg p-2 text-xs text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
                           value={manualContestName}
                           onChange={(e) => setManualContestName(e.target.value)}
                           placeholder="Ex: Tribunal de Justiça"
@@ -281,15 +298,15 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t border-border">
+                    <div className="space-y-1.5 pt-2 border-t border-border">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-xs font-bold text-text-main mt-2">Conteúdo Programático</h3>
+                        <h3 className="text-[10px] font-bold text-text-main mt-1">Conteúdo Programático</h3>
                         {rawText && (
-                          <button onClick={() => setRawText('')} className="text-red-500 text-[10px] font-bold uppercase tracking-wider hover:brightness-125 transition-all">Limpar</button>
+                          <button onClick={() => setRawText('')} className="text-red-500 text-[9px] font-bold uppercase tracking-wider hover:brightness-125 transition-all">Limpar</button>
                         )}
                       </div>
                       <textarea
-                        className="w-full h-32 bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
+                        className="w-full h-20 bg-slate-50 border border-border rounded-lg p-2 text-[10px] text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
                         placeholder="Cole o edital aqui..."
                         value={rawText}
                         onChange={(e) => setRawText(e.target.value)}
@@ -300,14 +317,14 @@ export default function Settings({ onImport, contests }: SettingsProps) {
 
                 {activeTab === 'ai' && (
                   <>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-accent/10 border border-accent/20 rounded-xl flex items-center justify-center text-accent shadow-sm">
-                          <Wand2 className="w-5 h-5" />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-accent/10 border border-accent/20 rounded-lg flex items-center justify-center text-accent shadow-sm">
+                          <Wand2 className="w-4 h-4" />
                         </div>
                         <div className="space-y-0.5">
-                          <h2 className="text-lg font-display text-text-main tracking-tight font-bold">Importar Edital com IA</h2>
-                          <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Processamento automático via PDF</p>
+                          <h2 className="text-base font-display text-text-main tracking-tight font-bold">Importar Edital com IA</h2>
+                          <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest">Processamento automático via PDF</p>
                         </div>
                       </div>
                     </div>
@@ -316,7 +333,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
                       <button 
                         onClick={() => {
-                          if (profile?.userPlan !== 'pro') {
+                          if (!isPro) {
                             setProFeatureName('Importação de Edital via PDF');
                             setShowProModal(true);
                             return;
@@ -324,9 +341,9 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           fileInputRef.current?.click();
                         }}
                         disabled={extractingPdf}
-                        className="w-full flex items-center justify-center gap-4 py-4 bg-gradient-to-r from-primary to-accent text-white rounded-xl text-sm font-bold uppercase tracking-wider hover:scale-[1.02] transition-all shadow-lg relative group"
+                        className="w-full flex items-center justify-center gap-3 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:scale-[1.02] transition-all shadow-lg relative group"
                       >
-                        {profile?.userPlan !== 'pro' && (
+                        {!isPro && (
                            <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
                              PRO
                            </div>
@@ -340,12 +357,12 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
+                        <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
                         <input 
                           type="text" 
-                          className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
+                          className="w-full bg-slate-50 border border-border rounded-lg p-2 text-xs text-text-main focus:border-primary/50 outline-none transition-all placeholder:text-slate-400"
                           value={manualContestName}
                           onChange={(e) => setManualContestName(e.target.value)}
                           placeholder="Ex: Tribunal de Justiça"
@@ -365,11 +382,11 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-border">
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex flex-col gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer group">
                           <div className={cn(
-                            "w-5 h-5 rounded-lg border transition-all flex items-center justify-center shrink-0",
+                            "w-4 h-4 rounded-md border transition-all flex items-center justify-center shrink-0",
                             autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-slate-50"
                           )}>
                             {autoSchedule && <CheckCircle2 className="w-3 h-3" />}
@@ -385,7 +402,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                                 key={w}
                                 onClick={() => setScheduleWeeks(w)}
                                 className={cn(
-                                  "px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex-1 text-center",
+                                  "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center",
                                   scheduleWeeks === w 
                                     ? "bg-white text-text-main shadow-sm" 
                                     : "text-text-sub hover:text-text-main"
@@ -402,10 +419,10 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 )}
               </section>
 
-              <div className="pt-4">
+              <div className="pt-3">
                 {error && (
-                  <div className="flex items-center gap-3 p-5 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-bold uppercase tracking-wider animate-in shake duration-300">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider animate-in shake duration-300 mb-3">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
@@ -413,7 +430,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                   onClick={handleEditalImport}
                   disabled={loading || (activeTab === 'manual' && (!manualContestName || !manualRole)) || (activeTab === 'ai' && !rawText)}
                   className={cn(
-                    "w-full py-6 rounded-2xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-4 transition-all shadow-sm relative overflow-hidden group",
+                    "w-full py-4 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-sm relative overflow-hidden group",
                     loading || (activeTab === 'manual' && (!manualContestName || !manualRole)) || (activeTab === 'ai' && !rawText)
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
                       : "bg-text-main text-white hover:scale-[1.01] active:scale-[0.99] hover:shadow-md"
@@ -431,7 +448,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 {contestData && (
                   <button
                     onClick={() => setStage('metas')}
-                    className="w-full mt-4 py-6 rounded-2xl bg-primary text-white font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-4 transition-all shadow-sm hover:scale-[1.01] active:scale-[0.99] hover:shadow-md"
+                    className="w-full mt-3 py-4 rounded-xl bg-primary text-white font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-sm hover:scale-[1.01] active:scale-[0.99] hover:shadow-md"
                   >
                     Continuar para Metas
                   </button>
@@ -441,27 +458,27 @@ export default function Settings({ onImport, contests }: SettingsProps) {
           )}
 
           {stage === 'metas' && (
-            <section className="bg-white border border-border p-6 rounded-2xl space-y-6 shadow-sm transition-all hover:border-primary/20 animate-in fade-in duration-300">
+            <section className="bg-white border border-border p-4 rounded-xl space-y-4 shadow-sm transition-all hover:border-primary/20 animate-in fade-in duration-300">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  <h2 className="text-sm font-bold text-text-sub uppercase tracking-wider">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <h2 className="text-xs font-bold text-text-sub uppercase tracking-wider">
                     {wizardStep === 0 ? 'Intensidade dos Estudos' : 'Cronograma e Datas'}
                   </h2>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
                   Passo {wizardStep + 1} de 2
                 </span>
               </div>
               
-              <div className="min-h-[150px]">
+              <div className="min-h-[100px]">
                 {wizardStep === 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in duration-300">
                     <div className="space-y-1">
                       <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Horas por Dia</label>
                       <input 
                         type="number" 
-                        className="w-full bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                        className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                         value={dailyHours}
                         onChange={(e) => setDailyHours(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="0"
@@ -471,7 +488,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Questões por Dia</label>
                       <input 
                         type="number" 
-                        className="w-full bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                        className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                         value={dailyQuestions}
                         onChange={(e) => setDailyQuestions(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="0"
@@ -481,7 +498,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Conteúdo por Dia</label>
                       <input 
                         type="number" 
-                        className="w-full bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                        className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                         value={dailyContentVolume}
                         onChange={(e) => setDailyContentVolume(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="Ex: 1"
@@ -496,7 +513,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Data Início</label>
                       <input 
                         type="date" 
-                        className="w-full bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                        className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                         value={scheduleStartDate}
                         onChange={(e) => setScheduleStartDate(e.target.value)}
                       />
@@ -505,7 +522,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Data da Prova</label>
                       <input 
                         type="date" 
-                        className="w-full bg-slate-50 border border-border rounded-lg p-3 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
+                        className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main outline-none focus:border-primary/50 transition-all font-bold"
                         value={examDate}
                         onChange={(e) => setExamDate(e.target.value)}
                       />
@@ -514,11 +531,11 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2 pt-1">
                 {wizardStep > 0 && (
                   <button 
                     onClick={() => setWizardStep(prev => prev - 1)}
-                    className="flex-1 py-3 rounded-xl border border-border font-bold text-text-sub hover:bg-slate-50 transition-all text-xs uppercase tracking-wider"
+                    className="flex-1 py-2.5 rounded-xl border border-border font-bold text-text-sub hover:bg-slate-50 transition-all text-[10px] uppercase tracking-wider"
                   >
                     Voltar
                   </button>
@@ -526,14 +543,14 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 {wizardStep < 1 ? (
                   <button 
                     onClick={() => setWizardStep(prev => prev + 1)}
-                    className="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all text-xs uppercase tracking-wider"
+                    className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all text-[10px] uppercase tracking-wider"
                   >
                     Próximo Passo
                   </button>
                 ) : (
                   <button 
                     onClick={handleFinalSave}
-                    className="flex-1 py-3 rounded-xl bg-text-main text-white font-bold hover:bg-text-main/90 transition-all text-xs uppercase tracking-wider"
+                    className="flex-1 py-2.5 rounded-xl bg-text-main text-white font-bold hover:bg-text-main/90 transition-all text-[10px] uppercase tracking-wider"
                   >
                     Analisar e Prosseguir
                   </button>

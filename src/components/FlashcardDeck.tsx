@@ -112,41 +112,55 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
         )}
       </header>
 
-      <div className="relative h-80 md:h-96 group" style={{ perspective: 1000 }}>
-        <motion.div
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
-          className="w-full h-full relative cursor-pointer"
-          style={{ transformStyle: 'preserve-3d' }}
-          onClick={() => setIsFlipped(!isFlipped)}
-        >
-          {/* Front */}
-          <div 
-            className="absolute inset-0 w-full h-full bg-white border-2 border-border p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-sm"
-            style={{ backfaceVisibility: 'hidden' }}
-          >
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30">
-               <RefreshCw className="w-3 h-3 text-text-sub" />
-               <span className="text-[8px] font-bold text-text-sub uppercase tracking-[0.2em]">Toque para virar</span>
-            </div>
-            <h3 className="text-xl md:text-2xl font-display text-text-main font-bold leading-relaxed italic pr-2">
-              {currentCard.front}
-            </h3>
-          </div>
-
-          {/* Back */}
-          <div 
-            className="absolute inset-0 w-full h-full bg-white border-2 border-accent/20 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-inner"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-          >
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50">
-               <span className="text-[8px] font-bold text-accent uppercase tracking-[0.2em]">Resposta</span>
-            </div>
-            <div className="text-base md:text-lg text-text-main font-medium leading-relaxed italic overflow-y-auto max-h-full no-scrollbar">
-              {currentCard.back}
-            </div>
-          </div>
-        </motion.div>
+      <div className="relative h-80 md:h-96 group">
+        <AnimatePresence mode="wait">
+          {!isFlipped ? (
+            <motion.div
+              key="front"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.05, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 w-full h-full cursor-pointer bg-white border-2 border-border pt-16 pb-8 px-2 md:px-6 rounded-[2.5rem] flex flex-col text-center shadow-sm"
+              onClick={() => setIsFlipped(true)}
+            >
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30">
+                 <RefreshCw className="w-3 h-3 text-text-sub" />
+                 <span className="text-[8px] font-bold text-text-sub uppercase tracking-[0.2em]">Toque para virar</span>
+              </div>
+              <div className="flex-1 w-full relative z-10 flex flex-col items-center justify-center overflow-hidden">
+                <h3 className="text-sm sm:text-base md:text-lg font-display text-text-main font-bold leading-snug italic px-2 md:px-4 w-full">
+                  {currentCard.front.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}
+                </h3>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="back"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.05, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 w-full h-full bg-white border-2 border-accent/20 pt-10 pb-4 px-2 md:px-6 rounded-[2.5rem] flex flex-col text-center shadow-inner overflow-hidden"
+            >
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50 z-0">
+                 <span className="text-[8px] font-bold text-accent uppercase tracking-[0.2em]">Resposta</span>
+              </div>
+              <div 
+                className="flex-1 overflow-y-auto w-full relative z-10 touch-pan-y overscroll-contain px-4 custom-scrollbar"
+              >
+                <div className="min-h-full flex flex-col justify-start py-4">
+                  <div className="text-sm sm:text-base text-text-main font-medium leading-relaxed italic w-full text-left whitespace-pre-wrap">
+                    {currentCard.back.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '')}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-20 hidden md:block">
+                <ChevronDown className="w-4 h-4 text-accent animate-bounce" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence mode="wait">

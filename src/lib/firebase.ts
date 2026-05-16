@@ -36,24 +36,14 @@ if (process.env.NODE_ENV !== 'production') {
 const databaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId;
 
 const app = initializeApp(config);
+console.log("Firebase App initialized with Project ID:", config.projectId);
 export const auth = getAuth(app);
-export const db = getFirestore(app, databaseId);
+export const db = (databaseId && databaseId !== '(default)') 
+  ? getFirestore(app, databaseId) 
+  : getFirestore(app);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
 export { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile };
 export const logout = () => signOut(auth);
-
-// Critical: Connection Test
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log("Firebase connected successfully");
-  } catch (error: any) {
-    if (error.message?.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();

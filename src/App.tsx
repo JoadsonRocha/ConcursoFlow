@@ -14,7 +14,8 @@ import {
   Target,
   FileUp,
   MessageCircle,
-  Compass
+  Compass,
+  Crown
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -34,12 +35,14 @@ import Perfil from './pages/Perfil';
 import Auth from './pages/Auth';
 import Pareto from './pages/Pareto';
 import Explorar from './pages/Explorar';
+import Planos from './pages/Planos';
 import BrandLogo from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
 import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import Dashboard from './pages/Dashboard';
 
 const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string }) => (
@@ -67,7 +70,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: str
 
 // App Component
 export default function App() {
-  const { user, profile, loading: authLoading, logout } = useAuth();
+  const { user, profile, loading: authLoading, logout, isPro } = useAuth();
   const [contests, setContests] = useState<Contest[]>([]);
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -389,6 +392,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/planos" element={<Planos />} />
         <Route path="/termos" element={<TermsOfUse />} />
         <Route path="/privacidade" element={<PrivacyPolicy />} />
         <Route path="*" element={<Navigate to="/" />} />
@@ -446,7 +450,23 @@ export default function App() {
             </nav>
           </div>
 
-
+          {/* Sidebar actions: Upgrade hidden for PRO mode */}
+          {false && !isPro && (
+            <div className="mt-4">
+              <Link
+                to="/planos"
+                className={cn(
+                  "flex items-center gap-3 py-3 rounded-xl transition-all duration-300 group shadow-md shadow-indigo-500/20",
+                  "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600 opacity-90 hover:opacity-100",
+                  isSidebarOpen ? "px-4" : "justify-center px-0 mx-2"
+                )}
+                title={!isSidebarOpen ? "Fazer Upgrade para Premium" : undefined}
+              >
+                <Crown className={cn("w-4 h-4 shrink-0 text-yellow-300")} />
+                {isSidebarOpen && <span className="text-[11px] font-bold uppercase tracking-wider">Fazer Upgrade</span>}
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="mt-auto pt-6 border-t border-border">
@@ -478,10 +498,10 @@ export default function App() {
             </button>
             <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
               <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
-                Stratis Planner
+                EDUINCLUSIVA
               </h2>
               <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
-                Inteligência para concursos
+                Performance PRO Ativa
               </span>
             </Link>
           </div>
@@ -521,9 +541,17 @@ export default function App() {
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         className="absolute right-0 mt-5 w-64 bg-white border border-border rounded-2xl shadow-xl py-6 z-[100] overflow-hidden"
                       >
-                        <div className="px-6 py-4 border-b border-border mb-2">
-                          <div className="text-xs font-black text-text-main uppercase tracking-wider truncate">{user?.displayName || 'Concurseiro'}</div>
-                          <div className="text-xs text-text-sub font-medium truncate opacity-60 italic">{user?.email}</div>
+                        <div className="px-6 py-4 border-b border-border mb-2 flex items-center justify-between">
+                          <div className="min-w-0">
+                            <div className="text-xs font-black text-text-main uppercase tracking-wider truncate">{user?.displayName || 'Concurseiro'}</div>
+                            <div className="text-xs text-text-sub font-medium truncate opacity-60 italic">{user?.email}</div>
+                          </div>
+                          <div className={cn(
+                            "px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest shrink-0 ml-2",
+                            isPro ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
+                          )}>
+                            {isPro ? 'PRO' : 'FREE'}
+                          </div>
                         </div>
                         <Link 
                           to="/perfil" 
@@ -585,6 +613,7 @@ export default function App() {
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/explorar" element={<Explorar />} />
+              <Route path="/planos" element={<Planos />} />
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookiePolicy />} />
@@ -592,6 +621,7 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+    <SpeedInsights />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorUtils';
+import { Profile } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -12,15 +13,37 @@ interface AuthContextType {
   signup: (email: string, pass: string, name: string) => Promise<any>;
   resetPassword: (email: string) => Promise<any>;
   logout: () => Promise<void>;
-  profile: any;
+  profile: Profile | null;
+  updateProfile: (data: Partial<Profile>) => Promise<void>;
+  isPro: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const checkMonthlyReset = async (userUid: string, currentProfile: Profile) => {
+    if (!currentProfile.lastUsageReset) return;
+    
+    const lastReset = currentProfile.lastUsageReset.toDate ? currentProfile.lastUsageReset.toDate() : new Date(currentProfile.lastUsageReset);
+    const now = new Date();
+    
+    // If it's a different month or year, reset counters
+    if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+      const userRef = doc(db, 'users', userUid);
+      const resetData = {
+        summaryUsage: 0,
+        flashcardUsage: 0,
+        mindmapUsage: 0,
+        importUsage: 0,
+        lastUsageReset: serverTimestamp()
+      };
+      await updateDoc(userRef, resetData);
+    }
+  };
 
   useEffect(() => {
     let unsubProfile: (() => void) | null = null;
@@ -29,18 +52,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       if (user) {
         try {
-          // Listen to profile updates
           const userRef = doc(db, 'users', user.uid);
           
           if (unsubProfile) unsubProfile();
           unsubProfile = onSnapshot(userRef, async (userDoc) => {
             if (!userDoc.exists()) {
               const newProfile: any = {
+                uid: user.uid,
                 email: user.email,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 currentContestId: null,
-                tourCompleted: false
+                tourCompleted: false,
+                userPlan: 'pro',
+                lastUsageReset: serverTimestamp(),
+                summaryUsage: 0,
+                flashcardUsage: 0,
+                mindmapUsage: 0,
+                importUsage: 0
               };
               if (user.displayName) newProfile.displayName = user.displayName;
               if (user.photoURL) newProfile.photoURL = user.photoURL;
@@ -50,12 +79,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setProfile(newProfile);
               } catch (err) {
                 console.error("Erro ao criar perfil inicial:", err);
-                // We still set a local profile so the user can use the app
                 setProfile(newProfile);
                 handleFirestoreError(err, OperationType.WRITE, 'users/' + user.uid);
               }
             } else {
-              setProfile(userDoc.data());
+              const data = userDoc.data() as Profile;
+              // Force PRO mode
+              if (data.userPlan !== 'pro') {
+                data.userPlan = 'pro';
+                updateDoc(userRef, { userPlan: 'pro' }).catch(console.error);
+              }
+              setProfile(data);
+              // Background check for reset
+              checkMonthlyReset(user.uid, data);
             }
             setLoading(false); 
           }, (err) => {
@@ -79,6 +115,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  const updateProfileData = async (data: Partial<Profile>) => {
+    if (!user) return;
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+  };
+
   const signup = async (email: string, pass: string, name: string) => {
     const res = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(res.user, { displayName: name });
@@ -91,13 +136,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Explicitly create the profile doc here to ensure the name is captured
     const userRef = doc(db, 'users', res.user.uid);
-    const newProfile = {
+    const newProfile: Profile = {
+      uid: res.user.uid,
       email: email,
       displayName: name,
+      userPlan: 'pro',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       currentContestId: null,
-      tourCompleted: false
+      tourCompleted: false,
+      lastUsageReset: serverTimestamp(),
+      summaryUsage: 0,
+      flashcardUsage: 0,
+      mindmapUsage: 0,
+      importUsage: 0
     };
     await setDoc(userRef, newProfile, { merge: true }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'users/' + res.user.uid));
     setProfile(newProfile);
@@ -122,7 +174,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signup,
       resetPassword,
       logout, 
-      profile 
+      profile,
+      updateProfile: updateProfileData,
+      isPro: true
     }}>
       {children}
     </AuthContext.Provider>

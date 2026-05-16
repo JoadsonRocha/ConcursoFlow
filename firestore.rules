@@ -2,86 +2,118 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    function isSignedIn() { return request.auth != null; }
-    function incoming() { return request.resource.data; }
-    function existing() { return resource.data; }
-    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
-    function isValidMindMap(data) {
-      return data.title is string && data.title.size() <= 100 &&
-             data.isPublic is bool &&
-             data.ownerId is string &&
-             data.createdAt is timestamp;
-    }
-
-    match /feedbacks/{feedbackId} {
-      allow read: if false; // only admin can read
-      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update, delete: if false;
-    }
-
-    match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
-      
-      match /contests/{contestId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && incoming().ownerId == userId;
-        allow update: if isOwner(userId);
-        allow delete: if isOwner(userId);
-      }
-      
-      match /flashcards/{flashcardId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && incoming().ownerId == userId;
-        allow update: if isOwner(userId);
-        allow delete: if isOwner(userId);
-      }
-    }
-
-    match /shared_contests/{sharedId} {
-      allow read: if true;
-      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])) ||
-        (existing().ownerId == request.auth.uid)
-      );
-      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
-    }
     
-    match /shared_flashcards/{sharedId} {
-      allow read: if true;
+    // ======================================================
+    // 1. GLOBAL HELPERS & SAFETY
+    // ======================================================
+    
+    match /{document=**} {
+      allow read, write: if false; // Default deny
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ======================================================
+    // 2. ENTITY VALIDATORS
+    // ======================================================
+
+    function isValidUser(data) {
+      return data.email is string 
+        && data.uid == request.auth.uid
+        && (!data.hasAll(['displayName']) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!data.hasAll(['userPlan']) || (data.userPlan in ['free', 'pro', 'annual', 'monthly']))
+        && data.keys().hasAll(['email', 'uid', 'createdAt', 'updatedAt']);
+    }
+
+    function isValidContest(data) {
+      return data.name is string && data.name.size() <= 200
+        && data.role is string && data.role.size() <= 200
+        && data.ownerId == request.auth.uid
+        && data.keys().hasAll(['name', 'role', 'ownerId']);
+    }
+
+    // ======================================================
+    // 3. COLLECTION RULES
+    // ======================================================
+
+    // Users Profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && isValidUser(incoming())
+        && incoming().userPlan == 'pro'; // Force PRO on creation for this specific requirement
+      
+      allow update: if isOwner(userId) 
+        && isValidUser(incoming())
+        && (!incoming().diff(existing()).affectedKeys().hasAny(['userPlan', 'uid', 'createdAt'])) // Lockdown PRO mode
+        && incoming().updatedAt == request.time;
+        
+      // Subcollection: Contests
+      match /contests/{contestId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
+        allow update: if isOwner(userId) && isValidContest(incoming()) && incoming().updatedAt == request.time;
+        allow delete: if isOwner(userId);
+      }
+      
+      // Subcollection: Flashcards
+      match /flashcards/{flashcardId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // MindMaps
+    match /mindmaps/{mindmapId} {
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.ownerId);
       allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])) ||
-        (existing().ownerId == request.auth.uid)
-      );
-      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow update, delete: if isOwner(existing().ownerId);
+    }
+
+    // Community Collections (Shared)
+    match /shared_contests/{sharedId} {
+      allow list: if true;
+      allow get: if true;
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isOwner(existing().ownerId);
+      allow delete: if isOwner(existing().ownerId);
+    }
+
+    match /shared_flashcards/{sharedId} {
+      allow list: if true;
+      allow get: if true;
+      allow write: if isSignedIn() && (request.method == 'create' ? incoming().ownerId == request.auth.uid : isOwner(existing().ownerId));
     }
 
     match /shared_decks/{deckId} {
-      allow read: if true;
-      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'clonesCount'])) ||
-        (existing().ownerId == request.auth.uid)
-      );
-      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow list: if true;
+      allow get: if true;
+      allow write: if isSignedIn() && (request.method == 'create' ? incoming().ownerId == request.auth.uid : isOwner(existing().ownerId));
     }
 
-    match /mindmaps/{mindmapId} {
-      allow read: if (resource.data.isPublic == true) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        (resource.data.isPublic == true && incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'clonesCount'])) ||
-        (existing().ownerId == request.auth.uid)
-      );
-      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    // Connection Test Document
+    match /test/connection {
+      allow read: if true;
     }
   }
 }

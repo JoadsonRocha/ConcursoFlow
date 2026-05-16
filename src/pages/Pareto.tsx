@@ -4,6 +4,9 @@ import { BarChart2, Info, Building2, Target, Loader2, Zap, TrendingUp, AlertCirc
 import { cn } from '../lib/utils';
 import { Contest } from '../types';
 
+import { useAuth } from '../contexts/AuthContext';
+import ProModal from '../components/ProModal';
+
 interface ParetoProps {
   contest: Contest;
   contests?: Contest[];
@@ -12,6 +15,8 @@ interface ParetoProps {
 }
 
 export default function Pareto({ contest, contests = [], onContestChange, onUpdate }: ParetoProps) {
+  const { profile, isPro } = useAuth();
+  const [showProModal, setShowProModal] = useState(false);
   const [banca, setBanca] = useState(contest.banca || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const isAnalyzed = contest.paretoAnalyzed || false;
@@ -23,6 +28,13 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
 
   const handleAnalyze = () => {
     if (!banca) return;
+    
+    // Check PRO status for re-analyzing or if already analyzed
+    if (!isPro && contest.paretoAnalyzed) {
+      setShowProModal(true);
+      return;
+    }
+
     setIsAnalyzing(true);
     setTimeout(() => {
       setIsAnalyzing(false);
@@ -196,10 +208,21 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
               </p>
             </div>
             <button 
-              onClick={() => onUpdate && onUpdate({ ...contest, paretoAnalyzed: false })}
-              className="mt-4 md:mt-0 p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all ml-auto shrink-0"
+              onClick={() => {
+                if (!isPro) {
+                  setShowProModal(true);
+                  return;
+                }
+                onUpdate && onUpdate({ ...contest, paretoAnalyzed: false });
+              }}
+              className="mt-4 md:mt-0 p-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all ml-auto shrink-0 relative group"
               title="Refazer análise"
             >
+              {!isPro && (
+                 <div className="absolute -top-1 -right-1 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
+                   PRO
+                 </div>
+              )}
               <Building2 className="w-5 h-5" />
             </button>
           </div>
@@ -264,6 +287,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           </div>
         </motion.div>
       )}
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Análise de Bancas Ilimitada" />
     </motion.div>
   );
 }
