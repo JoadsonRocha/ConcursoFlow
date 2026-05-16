@@ -152,24 +152,24 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-36 pb-24 md:pt-48 md:pb-32 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-8 md:space-y-12">
+      <section className="relative pt-20 pb-16 md:pt-24 md:pb-24 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 md:space-y-8">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-6 md:space-y-8"
+            className="space-y-4 md:space-y-6"
           >
-            <div className="inline-flex items-center gap-3 bg-white/50 backdrop-blur-md border border-border px-5 py-2.5 rounded-full text-[10px] md:text-xs font-bold text-text-sub uppercase tracking-wider shadow-sm hover:shadow-md transition-shadow cursor-default">
-              <Zap className="w-3.5 h-3.5 text-primary" />
+            <div className="inline-flex items-center gap-3 bg-white/50 backdrop-blur-md border border-border px-5 py-2 rounded-full text-[10px] md:text-xs font-bold text-text-sub uppercase tracking-wider shadow-sm">
+              <Zap className="w-3 h-3 text-primary" />
               A nova era da preparação para concursos
             </div>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display text-text-main leading-[1.05] tracking-tight font-extrabold">
+            <h1 className="text-3xl md:text-4xl font-display text-text-main leading-[1.1] tracking-tight font-extrabold">
               Aprovação com <br/>
               <span className="text-primary italic relative">
                 estratégia
-                <svg className="absolute -bottom-2 md:-bottom-4 left-0 w-full h-3 md:h-5 text-primary/30" viewBox="0 0 200 20" preserveAspectRatio="none">
-                  <path d="M0,10 Q100,20 200,10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-2 md:h-3 text-primary/30" viewBox="0 0 200 10" preserveAspectRatio="none">
+                  <path d="M0,5 Q100,10 200,5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                 </svg>
               </span> absoluta.
             </h1>
@@ -203,56 +203,60 @@ const Landing = () => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.4 }}
-            className="w-full max-w-5xl mx-auto mt-20 rounded-2xl bg-white border border-border shadow-2xl p-4 md:p-6 overflow-hidden relative group"
+            className="w-full max-w-sm mx-auto mt-12"
           >
-             {/* Simple Dashboard Mockup */}
-             <div className="aspect-[16/9] bg-slate-50 flex flex-col rounded-xl overflow-hidden border border-border/50">
-                <div className="h-10 border-b border-border flex items-center px-4 justify-between bg-white">
-                   <div className="flex gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-slate-200" />
-                      <div className="w-2 h-2 rounded-full bg-slate-200" />
-                      <div className="w-2 h-2 rounded-full bg-slate-200" />
-                   </div>
-                   <div className="w-24 h-2 bg-slate-100 rounded-full" />
+           {/* Compact Card Style */}
+           <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+             {/* Title Bar */}
+             <div className="h-6 border-b border-slate-100 flex items-center px-3 justify-between bg-slate-50/50">
+                <div className="flex gap-1">
+                   <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                   <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 </div>
-                <div className="flex-1 p-4 md:p-8 grid grid-cols-12 gap-4">
-                   <div className="col-span-3 space-y-4">
-                      <div className="h-8 bg-white border border-border rounded-lg" />
-                      <div className="h-24 bg-white border border-border rounded-lg" />
-                      <div className="h-16 bg-white border border-border rounded-lg" />
-                   </div>
-                   <div className="col-span-9 space-y-4">
-                      <div className="h-32 bg-white border border-border rounded-xl p-6 flex flex-col justify-between">
-                         <div className="flex justify-between">
-                            <div className="w-24 h-4 bg-slate-100 rounded-full" />
-                            <div className="flex gap-2">
-                               <div className="w-6 h-6 rounded-lg bg-primary/10" />
-                               <div className="w-6 h-6 rounded-lg bg-secondary/10" />
-                            </div>
-                         </div>
-                         <div className="space-y-2">
-                            <div className="flex justify-between text-[10px] font-bold text-text-sub uppercase">
-                               <span>Progresso Semanal</span>
-                               <span>67%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                               <div className="h-full bg-primary w-2/3" />
-                            </div>
-                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                         <div className="h-32 bg-white border border-border rounded-xl p-4 space-y-3">
-                            <div className="w-12 h-2 bg-slate-100 rounded-full" />
-                            <div className="space-y-1">
-                               <div className="w-full h-2 bg-slate-50 rounded-full" />
-                               <div className="w-full h-2 bg-slate-50 rounded-full" />
-                            </div>
-                         </div>
-                         <div className="h-32 bg-white border border-border rounded-xl" />
-                      </div>
-                   </div>
-                </div>
+                <div className="text-[9px] text-slate-500 font-semibold tracking-widest uppercase">Stratis Planner — Cronograma Hoje</div>
+                <div className="w-6" />
              </div>
+
+             {/* Content */}
+             <div className="p-4 space-y-3">
+               <div className="flex justify-between items-end">
+                 <div>
+                    <div className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Progresso Semanal</div>
+                    <div className="text-2xl font-black text-slate-900 tracking-tight">68%</div>
+                 </div>
+                 <div className="text-right">
+                    <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Meta da semana</div>
+                    <div className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-bold border border-emerald-100 italic">No prazo</div>
+                 </div>
+               </div>
+               
+               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                 <div className="h-full bg-blue-500 w-[68%]" />
+               </div>
+
+               <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { sub: 'Const.', cat: 'Alta', color: 'bg-blue-500', pct: '85%' },
+                    { sub: 'Port.', cat: 'Média', color: 'bg-amber-400', pct: '42%' },
+                    { sub: 'Rac.', cat: 'Alta', color: 'bg-purple-500', pct: '60%' },
+                  ].map((item, i) => (
+                    <div key={i} className="p-2 bg-slate-50 rounded-md border border-slate-100 space-y-1">
+                      <div className="flex justify-between items-center text-[8px] font-bold text-slate-700 uppercase tracking-tight">
+                         <span>{item.sub}</span>
+                         <span>{item.pct}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-[7px] font-bold text-slate-500 uppercase px-1 py-0.5 bg-white rounded border border-slate-100">{item.cat}</span>
+                      </div>
+                      <div className="w-full h-0.5 bg-slate-200 rounded-full overflow-hidden">
+                         <div className={`h-full ${item.color}`} style={{ width: item.pct }} />
+                      </div>
+                    </div>
+                  ))}
+               </div>
+             </div>
+           </div>
           </motion.div>
         </div>
       </section>
@@ -290,7 +294,7 @@ const Landing = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
              <div className="space-y-4 max-w-2xl">
                 <div className="text-primary font-bold text-[10px] md:text-xs uppercase tracking-widest">Funcionalidades</div>
-                <h2 className="text-4xl md:text-6xl font-display leading-[1.1] text-text-main tracking-tight font-extrabold">
+                <h2 className="text-2xl md:text-3xl font-display leading-[1.1] text-text-main tracking-tight font-extrabold">
                    Um passo à frente <br/>do seu objetivo.
                 </h2>
                 <p className="text-lg text-text-sub font-medium max-w-xl mx-auto md:mx-0">
@@ -300,42 +304,42 @@ const Landing = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-             <div className="md:col-span-8 bg-white border border-slate-200 p-10 md:p-14 rounded-2xl shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+             <div className="md:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-                <div className="relative z-10 space-y-6">
-                   <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-inner">
-                      <BrainCircuit className="w-7 h-7" />
+                <div className="relative z-10 space-y-4">
+                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                      <BrainCircuit className="w-5 h-5" />
                    </div>
-                   <h3 className="text-3xl font-display text-text-main font-bold">Mapeamento Estratégico</h3>
-                   <p className="text-slate-600 text-base md:text-lg font-medium max-w-lg leading-relaxed">Nossa plataforma analisa o edital, organiza os assuntos e indica o que é prioritário com base no histórico de provas e relevância por banca.</p>
+                   <h3 className="text-2xl font-display text-text-main font-bold">Mapeamento Estratégico</h3>
+                   <p className="text-slate-600 text-sm md:text-base font-medium max-w-lg leading-relaxed">Nossa plataforma analisa o edital, organiza os assuntos e indica o que é prioritário com base no histórico de provas e relevância por banca.</p>
                 </div>
              </div>
 
-             <div className="md:col-span-4 bg-white border border-slate-200 p-10 md:p-12 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group overflow-hidden">
-                <div className="w-14 h-14 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-8 group-hover:scale-110 transition-transform duration-500 text-center">
-                   <Calendar className="w-7 h-7" />
+             <div className="md:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group overflow-hidden">
+                <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-6 group-hover:scale-110 transition-transform duration-500 text-center">
+                   <Calendar className="w-5 h-5" />
                 </div>
-                <h3 className="text-2xl font-display text-text-main font-bold mb-4">Cronograma Ágil</h3>
-                <p className="text-slate-600 md:text-lg font-medium leading-relaxed">Planos diários flexíveis. O sistema ajusta sua rota conforme seu tempo disponível e evolução real.</p>
+                <h3 className="text-xl font-display text-text-main font-bold mb-3">Cronograma Ágil</h3>
+                <p className="text-slate-600 md:text-base font-medium leading-relaxed">Planos diários flexíveis. O sistema ajusta sua rota conforme seu tempo disponível e evolução real.</p>
              </div>
 
-             <div className="md:col-span-5 bg-white border border-slate-200 p-10 md:p-12 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group">
-                <div className="w-14 h-14 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-8 group-hover:scale-110 transition-transform duration-500">
-                   <Target className="w-7 h-7" />
+             <div className="md:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group">
+                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-6 group-hover:scale-110 transition-transform duration-500">
+                   <Target className="w-5 h-5" />
                 </div>
-                <h3 className="text-2xl font-display text-text-main font-bold mb-4">Microlearning Organizado</h3>
-                <p className="text-slate-600 md:text-lg font-medium leading-relaxed">Crie flashcards com descrições personalizadas e tags. Utilize geradores automáticos para acelerar sua memorização por tópicos específicos.</p>
+                <h3 className="text-xl font-display text-text-main font-bold mb-3">Microlearning Organizado</h3>
+                <p className="text-slate-600 md:text-base font-medium leading-relaxed">Crie flashcards com descrições personalizadas e tags. Utilize geradores automáticos para acelerar sua memorização por tópicos específicos.</p>
              </div>
 
              {/* Feature 4: Wide */}
-             <div className="md:col-span-7 bg-white border border-slate-200 p-10 md:p-14 rounded-2xl flex flex-col justify-between hover:shadow-xl transition-all group relative overflow-hidden">
+             <div className="md:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:shadow-xl transition-all group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4"></div>
-                <div className="relative z-10 space-y-6">
-                   <div className="w-14 h-14 bg-primary/10 rounded-xl border border-primary/5 flex items-center justify-center text-primary">
-                      <Users className="w-7 h-7" />
+                <div className="relative z-10 space-y-4">
+                   <div className="w-10 h-10 bg-primary/10 rounded-xl border border-primary/5 flex items-center justify-center text-primary">
+                      <Users className="w-5 h-5" />
                    </div>
-                   <h3 className="text-3xl font-display font-bold text-text-main">Comunidade e Compartilhamento</h3>
-                   <p className="text-slate-600 text-base md:text-lg font-medium leading-relaxed max-w-lg">Não precisa começar do zero. Importe editais organizados, cronogramas de pessoas aprovadas e troque materiais validados com milhares de outros estudantes na plataforma.</p>
+                   <h3 className="text-2xl font-display font-bold text-text-main">Comunidade e Compartilhamento</h3>
+                   <p className="text-slate-600 text-sm md:text-base font-medium leading-relaxed max-w-lg">Não precisa começar do zero. Importe editais organizados, cronogramas de pessoas aprovadas e troque materiais validados com milhares de outros estudantes na plataforma.</p>
                 </div>
              </div>
           </div>
@@ -343,7 +347,7 @@ const Landing = () => {
       </section>
 
       {/* Depoimentos / Aprovados Reais */}
-      <section className="py-24 md:py-32 px-6 bg-white border-t border-border/50 relative">
+      <section className="py-16 md:py-20 px-6 bg-white border-t border-border/50 relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
              <div className="text-primary font-bold text-xs uppercase tracking-widest">Aprovados Reais</div>
@@ -407,74 +411,51 @@ const Landing = () => {
       <div className="py-12 bg-white"></div>
 
       {/* Destaques / Guias Rápidos */}
-      <section className="py-16 md:py-20 px-6 bg-white overflow-hidden border-t border-border/50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10 space-y-2">
-             <div className="text-primary font-bold text-[10px] uppercase tracking-widest">Painel de Acompanhamento</div>
-             <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main tracking-tight">Estratégia para hoje</h2>
+      <section className="py-16 md:py-20 px-6 bg-white border-t border-border/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10 space-y-3">
+             <div className="text-primary font-bold text-[10px] uppercase tracking-widest">Guias Rápidos</div>
+             <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main tracking-tight">O que você precisa saber</h2>
           </div>
           
-          {/* New Compact Card Style */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Title Bar */}
-            <div className="h-8 border-b border-slate-100 flex items-center px-4 justify-between bg-slate-50/50">
-               <div className="flex gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-400" />
-                  <div className="w-2 h-2 rounded-full bg-amber-400" />
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
-               </div>
-               <div className="text-[10px] text-text-sub font-semibold tracking-widest uppercase">Stratis Planner — Cronograma Hoje</div>
-               <div className="w-8" />
-            </div>
-
-            {/* Content */}
-            <div className="p-5 space-y-6">
-              <div className="flex justify-between items-end">
-                <div>
-                   <div className="text-[10px] text-text-sub uppercase font-bold tracking-wider mb-1">Progresso Semanal</div>
-                   <div className="text-3xl font-black text-text-main tracking-tight">68%</div>
-                </div>
-                <div className="text-right">
-                   <div className="text-[10px] text-text-sub font-bold uppercase tracking-wider mb-1">Meta da semana</div>
-                   <div className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100 italic">No prazo</div>
-                </div>
-              </div>
-              
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-[68%]" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 {[
-                   { sub: 'Direito Constitucional', cat: 'Alta', color: 'bg-primary', pct: '85%' },
-                   { sub: 'Português', cat: 'Média', color: 'bg-amber-400', pct: '42%' },
-                   { sub: 'Raciocínio', cat: 'Alta', color: 'bg-violet-500', pct: '60%' },
-                 ].map((item, i) => (
-                   <div key={i} className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2">
-                     <div className="flex justify-between items-center text-[10px] font-bold text-text-main uppercase tracking-tight">
-                        <span>{item.sub}</span>
-                        <span>{item.pct}</span>
-                     </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-[9px] font-bold text-text-sub uppercase px-1.5 py-0.5 bg-white rounded border border-slate-100">{item.cat}</span>
-                     </div>
-                     <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                        <div className={`h-full ${item.color}`} style={{ width: item.pct }} />
-                     </div>
-                   </div>
-                 ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {contentData.filter(item => ['tutorial-2', 'dica-1'].includes(item.id)).map((item) => (
+               <Link 
+                 key={item.id} 
+                 to={`/explorar/${item.id}`}
+                 className="group bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all flex flex-col h-full"
+               >
+                 <div className="relative aspect-[16/8] bg-slate-200 overflow-hidden">
+                   <img 
+                      src={item.image} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                      alt={item.title} 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).classList.add('hidden');
+                        (e.target as HTMLImageElement).parentElement?.classList.add('bg-primary/20');
+                      }}
+                   />
+                 </div>
+                 <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex items-center gap-3 mb-3">
+                       <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">{item.category}</span>
+                       <span className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">{item.readTime}</span>
+                    </div>
+                    <h3 className="text-lg font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight mb-2">{item.title}</h3>
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed mb-4 flex-grow">{item.excerpt}</p>
+                 </div>
+               </Link>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-24 md:py-32 px-6 bg-slate-50 relative border-t border-border/50">
+      <section className="py-16 md:py-20 px-6 bg-slate-50 relative border-t border-border/50">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-             <div className="text-primary font-bold text-xs uppercase tracking-widest">Dúvidas Frequentes</div>
-             <h2 className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight">Perguntas que todo concurseiro faz</h2>
+          <div className="text-center mb-10 space-y-3">
+             <div className="text-primary font-bold text-[10px] uppercase tracking-widest">Dúvidas Frequentes</div>
+             <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main tracking-tight">Perguntas que todo concurseiro faz</h2>
           </div>
           <div className="space-y-4">
              {[
@@ -506,7 +487,7 @@ const Landing = () => {
       </section>
 
       {/* Stratis Journal Insights */}
-      <section id="insights" className="py-24 md:py-32 px-6 bg-white relative">
+      <section id="insights" className="py-16 md:py-20 px-6 bg-white relative">
         <div className="max-w-6xl mx-auto space-y-16">
            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div className="space-y-4">
@@ -524,7 +505,7 @@ const Landing = () => {
               </Link>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {contentData.slice(0, 3).map((item) => (
                  <Link 
                    key={item.id} 
@@ -532,7 +513,7 @@ const Landing = () => {
                    className="group flex flex-col"
                  >
                    <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-6 shadow-sm group-hover:shadow-xl transition-all">
-                     <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} referrerPolicy="no-referrer" />
+                   <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} referrerPolicy="no-referrer" />
                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                    </div>
                    <div className="flex items-center gap-3 mb-3">
@@ -540,10 +521,10 @@ const Landing = () => {
                          "text-[9px] font-black uppercase tracking-widest",
                          item.id.includes('tutorial') ? "text-secondary" : "text-accent"
                       )}>{item.category}</span>
-                      <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{item.readTime}</span>
+                      <span className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">{item.readTime}</span>
                    </div>
-                   <h3 className="text-xl font-display font-bold text-text-main group-hover:text-primary transition-colors leading-tight mb-3">{item.title}</h3>
-                   <p className="text-xs text-text-sub font-medium line-clamp-2 leading-relaxed">{item.excerpt}</p>
+                   <h3 className="text-base font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight mb-2">{item.title}</h3>
+                   <p className="text-[10px] text-slate-700 font-medium line-clamp-2 leading-relaxed">{item.excerpt}</p>
                  </Link>
               ))}
            </div>
@@ -551,26 +532,26 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 md:py-40 px-6 bg-white relative overflow-hidden border-t border-border">
+      <section className="py-32 md:py-40 px-6 bg-slate-950 text-white relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl -z-10">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100%] h-[100%] bg-primary/5 blur-[150px] rounded-full animate-pulse"></div>
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/20 blur-[150px] rounded-full animate-pulse"></div>
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-10">
-           <div className="w-16 h-16 bg-primary/5 rounded-xl border border-primary/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-sm">
+           <div className="w-16 h-16 bg-white/5 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-sm">
               <Zap className="w-8 h-8 text-primary shadow-sm" />
            </div>
-           <h2 className="text-3xl md:text-5xl font-display text-text-main leading-[1.1] tracking-tight font-bold">
+           <h2 className="text-3xl md:text-5xl font-display leading-[1.1] tracking-tight font-bold">
              Dê o passo definitivo rumo ao seu <br />
              nome no <span className="text-primary italic">Diário Oficial</span>.
            </h2>
-           <p className="text-text-sub text-lg md:text-xl font-medium max-w-2xl mx-auto">
+           <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">
              Junte-se à elite dos estudantes que utilizam engenharia de dados para vencer editais.
            </p>
            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
               <Link 
                 to="/auth"
-                className="w-full sm:w-auto primary-button px-10 py-4 text-xs tracking-wider uppercase shadow-xl rounded-xl"
+                className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90 px-10 py-4 text-xs tracking-wider uppercase shadow-xl rounded-xl font-bold"
               >
                 Ativar Minha Conta
               </Link>
