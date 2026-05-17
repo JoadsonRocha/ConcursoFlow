@@ -115,5 +115,11 @@ service cloud.firestore {
     match /test/connection {
       allow read: if true;
     }
+
+    // Mail collection for Resend/Firebase Email Extension
+    match /mail/{mailId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
+    }
   }
 }

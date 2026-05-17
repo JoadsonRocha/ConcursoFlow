@@ -47,3 +47,28 @@ export const googleProvider = new GoogleAuthProvider();
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
 export { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, updateProfile };
 export const logout = () => signOut(auth);
+
+import { collection, addDoc } from 'firebase/firestore';
+
+/**
+ * Envia um email através da extensão do Resend para o Firebase
+ * escrevendo um documento na coleção 'mail'
+ */
+export const sendEmail = async (to: string | string[], subject: string, html: string, text?: string) => {
+  try {
+    const mailRef = collection(db, 'mail');
+    await addDoc(mailRef, {
+      to,
+      message: {
+        subject,
+        html,
+        text: text || '',
+      }
+    });
+    console.log('Email enviado para fila de processamento');
+    return true;
+  } catch (error) {
+    console.error('Erro ao enviar email:', error);
+    throw error;
+  }
+};

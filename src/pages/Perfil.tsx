@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import ProModal from '../components/ProModal';
 
 export default function Perfil() {
-  const { user, profile, logout, isPro } = useAuth();
+  const { user, profile, logout, isPro, resetPassword } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || user?.photoURL || '');
   const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '');
@@ -150,7 +150,7 @@ export default function Perfil() {
     setResetLoading(true);
     setMessage(null);
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      await resetPassword(user.email);
       setMessage({ type: 'success', text: 'E-mail de redefinição de senha enviado!' });
     } catch (err) {
       setMessage({ type: 'error', text: 'Erro ao enviar e-mail. Tente novamente mais tarde.' });

@@ -162,8 +162,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const resetPassword = (email: string) => {
-    return sendPasswordResetEmail(auth, email);
+  const resetPassword = async (email: string) => {
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao enviar email');
+      }
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   };
 
   return (
