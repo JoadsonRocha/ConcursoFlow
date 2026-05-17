@@ -160,17 +160,20 @@ async function startServer() {
         const link = await admin.auth().generatePasswordResetLink(email);
 
         // Fetch the beautiful HTML template
-        // We will import it at the top or inline it. Let's inline a simple requirement here if not imported, 
-        // to avoid build issues. Or we can just use the provided one.
         const { getPasswordResetEmailTemplate } = require('./src/lib/emailTemplates');
         
-        const db = getDb();
-        await db.collection('mail').add({
-          to: email,
-          message: {
-            subject: 'Recuperação de Senha - Stratis Planner',
-            html: getPasswordResetEmailTemplate(link)
-          }
+        // Use Resend to send the email directly
+        const { Resend } = require('resend');
+        if (!process.env.RESEND_API_KEY) {
+          throw new Error('RESEND_API_KEY is not configured');
+        }
+        
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: 'Stratis Planner <contato@stratisplanner.com>',
+          to: [email],
+          subject: 'Recuperação de Senha - Stratis Planner',
+          html: getPasswordResetEmailTemplate(link),
         });
 
         // Always return success even if email doesn't exist to prevent enumeration

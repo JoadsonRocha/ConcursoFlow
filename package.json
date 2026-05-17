@@ -37,6 +37,7 @@
     "reactflow": "^11.11.4",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
+    "resend": "^6.12.3",
     "sonner": "^2.0.7",
     "stripe": "^22.1.1",
     "tailwind-merge": "^3.5.0",
