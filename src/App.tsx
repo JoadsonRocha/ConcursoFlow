@@ -50,7 +50,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: str
     id={id}
     to={to} 
     className={cn(
-      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-[11px] font-bold uppercase tracking-wider",
+      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-[13px] font-bold uppercase tracking-wider",
       active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main",
       collapsed ? "justify-center px-0" : "px-4"
     )}
@@ -437,7 +437,7 @@ export default function App() {
 
         <div className="space-y-6 flex-grow overflow-y-auto no-scrollbar">
           <div>
-            {isSidebarOpen && <span className="block text-[10px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
+            {isSidebarOpen && <span className="block text-[12px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-1">
               <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
@@ -463,7 +463,7 @@ export default function App() {
                 title={!isSidebarOpen ? "Fazer Upgrade para Premium" : undefined}
               >
                 <Crown className={cn("w-4 h-4 shrink-0 text-yellow-300")} />
-                {isSidebarOpen && <span className="text-[11px] font-bold uppercase tracking-wider">Fazer Upgrade</span>}
+                {isSidebarOpen && <span className="text-[13px] font-bold uppercase tracking-wider">Fazer Upgrade</span>}
               </Link>
             </div>
           )}
@@ -474,7 +474,7 @@ export default function App() {
             id="tour-importar"
             to="/configuracoes"
             className={cn(
-              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-[11px] font-bold uppercase tracking-wider",
+              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-[13px] font-bold uppercase tracking-wider",
               location.pathname === '/configuracoes' ? "bg-slate-100 text-text-main" : "text-text-sub hover:bg-slate-50 ",
               isSidebarOpen ? "px-4" : "justify-center px-0"
             )}

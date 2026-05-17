@@ -100,16 +100,16 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row overflow-hidden relative">
+    <div className="h-screen bg-slate-50 flex flex-col md:flex-row overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[150px] rounded-full"></div>
       </div>
 
-      <div className="hidden md:flex md:w-1/2 lg:w-3/5 bg-white backdrop-blur-3xl relative items-center justify-center p-20 overflow-hidden border-r border-border ">
-        <div className="relative z-10 space-y-10 max-w-lg">
+      <div className="hidden md:flex md:w-1/2 lg:w-3/5 bg-white backdrop-blur-3xl relative items-center justify-center p-10 overflow-hidden border-r border-border ">
+        <div className="relative z-10 space-y-8 max-w-lg">
           <BrandLogo size="lg" />
           
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h1 className="text-4xl lg:text-6xl font-display text-text-main leading-tight tracking-tight font-bold">
               Domine sua <br/>
               <span className="text-primary italic">Aprovação</span>
@@ -132,20 +132,20 @@ export default function Auth() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col px-6 py-10 md:px-20 md:py-20 relative overflow-y-auto bg-slate-50 ">
-        <div className="max-w-md mx-auto w-full space-y-10">
-          <header className="space-y-6">
+      <div className="flex-1 flex flex-col px-4 py-4 md:px-8 md:py-4 relative overflow-y-auto bg-slate-50 justify-center">
+        <div className="max-w-sm mx-auto w-full space-y-3 md:space-y-4">
+          <header className="space-y-2 md:space-y-3">
             <Link to="/" className="inline-flex items-center gap-3 text-text-sub hover:text-text-main transition-all text-xs font-bold uppercase tracking-wider group">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Retornar ao Início
             </Link>
             
-            <div className="md:hidden flex items-center gap-3 mb-8">
+            <div className="md:hidden flex items-center gap-3 mb-4">
               <BrandLogo size="md" />
             </div>
 
-            <div className="space-y-2">
-              <h2 className="text-3xl font-display text-text-main tracking-tight uppercase font-bold">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-display text-text-main tracking-tight uppercase font-bold">
                 {authMode === 'login' && 'Log In'}
                 {authMode === 'signup' && 'Sign Up'}
                 {authMode === 'recover' && 'Recuperar Senha'}
@@ -186,17 +186,17 @@ export default function Auth() {
           )}
 
           {authMode === 'success_recover' ? (
-            <div className="space-y-6">
+            <div className="space-y-3">
               <button 
                 type="button"
                 onClick={() => setAuthMode('login')}
-                className="w-full bg-primary text-white py-4 rounded-xl text-xs uppercase tracking-wider font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+                className="w-full bg-primary text-white py-3 md:py-4 rounded-xl text-xs uppercase tracking-wider font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
               >
                 Voltar ao Login
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <AnimatePresence mode="wait">
                 {authMode === 'signup' && (
                   <motion.div 
@@ -215,7 +215,7 @@ export default function Auth() {
                         placeholder="Ex: Joadson Rocha"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full bg-white border border-border rounded-xl py-3.5 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
+                        className="w-full bg-white border border-border rounded-xl py-3 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
                       />
                     </div>
                   </motion.div>
@@ -232,7 +232,7 @@ export default function Auth() {
                     placeholder="estudante@stratis.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white border border-border rounded-xl py-3.5 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
+                    className="w-full bg-white border border-border rounded-xl py-3 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
                   />
                 </div>
               </div>
@@ -253,7 +253,7 @@ export default function Auth() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-white border border-border rounded-xl py-3.5 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
+                      className="w-full bg-white border border-border rounded-xl py-3 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
                     />
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary text-white py-4 rounded-xl text-xs uppercase tracking-wider font-bold shadow-lg shadow-primary/20 disabled:opacity-70 group"
+                className="w-full bg-primary text-white py-3 rounded-xl text-[10px] uppercase tracking-wider font-bold shadow-lg shadow-primary/20 disabled:opacity-70 group"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
@@ -308,19 +308,15 @@ export default function Auth() {
 
               {(authMode === 'login' || authMode === 'signup') && (
                 <>
-                  <div className="relative py-4">
+                  <div className="relative py-2 mt-2">
                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
                     <div className="relative flex justify-center text-xs font-bold uppercase"><span className="bg-slate-50 px-4 text-text-sub tracking-wider">Ou com Google</span></div>
                   </div>
 
-                  <p className="text-[10px] text-center text-text-sub font-semibold mb-3">
-                    Se estiver de um celular ou tela menor, o Google Login pode ser bloqueado. Caso falhe, use E-mail e Senha.
-                  </p>
-
                   <button 
                     type="button"
                     onClick={signInGoogle}
-                    className="w-full bg-white border border-border py-4 rounded-xl text-xs font-bold uppercase tracking-wider text-text-main hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95"
+                    className="w-full bg-white border border-border py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-text-main hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -335,7 +331,7 @@ export default function Auth() {
             </form>
           )}
 
-          <footer className="pt-10 text-center space-y-4">
+          <footer className="pt-2 text-center space-y-2">
              <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-text-sub uppercase tracking-wider opacity-60">
                 <Link to="/termos" className="hover:text-primary">Termos</Link>
                 <Link to="/privacidade" className="hover:text-primary">Privacidade</Link>
