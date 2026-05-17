@@ -116,7 +116,7 @@ export default function Perfil() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-      try {
+    try {
       let finalPhotoURL = photoURL;
       
       // Update in Firestore as well for consistency
@@ -131,10 +131,14 @@ export default function Perfil() {
         updatedAt: new Date()
       });
       
-      await updateProfile(user, {
-        displayName,
-        photoURL: finalPhotoURL
-      });
+      const authUpdates: { displayName?: string, photoURL?: string } = { displayName };
+      // Firebase Auth photoURL length limit is ~2048 chars. Base64 strings will exceed this.
+      // If finalPhotoURL is a base64 data URI, we don't save it to Firebase Auth, only to Firestore.
+      if (finalPhotoURL && !finalPhotoURL.startsWith('data:')) {
+        authUpdates.photoURL = finalPhotoURL;
+      }
+
+      await updateProfile(user, authUpdates);
       
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
     } catch (err) {

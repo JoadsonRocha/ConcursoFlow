@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { Zap } from 'lucide-react';
-
 interface BrandLogoProps {
   className?: string;
   showText?: boolean;
@@ -10,16 +8,16 @@ interface BrandLogoProps {
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({ className = '', showText = true, size = 'md' }) => {
   const iconSizes = {
-    sm: 'w-6 h-6',
-    md: 'w-10 h-10',
+    sm: 'w-8 h-8', // Increased slightly for visibility of the new logo
+    md: 'w-12 h-12',
     lg: 'w-16 h-16',
     xl: 'w-24 h-24'
   };
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className={`${iconSizes[size]} shrink-0 relative flex items-center justify-center bg-primary rounded-xl shadow-lg shadow-primary/20`}>
-        <Zap className={`${size === 'sm' ? 'w-3 h-3' : size === 'md' ? 'w-5 h-5' : size === 'lg' ? 'w-8 h-8' : 'w-12 h-12'} text-white fill-white`} />
+      <div className={`${iconSizes[size]} shrink-0 relative flex items-center justify-center`}>
+        <img src="/logo.png" alt="Stratis Planner Logo" className="w-full h-full object-contain" />
       </div>
       
       {showText && (

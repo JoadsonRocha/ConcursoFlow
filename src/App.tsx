@@ -433,7 +433,7 @@ export default function App() {
           ? "translate-x-0 w-72 md:w-[280px] px-6 py-8 shadow-2xl md:shadow-none" 
           : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-8"
       )}>
-        <Link to="/" className="mb-14 px-2 block hover:opacity-80 transition-opacity">
+        <Link to="/" className="mb-14 px-2 hover:opacity-80 transition-opacity flex justify-center items-center">
           <BrandLogo showText={false} size={isSidebarOpen ? "md" : "sm"} />
         </Link>
 
