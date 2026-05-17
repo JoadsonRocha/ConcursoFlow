@@ -20,13 +20,14 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import BrandLogo from '../components/BrandLogo';
 import { contentData } from '../constants/content';
 
 const Landing = () => {
   const { login, loginEmail, signup } = useAuth();
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,14 +73,20 @@ const Landing = () => {
   };
 
   const signInGoogle = async () => {
+    if (loading) return;
     setError('');
+    setLoading(true);
     try {
       await login();
+      navigate('/dashboard'); // or redirect somewhere
     } catch (err: any) {
       console.error(err);
       let msg = 'Erro ao entrar com Google';
-      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
+      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado pelo usuário. Se o popup não abrir, tente acessar por uma nova aba.';
+      if (err.code === 'auth/cancelled-popup-request') msg = 'O login foi cancelado devido a múltiplas requisições ou bloqueio de pop-up.';
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 

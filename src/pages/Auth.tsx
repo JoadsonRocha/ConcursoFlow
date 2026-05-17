@@ -87,15 +87,20 @@ export default function Auth() {
   };
 
   const signInGoogle = async () => {
+    if (loading) return;
     setError('');
+    setLoading(true);
     try {
       await login();
       navigate('/');
     } catch (err: any) {
       console.error(err);
       let msg = 'Erro ao entrar com Google';
-      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado';
+      if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado pelo usuário. Se o popup não abrir, tente acessar por uma nova aba.';
+      if (err.code === 'auth/cancelled-popup-request') msg = 'O login foi cancelado devido a múltiplas requisições ou bloqueio de pop-up.';
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
