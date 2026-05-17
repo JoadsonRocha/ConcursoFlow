@@ -4,14 +4,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage } from 'firebase/storage';
 import { auth, db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { createCheckoutSession } from '../services/stripe';
 import { toast } from 'sonner';
 import ProModal from '../components/ProModal';
-
-const storage = getStorage(db.app);
 
 export default function Perfil() {
   const { user, profile, logout, isPro } = useAuth();
@@ -118,16 +116,9 @@ export default function Perfil() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-    try {
+      try {
       let finalPhotoURL = photoURL;
       
-      // Upload image to storage if it's a data URI
-      if (photoURL && photoURL.startsWith('data:')) {
-        const storageRef = ref(storage, `users/${user.uid}/profile.jpg`);
-        await uploadString(storageRef, photoURL, 'data_url');
-        finalPhotoURL = await getDownloadURL(storageRef);
-      }
-
       // Update in Firestore as well for consistency
       await updateDoc(doc(db, 'users', user.uid), {
         displayName,
