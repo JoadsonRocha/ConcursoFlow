@@ -26,24 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const checkMonthlyReset = async (userUid: string, currentProfile: Profile) => {
-    if (!currentProfile.lastUsageReset) return;
-    
-    const lastReset = currentProfile.lastUsageReset.toDate ? currentProfile.lastUsageReset.toDate() : new Date(currentProfile.lastUsageReset);
-    const now = new Date();
-    
-    // If it's a different month or year, reset counters
-    if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
-      const userRef = doc(db, 'users', userUid);
-      const resetData = {
-        summaryUsage: 0,
-        flashcardUsage: 0,
-        mindmapUsage: 0,
-        importUsage: 0,
-        lastUsageReset: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-      await updateDoc(userRef, resetData);
-    }
+    // Moved to backend for security
   };
 
   useEffect(() => {

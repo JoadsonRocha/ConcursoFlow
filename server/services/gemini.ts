@@ -152,7 +152,11 @@ export async function parseEdital(rawText: string) {
 export async function generateSchedule(subjectsSummary: string, days: number) {
   const genAI = getAiClient();
 
-  const prompt = `Cronograma de ${days} dias para: ${subjectsSummary}`;
+  const prompt = `Gere rigorosamente ${days} dias de cronograma de estudos baseados nos tópicos: ${subjectsSummary}.
+  Organize de forma progressiva e equilibrada. 
+  Para cada dia, o 'dayNumber' deve ser a sequência do dia (1 até ${days}).
+  Inclua 'specificTopic' (assunto principal do dia), 'generalTopic' (revisão de base ou lei seca),
+  'questionGoal' (meta de questões sugerida, número inteiro) e 'revisionTask' (tarefa de revisão, ex: Flashcards, Mapa Mental).`;
 
   const response = await genAI.models.generateContent({
     model: "gemini-2.0-flash",
@@ -161,7 +165,17 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
-        items: { type: Type.OBJECT, properties: { dayNumber: { type: Type.NUMBER }, specificTopic: { type: Type.STRING }, generalTopic: { type: Type.STRING } } }
+        items: { 
+          type: Type.OBJECT, 
+          properties: { 
+            dayNumber: { type: Type.NUMBER }, 
+            specificTopic: { type: Type.STRING }, 
+            generalTopic: { type: Type.STRING },
+            questionGoal: { type: Type.NUMBER },
+            revisionTask: { type: Type.STRING }
+          },
+          required: ["dayNumber", "specificTopic", "generalTopic", "questionGoal", "revisionTask"]
+        }
       }
     }
   });
