@@ -33,6 +33,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import Perfil from './pages/Perfil';
 import Auth from './pages/Auth';
+import ResetPassword from './pages/ResetPassword';
 import Pareto from './pages/Pareto';
 import Explorar from './pages/Explorar';
 import Planos from './pages/Planos';
@@ -392,6 +393,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/planos" element={<Planos />} />
         <Route path="/termos" element={<TermsOfUse />} />
         <Route path="/privacidade" element={<PrivacyPolicy />} />
@@ -617,6 +619,7 @@ export default function App() {
               <Route path="/termos" element={<TermsOfUse />} />
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
             </Routes>
           </AnimatePresence>
         </div>

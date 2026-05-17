@@ -163,7 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    return sendPasswordResetEmail(auth, email);
+    const actionCodeSettings = {
+      url: `${window.location.origin}/reset-password`,
+      handleCodeInApp: false
+    };
+    return sendPasswordResetEmail(auth, email, actionCodeSettings);
   };
 
   return (

@@ -148,43 +148,6 @@ async function startServer() {
       }
     });
 
-    // Firebase Auth - Password Reset via Resend (Securely)
-    app.post('/api/auth/reset-password', async (req, res) => {
-      try {
-        const { email } = req.body;
-        if (!email) {
-          return res.status(400).json({ error: 'Email é obrigatório' });
-        }
-
-        // Generate the reset link locally on the backend
-        const link = await admin.auth().generatePasswordResetLink(email);
-
-        // Fetch the beautiful HTML template
-        const { getPasswordResetEmailTemplate } = require('./src/lib/emailTemplates');
-        
-        // Use Resend to send the email directly
-        const { Resend } = require('resend');
-        if (!process.env.RESEND_API_KEY) {
-          throw new Error('RESEND_API_KEY is not configured');
-        }
-        
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: 'Stratis Planner <contato@stratisplanner.com>',
-          to: [email],
-          subject: 'Recuperação de Senha - Stratis Planner',
-          html: getPasswordResetEmailTemplate(link),
-        });
-
-        // Always return success even if email doesn't exist to prevent enumeration
-        res.json({ success: true, message: 'Email de recuperação enviado (se a conta existir).' });
-      } catch (error: any) {
-        console.error('❌ Erro no reset-password:', error.message);
-        // Do not leak the error to the client
-        res.json({ success: true, message: 'Email de recuperação enviado (se a conta existir).' });
-      }
-    });
-
     app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
     if (process.env.NODE_ENV !== 'production') {
