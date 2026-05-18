@@ -69,7 +69,7 @@ async function startServer() {
     
     const getDb = () => {
       try {
-        const currentDbId = DATABASE_ID || firebaseConfig.firestoreDatabaseId;
+        const currentDbId = DATABASE_ID;
         if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
           console.log(`[Firestore Admin] Usando banco de dados específico: ${currentDbId}`);
           return getFirestore(admin.app(), currentDbId);

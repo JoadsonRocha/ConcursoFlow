@@ -207,6 +207,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   const totalProgress = calculateDetailedProgress(contest?.subjects || []);
 
   // Quick Metrics Calculations
+  const getLocalDateStr = (d: Date) => {
+    const dt = new Date(d);
+    dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+    return dt.toISOString().split('T')[0];
+  };
+
   const totalHours = contest?.dailyHistory?.reduce((acc, curr) => acc + curr.hours, 0) || 0;
   const totalQuestions = contest?.dailyHistory?.reduce((acc, curr) => acc + curr.questions, 0) || 0;
   const calculateStreak = () => {
@@ -214,10 +220,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     const history = [...contest.dailyHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     let streak = 0;
     const todayDate = new Date();
-    const today = todayDate.toISOString().split('T')[0];
+    const today = getLocalDateStr(todayDate);
+    
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = yesterdayDate.toISOString().split('T')[0];
+    const yesterday = getLocalDateStr(yesterdayDate);
+    
     let currentCheckDate = new Date(todayDate);
     
     const hasToday = history.find(h => h.date === today && (h.hours > 0 || h.questions > 0));
@@ -228,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     }
     
     for (let i = 0; i < 365; i++) {
-       const dateStr = currentCheckDate.toISOString().split('T')[0];
+       const dateStr = getLocalDateStr(currentCheckDate);
        const entry = history.find(h => h.date === dateStr);
        if (entry && (entry.hours > 0 || entry.questions > 0)) {
           streak++;
@@ -243,16 +251,31 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   const todayTaskIncomplete = contest?.schedule?.find(day => !day.completed);
   
-  // Calculate todayDayNumber based on start time derived from contest ID
-  const startDate = contest.scheduleStartDate ? new Date(contest.scheduleStartDate) : new Date(parseInt(contest.id.split('-')[1]));
-  const today = new Date();
-  const diffDays = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  // dayNumber 1 is the first day (offset 0)
-  const todayDayNumber = Math.max(1, diffDays);
+  // Real calendar progression
+  const getStartDate = () => {
+    if (contest.scheduleStartDate) return new Date(contest.scheduleStartDate + 'T00:00:00');
+    if ((contest as any).createdAt && (contest as any).createdAt.toDate) {
+      return (contest as any).createdAt.toDate();
+    }
+    const timestampStr = contest.id.split('-')[1];
+    if (timestampStr && !isNaN(parseInt(timestampStr))) {
+      return new Date(parseInt(timestampStr));
+    }
+    return new Date();
+  };
+
+  const startDate = getStartDate();
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffTime = Math.max(0, now.getTime() - start.getTime());
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  const todayDayNumber = Math.max(1, diffDays + 1);
 
   const todayTask = contest?.schedule?.find(day => day.dayNumber === todayDayNumber) || todayTaskIncomplete;
   
-  const todayHistory = contest?.dailyHistory?.find(h => h.date === new Date().toISOString().split('T')[0]);
+  const todayHistory = contest?.dailyHistory?.find(h => h.date === getLocalDateStr(new Date()));
 
   const [showSimilarityModal, setShowSimilarityModal] = useState(false);
   const [selectedContestsForComparison, setSelectedContestsForComparison] = useState<string[]>([]);
@@ -328,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       }));
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateStr(new Date());
     const newHistoryEntry = { 
       date: today, 
       hours: typeof logForm.hours === 'number' ? logForm.hours : (contest.dailyGoalHours || 0), 
@@ -654,7 +677,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         <div className="space-y-3">
           <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
              <div className="w-1 h-3 bg-primary rounded-full"></div>
-             Meta de Hoje
+             Meta de Hoje {todayTask ? `- Dia ${todayTask.dayNumber}` : ''}
           </h3>
           <div className="rise-card p-4 md:p-6 flex flex-col items-center text-center space-y-5 bg-gradient-to-b from-white to-slate-50 border border-border shadow-sm">
             {todayTask && !todayTask.completed ? (

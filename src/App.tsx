@@ -15,7 +15,9 @@ import {
   FileUp,
   MessageCircle,
   Compass,
-  Crown
+  Crown,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -79,6 +81,9 @@ export default function App() {
   const [migrated, setMigrated] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [runTour, setRunTour] = useState(false);
+  const [showBetaModal, setShowBetaModal] = useState(() => {
+    return sessionStorage.getItem('betaModalShown') !== 'true';
+  });
   const location = useLocation();
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -377,6 +382,11 @@ export default function App() {
     }
   };
 
+  const handleCloseBetaModal = () => {
+    sessionStorage.setItem('betaModalShown', 'true');
+    setShowBetaModal(false);
+  };
+
   if (authLoading || (user && dataLoading) || (user && !currentContest && contests.length > 0)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
@@ -404,6 +414,56 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-bg font-sans overflow-hidden relative">
+      {/* Beta Modal */}
+      <AnimatePresence>
+        {user && showBetaModal && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={handleCloseBetaModal}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-[2001] overflow-hidden flex flex-col"
+            >
+              <div className="bg-amber-100 p-6 flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-amber-500 rounded-full flex justify-center items-center mb-4 text-white shadow-lg shadow-amber-500/30">
+                  <AlertTriangle className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-amber-950 uppercase tracking-tight">Fase Beta</h3>
+              </div>
+              <div className="p-6 text-center space-y-4 text-text-sub">
+                <p className="font-medium">
+                  Você está acessando uma versão de <strong>testes antecipados (Beta)</strong> do Stratis Planner.
+                </p>
+                <p className="text-sm">
+                  O aplicativo está em evolução rápida e aperfeiçoando suas respostas via IA. Por isso, <strong>inconsistências matemáticas ou pequenas instabilidades</strong> podem ocorrer nos próximos dias.
+                </p>
+                <div className="pt-4 border-t border-slate-100">
+                  <button 
+                    onClick={handleCloseBetaModal}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-wider py-4 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-[0.98]"
+                  >
+                    Estou Ciente e Quero Testar
+                  </button>
+                </div>
+              </div>
+              <button 
+                onClick={handleCloseBetaModal}
+                className="absolute top-4 right-4 text-amber-900/50 hover:text-amber-900 p-2 transition-colors bg-white/50 backdrop-blur rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {user && profile && React.createElement(Joyride as any, {
           steps: tourSteps,
           run: runTour,
