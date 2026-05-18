@@ -36,6 +36,7 @@ import BrandLogo from '../components/BrandLogo';
 import { db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useContestStats } from '../hooks/useContestStats';
+import EmptyState from '../components/EmptyState';
 
 interface DashboardProps {
   contest: Contest;
@@ -322,55 +323,9 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   if (isDefaultContest) {
     return (
-      <section className="rise-card p-10 md:p-20 text-center space-y-10 border border-border bg-white flex flex-col items-center shadow-sm">
-        <motion.div 
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ repeat: Infinity, duration: 4 }}
-          className="w-24 h-24 flex items-center justify-center"
-        >
-          <BrandLogo showText={false} size="lg" />
-        </motion.div>
-        <div className="space-y-6">
-          <h2 className="text-3xl md:text-5xl font-display text-text-main tracking-tight font-bold italic">
-             Ativar <span className="text-primary">Planejamento</span>
-          </h2>
-          <p className="text-text-sub max-w-lg mx-auto text-sm md:text-base font-medium leading-relaxed">
-            Importe seu edital para começar sua jornada de aprovação. Nossa tecnologia estruturará tudo para você.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-md">
-          <Link id="tour-importar-dashboard" to="/configuracoes" className="flex-1 bg-primary text-white py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-lg">
-            IMPORTAR EDITAL
-          </Link>
-          <Link to="/comunidade" className="flex-1 bg-white border border-border text-text-main px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all">
-            COMUNIDADE
-          </Link>
-        </div>
-
-        {featuredContests.length > 0 && (
-          <div className="w-full max-w-3xl pt-10 border-t border-border">
-            <h3 className="text-xs font-bold text-text-sub uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
-              <Users className="w-4 h-4" /> Editais da Comunidade
-            </h3>
-            <p className="text-[10px] text-text-sub mb-6 text-center italic">Veja exemplos de editais que outros estudantes estão usando (apenas para referência)</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {featuredContests.map(c => (
-                <div key={c.id} className="p-4 bg-white border border-border rounded-xl text-left space-y-2 hover:border-primary/30 transition-all">
-                    <div className="text-[9px] font-bold text-primary uppercase">{c.banca || 'Concurso'}</div>
-                    <div className="text-[11px] font-black text-text-main leading-tight line-clamp-2">{c.role}</div>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="text-[10px] font-bold text-text-sub flex items-center gap-1">
-                        <Star className="w-2.5 h-2.5 text-primary fill-primary" />
-                        {c.likesCount || 0}
-                      </div>
-                      <Link to="/comunidade" className="text-[10px] font-bold text-primary uppercase tracking-wider hover:underline">Acessar</Link>
-                    </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-6">
+        <EmptyState featuredContests={featuredContests} />
+      </div>
     );
   }
 
