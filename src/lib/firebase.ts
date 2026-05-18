@@ -33,10 +33,10 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-const databaseId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId;
+const databaseId = firebaseConfig.firestoreDatabaseId;
 
 const app = initializeApp(config);
-console.log("Firebase App initialized with Project ID:", config.projectId);
+console.log("Firebase App initialized. Project:", config.projectId, "Database:", databaseId);
 export const auth = getAuth(app);
 export const db = (databaseId && databaseId !== '(default)') 
   ? getFirestore(app, databaseId) 

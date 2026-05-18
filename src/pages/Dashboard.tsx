@@ -365,7 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         <motion.div 
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 4 }}
-          className="w-24 h-24 bg-white border border-primary/20 rounded-2xl flex items-center justify-center shadow-xl"
+          className="w-24 h-24 flex items-center justify-center"
         >
           <BrandLogo showText={false} size="lg" />
         </motion.div>

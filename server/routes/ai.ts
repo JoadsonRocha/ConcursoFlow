@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { PLANS } from '../constants/plans';
 import * as GeminiService from '../services/gemini';
@@ -12,60 +13,85 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
   const userId = req.user?.uid;
   if (!userId) return res.status(401).json({ error: 'ID do usuário não identificado.' });
 
-  const db = getFirestore(DATABASE_ID);
+  const getDb = () => {
+    try {
+      const currentDbId = DATABASE_ID || '';
+      if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
+        return getFirestore(admin.app(), currentDbId);
+      }
+      return getFirestore();
+    } catch (e) {
+      console.warn("⚠️ AI Route: Falha ao obter Firestore, tentando fallback.", e);
+      return getFirestore();
+    }
+  };
+  const db = getDb();
 
   try {
-    // 1. Check limits and increment usage atomically
-    const userData = await db.runTransaction(async (transaction) => {
-      const userRef = db.collection('users').doc(userId);
-      const userDoc = await transaction.get(userRef);
+    const db = getDb();
+    
+    try {
+      // 1. Check limits and increment usage atomically
+      await db.runTransaction(async (transaction) => {
+        const userRef = db.collection('users').doc(userId);
+        const userDoc = await transaction.get(userRef);
 
-      if (!userDoc.exists) throw new Error('Perfil do usuário não encontrado.');
+        if (!userDoc.exists) return; // if user not found, just skip tracking
 
-      const data = userDoc.data();
-      const plan = 'pro'; // data?.userPlan || 'free';
-      let usage = data?.[usageField] || 0;
-      const limits = PLANS[plan] || PLANS.free;
-      const limit = (limits as any)[limitField];
+        const data = userDoc.data();
+        const plan = 'pro'; 
+        let usage = data?.[usageField] || 0;
+        const limits = PLANS[plan] || PLANS.free;
+        const limit = (limits as any)[limitField];
 
-      // Monthly reset check
-      const now = new Date();
-      const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
-      let needsReset = false;
-      if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
-        needsReset = true;
-        usage = 0;
+        const now = new Date();
+        const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
+        let needsReset = false;
+        if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+          needsReset = true;
+          usage = 0;
+        }
+
+        if (usage >= limit) {
+          throw new Error(`Limite atingido para o seu plano. Faça upgrade para continuar.`);
+        }
+
+        const updateData: any = {
+          [usageField]: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp()
+        };
+
+        if (needsReset) {
+            updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
+            updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
+            updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
+            updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
+            updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
+            updateData.lastUsageReset = FieldValue.serverTimestamp();
+        }
+
+        transaction.update(userRef, updateData);
+      });
+    } catch (transactionErr: any) {
+      if (transactionErr.message.includes('Limite atingido')) {
+        throw transactionErr; // Re-throw limit errors
       }
-
-      if (usage >= limit) {
-        throw new Error(`Limite atingido para o seu plano (${plan.toUpperCase()}). Faça upgrade para continuar.`);
-      }
-
-      const updateData: any = {
-        [usageField]: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp()
-      };
-
-      if (needsReset) {
-         updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
-         updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
-         updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
-         updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
-         updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
-         updateData.lastUsageReset = FieldValue.serverTimestamp();
-      }
-
-      transaction.update(userRef, updateData);
-
-      return data;
-    });
+      console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr.message || transactionErr);
+    }
 
     // 2. Perform AI action
     const result = await action();
     res.json(result);
   } catch (error: any) {
     console.error(`AI Route Error (${usageField}):`, error);
-    res.status(error.message.includes('Limite') ? 403 : 400).json({ error: error.message });
+
+    // Filter AI quota errors gracefully
+    const errorMsg = String(error.message || '');
+    if (error.status === 429 || error.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota')) {
+      return res.status(429).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
+    }
+
+    res.status(errorMsg.includes('Limite') ? 403 : 400).json({ error: error.message });
   }
 }
 

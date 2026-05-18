@@ -7,32 +7,54 @@ import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import aiRoutes from './server/routes/ai';
+import fs from 'fs';
 
-import { DATABASE_ID } from './server/constants/config';
+import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/config';
 
 dotenv.config();
 
 // Initialize Firebase Admin
-if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON && !process.env.FIREBASE_SERVICE_ACCOUNT_JSON.includes('...')) {
+let adminApp: admin.app.App | null = null;
+let authApp: admin.app.App | null = null;
+
+let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
+  serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
+}
+const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
+
+// Primary Admin App (for Firestore permissions)
+if (admin.apps.length === 0) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-    if (admin.apps.length === 0) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+    if (hasServiceAccount) {
+      const sa = JSON.parse(serviceAccountJson);
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert(sa),
+        projectId: sa.project_id
       });
-      console.log('✅ Firebase Admin: Inicializado com sucesso.');
+      console.log('✅ Firebase Admin: Inicializado com Service Account.');
+    } else {
+      adminApp = admin.initializeApp({
+        projectId: DB_PROJECT_ID
+      });
+      console.log('✅ Firebase Admin: Inicializado com projeto:', DB_PROJECT_ID);
     }
   } catch (err) {
-    console.error('❌ Firebase Admin: Erro ao processar o JSON.');
+    console.error('❌ Firebase Admin: Erro na inicialização do app principal:', err);
   }
-} else if (admin.apps.length === 0) {
-  // Try to initialize with default credentials in managed environments
-  try {
-    admin.initializeApp();
-    console.log('✅ Firebase Admin: Inicializado com credenciais padrão.');
-  } catch (err) {
-    console.warn('⚠️ Firebase Admin: Não foi possível inicializar (sem JSON e sem default).');
+}
+
+// Auth-specific App (to avoid audience mismatch if environment project != auth project)
+try {
+  const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+  if (hasServiceAccount) {
+    const sa = JSON.parse(serviceAccountJson as string);
+    authConfig.credential = admin.credential.cert(sa);
   }
+  authApp = admin.initializeApp(authConfig, 'auth');
+  console.log('✅ Firebase Auth App: Inicializado para o projeto:', AUTH_PROJECT_ID);
+} catch (err) {
+  console.warn('⚠️ Firebase Auth App: Já inicializado ou erro:', err);
 }
 
 async function startServer() {
@@ -45,13 +67,18 @@ async function startServer() {
       return new Stripe(key || 'sk_test_placeholder');
     };
     
-    // Lazy-load DB to avoid crash if init failed above
     const getDb = () => {
       try {
-        return getFirestore(DATABASE_ID);
+        const currentDbId = DATABASE_ID || firebaseConfig.firestoreDatabaseId;
+        if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
+          console.log(`[Firestore Admin] Usando banco de dados específico: ${currentDbId}`);
+          return getFirestore(admin.app(), currentDbId);
+        }
+        console.log('[Firestore Admin] Usando banco de dados (default)');
+        return getFirestore();
       } catch (e) {
-        console.error("❌ Erro ao obter Firestore Admin:", e);
-        throw e;
+        console.warn(`⚠️ Firestore Admin: Falha ao obter banco específico, tentando fallback...`, e);
+        return getFirestore();
       }
     };
 
@@ -148,7 +175,13 @@ async function startServer() {
       }
     });
 
-    app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+    app.get('/api/health', (req, res) => res.json({ 
+      status: 'ok', 
+      has_sa: hasServiceAccount,
+      db_project: DB_PROJECT_ID,
+      auth_project: AUTH_PROJECT_ID,
+      db_id: DATABASE_ID
+    }));
 
     if (process.env.NODE_ENV !== 'production') {
       const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });

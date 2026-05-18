@@ -15,11 +15,12 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const authApp = admin.app('auth');
+    const decodedToken = await admin.auth(authApp).verifyIdToken(idToken);
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error('Erro na autenticação de token:', error);
-    res.status(401).json({ error: 'Não autorizado. Token inválido.' });
+    console.error('Erro na autenticação de token:', error.message || error);
+    res.status(401).json({ error: 'Não autorizado. Token inválido.', details: error.message });
   }
 };

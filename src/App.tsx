@@ -513,7 +513,7 @@ export default function App() {
               <div className="hidden sm:flex flex-col items-end">
                 <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none mb-1 opacity-50">Sincronização</div>
                 <div className="text-[10px] font-black text-primary leading-none flex items-center gap-1.5 uppercase tracking-wider">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_6px_var(--color-primary)]"></div>
                   Conectado 
                 </div>
               </div>
@@ -522,12 +522,12 @@ export default function App() {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="group outline-none block"
                 >
-                  <div className="w-12 h-12 bg-white/5 rounded-2xl border-2 border-white/5 overflow-hidden group-hover:border-primary/50 transition-all shadow-xl p-1 backdrop-blur-md">
+                  <div className="w-10 h-10 rounded-full overflow-hidden group-hover:opacity-80 transition-all">
                     {profile?.photoURL || user.photoURL ? (
-                      <img src={profile?.photoURL || user.photoURL} className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" alt="Profile" />
+                      <img src={profile?.photoURL || user.photoURL} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Profile" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-white/5 rounded-xl">
-                        <UserIcon className="w-6 h-6" />
+                      <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-100">
+                        <UserIcon className="w-5 h-5" />
                       </div>
                     )}
                   </div>
