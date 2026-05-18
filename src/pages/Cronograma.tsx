@@ -124,35 +124,53 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     
     if (isNowCompleted) {
       const day = newSchedule[dayIndex];
-      const topicsStr = [day.specificTopic, day.generalTopic].join(' ').toLowerCase();
-
       const normalize = (s: string) => s.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
-        .replace(/[^\w\s]/gi, '') // remove special characters
-        .replace(/^[\d.\-\s]+/, '') // remove numeric prefixes
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s]/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/^(parte|modulo|eixo|bloco) [\div]+ /i, '')
         .trim();
 
+      const topicsStr = [day.specificTopic, day.generalTopic].join(' ');
       const scheduleWords = normalize(topicsStr).split(/\s+/).filter(w => w.length > 2);
       
-      newSubjects = newSubjects.map(subject => ({
-        ...subject,
-        topics: (subject.topics || []).map(topic => {
-          const normalizedTopic = normalize(topic.name);
-          const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
-          
-          // Check for significant overlap:
-          // 1. Topic name is directly in schedule string
-          // 2. Or a large portion of topic words match any word in schedule string
-          const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
-          const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
-          const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+      newSubjects = newSubjects.map(subject => {
+        const normalizedSubjectName = normalize(subject.name);
+        const normSpecific = normalize(day.specificTopic || '');
+        const normGeneral = normalize(day.generalTopic || '');
+        
+        const subjectIsMentioned = 
+          normalize(topicsStr).includes(normalizedSubjectName) || 
+          normalizedSubjectName.includes(normSpecific) || 
+          normalizedSubjectName.includes(normGeneral);
 
-          if (hasDirectMatch || matchRatio >= 0.6) {
-            return { ...topic, completed: true };
-          }
-          return topic;
-        })
-      }));
+        let updatedTopics = (subject.topics || []);
+        if (updatedTopics.length > 0) {
+          updatedTopics = updatedTopics.map(topic => {
+            if (topic.completed) return topic;
+            const normalizedTopic = normalize(topic.name);
+            const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
+            const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
+            const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
+            const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+            if (hasDirectMatch || matchRatio >= 0.45) return { ...topic, completed: true };
+            return topic;
+          });
+        }
+
+        let extraCompleted = subject.completedTopics || 0;
+        if (subjectIsMentioned && updatedTopics.length === 0) {
+          extraCompleted = Math.min(subject.totalTopics || 1, extraCompleted + 1);
+        }
+
+        return {
+          ...subject,
+          topics: updatedTopics,
+          completedTopics: (subject.topics?.length || 0) > 0 
+            ? updatedTopics.filter(t => t.completed).length 
+            : extraCompleted
+        };
+      });
     } else {
       // Reverting a day doesn't necessarily mean we should unmark topics, 
       // but for consistency we might want to if the user expects full sync.

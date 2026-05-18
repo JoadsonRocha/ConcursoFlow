@@ -5,7 +5,18 @@ import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
+import { registerSW } from 'virtual:pwa-register';
 import './index.css';
+
+// Automatically register service worker
+const updateSW = registerSW({
+  onNeedRefresh() {
+    // Show a prompt to user if needed
+  },
+  onOfflineReady() {
+    // Show a ready to work offline message
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

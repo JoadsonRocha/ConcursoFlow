@@ -25,7 +25,8 @@ import {
   PencilLine,
   Trash2,
   PieChart,
-  Users
+  Users,
+  Timer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
@@ -33,6 +34,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import BrandLogo from '../components/BrandLogo';
 import { db } from '../lib/firebase';
+import { useNavigate } from 'react-router-dom';
+import { useContestStats } from '../hooks/useContestStats';
 
 interface DashboardProps {
   contest: Contest;
@@ -120,11 +123,15 @@ const ContestSelectorItem = ({
 
 const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest, onDelete }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showLogModal, setShowLogModal ] = useState(false);
   const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [featuredContests, setFeaturedContests] = useState<Contest[]>([]);
+
+  const stats = useContestStats(contest);
+  const { totalHours, totalQuestions, streak: streakDays, generalProgressProps: generalProgress, specificProgressProps: technicalProgress, overallProgress, todayDayNumber, todayTask, todayHistory } = stats;
 
   const isDefaultContest = !contest || !contest.ownerId;
 
@@ -172,16 +179,6 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     return () => clearInterval(timer);
   }, [contest?.examDate]);
 
-  const calculateProgress = (subs: Subject[]) => {
-    const total = subs.reduce((acc, s) => acc + (s.totalTopics || s.topics?.length || 0), 0);
-    const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
-    return { 
-      total, 
-      completed, 
-      percent: total > 0 ? Math.round((completed / total) * 100) : 0,
-    };
-  };
-
   const prioritySubjects = [...(contest?.subjects || [])]
     .sort((a, b) => {
       const weights: any = { 'Muito Alta': 4, 'Alta': 3, 'Média': 2, 'Baixa': 1 };
@@ -189,93 +186,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     })
     .slice(0, 3);
 
-  const calculateDetailedProgress = (subs: Subject[]) => {
-    const total = subs.reduce((acc, s) => acc + (s.topics?.length || 0), 0);
-    const completed = subs.reduce((acc, s) => acc + (s.topics?.filter(t => t.completed).length || 0), 0);
-    return { total, completed, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
-  };
-
-  const generalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => {
-    const cat = s.category?.toLowerCase() || '';
-    return cat.includes('geral') || cat.includes('gerais') || cat.includes('base') || cat.includes('basica') || cat.includes('comun') || cat.includes('comuns');
-  }) || []);
-  
-  const technicalProgress = calculateDetailedProgress(contest?.subjects?.filter(s => {
-    const cat = s.category?.toLowerCase() || '';
-    return cat.includes('específico') || cat.includes('especificos') || cat.includes('tecnico') || cat.includes('foco');
-  }) || []);
-  const totalProgress = calculateDetailedProgress(contest?.subjects || []);
-
   // Quick Metrics Calculations
   const getLocalDateStr = (d: Date) => {
     const dt = new Date(d);
     dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
     return dt.toISOString().split('T')[0];
   };
-
-  const totalHours = contest?.dailyHistory?.reduce((acc, curr) => acc + curr.hours, 0) || 0;
-  const totalQuestions = contest?.dailyHistory?.reduce((acc, curr) => acc + curr.questions, 0) || 0;
-  const calculateStreak = () => {
-    if (!contest?.dailyHistory || contest.dailyHistory.length === 0) return 0;
-    const history = [...contest.dailyHistory].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    let streak = 0;
-    const todayDate = new Date();
-    const today = getLocalDateStr(todayDate);
-    
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = getLocalDateStr(yesterdayDate);
-    
-    let currentCheckDate = new Date(todayDate);
-    
-    const hasToday = history.find(h => h.date === today && (h.hours > 0 || h.questions > 0));
-    if (!hasToday) {
-       const hasYesterday = history.find(h => h.date === yesterday && (h.hours > 0 || h.questions > 0));
-       if (!hasYesterday) return 0;
-       currentCheckDate = new Date(yesterdayDate);
-    }
-    
-    for (let i = 0; i < 365; i++) {
-       const dateStr = getLocalDateStr(currentCheckDate);
-       const entry = history.find(h => h.date === dateStr);
-       if (entry && (entry.hours > 0 || entry.questions > 0)) {
-          streak++;
-          currentCheckDate.setDate(currentCheckDate.getDate() - 1);
-       } else {
-          break;
-       }
-    }
-    return streak;
-  };
-  const streakDays = calculateStreak();
-
-  const todayTaskIncomplete = contest?.schedule?.find(day => !day.completed);
-  
-  // Real calendar progression
-  const getStartDate = () => {
-    if (contest.scheduleStartDate) return new Date(contest.scheduleStartDate + 'T00:00:00');
-    if ((contest as any).createdAt && (contest as any).createdAt.toDate) {
-      return (contest as any).createdAt.toDate();
-    }
-    const timestampStr = contest.id.split('-')[1];
-    if (timestampStr && !isNaN(parseInt(timestampStr))) {
-      return new Date(parseInt(timestampStr));
-    }
-    return new Date();
-  };
-
-  const startDate = getStartDate();
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const diffTime = Math.max(0, now.getTime() - start.getTime());
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-  const todayDayNumber = Math.max(1, diffDays + 1);
-
-  const todayTask = contest?.schedule?.find(day => day.dayNumber === todayDayNumber) || todayTaskIncomplete;
-  
-  const todayHistory = contest?.dailyHistory?.find(h => h.date === getLocalDateStr(new Date()));
 
   const [showSimilarityModal, setShowSimilarityModal] = useState(false);
   const [selectedContestsForComparison, setSelectedContestsForComparison] = useState<string[]>([]);
@@ -320,35 +236,57 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         return day;
       });
 
-      // Sync with vertical edital - IMPROVED MATCHING
-      const topicsStr = [todayTask.specificTopic, todayTask.generalTopic].join(' ').toLowerCase();
       const normalize = (s: string) => s.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
-        .replace(/[^\w\s]/gi, '') // remove special characters
-        .replace(/^[\d.\-\s]+/, '') // remove numeric prefixes
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^\w\s]/gi, ' ') 
+        .replace(/\s+/g, ' ') 
+        .replace(/^(parte|modulo|eixo|bloco) [\div]+ /i, '')
         .trim();
 
+      const topicsStr = [todayTask.specificTopic, todayTask.generalTopic].join(' ');
       const scheduleWords = normalize(topicsStr).split(/\s+/).filter(w => w.length > 2);
       
-      newSubjects = newSubjects.map(subject => ({
-        ...subject,
-        topics: subject.topics?.map(topic => {
-          const normalizedTopic = normalize(topic.name);
-          const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
-          
-          // Check for significant overlap:
-          // 1. Topic name is directly in schedule string
-          // 2. Or a large portion of topic words match any word in schedule string
-          const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
-          const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
-          const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+      newSubjects = newSubjects.map(subject => {
+        const normalizedSubjectName = normalize(subject.name);
+        const normSpecific = normalize(todayTask.specificTopic || '');
+        const normGeneral = normalize(todayTask.generalTopic || '');
+        
+        const subjectIsMentioned = 
+          normalize(topicsStr).includes(normalizedSubjectName) || 
+          normalizedSubjectName.includes(normSpecific) || 
+          normalizedSubjectName.includes(normGeneral);
 
-          if (hasDirectMatch || matchRatio >= 0.6) {
-            return { ...topic, completed: true };
-          }
-          return topic;
-        })
-      }));
+        let updatedTopics = (subject.topics || []);
+        if (updatedTopics.length > 0) {
+          updatedTopics = updatedTopics.map(topic => {
+            if (topic.completed) return topic;
+            const normalizedTopic = normalize(topic.name);
+            const topicWords = normalizedTopic.split(/\s+/).filter(w => w.length > 2);
+            
+            const hasDirectMatch = normalize(topicsStr).includes(normalizedTopic) || normalizedTopic.includes(normalize(topicsStr));
+            const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
+            const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+
+            if (hasDirectMatch || matchRatio >= 0.45) {
+              return { ...topic, completed: true };
+            }
+            return topic;
+          });
+        }
+
+        let extraCompleted = subject.completedTopics || 0;
+        if (subjectIsMentioned && updatedTopics.length === 0) {
+          extraCompleted = Math.min(subject.totalTopics || 1, extraCompleted + 1);
+        }
+
+        return {
+          ...subject,
+          topics: updatedTopics,
+          completedTopics: (subject.topics?.length || 0) > 0 
+            ? updatedTopics.filter(t => t.completed).length 
+            : extraCompleted
+        };
+      });
     }
 
     const today = getLocalDateStr(new Date());
@@ -593,7 +531,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       {/* Quick Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {[
-          { label: 'Evolução', value: `${totalProgress.percent}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
+          { label: 'Evolução', value: `${overallProgress}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
           { label: 'Sequência', value: `${streakDays} dias`, icon: Target, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/20' },
           { label: 'Horas', value: `${totalHours}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
           { label: 'Questões', value: totalQuestions, icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
@@ -683,7 +621,16 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             {todayTask && !todayTask.completed ? (
               <div className="space-y-4 w-full">
                 <div className="space-y-3 w-full">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-text-sub">Planejamento para agora</p>
+                  <div className="flex items-center justify-between pointer-events-auto">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-text-sub">Planejamento para agora</p>
+                    <button
+                      onClick={() => navigate('/foco')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors border border-primary/20"
+                    >
+                      <Timer className="w-3.5 h-3.5" />
+                      Modo Foco
+                    </button>
+                  </div>
                   
                   <div className="space-y-2 text-left w-full">
                     {todayTask.generalTopic && (
@@ -767,7 +714,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </h3>
           <div className="grid grid-cols-1 gap-2">
             {prioritySubjects.map((sub, idx) => {
-              const progress = calculateDetailedProgress([sub]);
+              const subProgress = stats.subjectProgress.find(s => s.name === sub.name);
+              const percent = subProgress ? subProgress.percentage : 0;
               return (
                 <Link key={idx} to="/materias" className="rise-card p-3 flex items-center justify-between border border-border bg-white hover:border-secondary/30 transition-all">
                   <div className="flex items-center gap-3 overflow-hidden">
@@ -785,7 +733,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     </div>
                   </div>
                   <div className="text-right ml-3 shrink-0">
-                    <div className="text-sm md:text-base font-display font-bold text-text-main leading-none">{progress.percent}%</div>
+                    <div className="text-sm md:text-base font-display font-bold text-text-main leading-none">{percent}%</div>
                     <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-0.5">Domínio</div>
                   </div>
                 </Link>
@@ -819,7 +767,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
            </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
           <Link to="/pareto" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-accent/40 transition-all group overflow-hidden relative">
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-accent/5 rounded-full blur-xl group-hover:bg-accent/10 transition-all" />
             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent border border-accent/20">
@@ -865,22 +813,19 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             </div>
           </button>
 
-          <div className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-secondary/40 transition-all group overflow-hidden relative">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-secondary/5 rounded-full blur-xl group-hover:bg-secondary/10 transition-all" />
-            <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary border border-secondary/20">
-              <Clock className="w-5 h-5" />
+          <Link to="/estatisticas" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-emerald-500/40 transition-all group overflow-hidden relative">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-all" />
+            <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+              <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Metas e Recordes</h4>
-              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Foco no seu alto desempenho</p>
+              <h4 className="text-xs font-black text-text-main uppercase tracking-widest mb-1">Estatísticas</h4>
+              <p className="text-[10px] font-medium text-text-sub uppercase tracking-wider leading-relaxed">Visualize sua consistência e evolução</p>
             </div>
-            <button 
-              onClick={() => setShowLogModal(true)}
-              className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-secondary uppercase tracking-widest hover:underline"
-            >
-              Registrar Agora <Plus className="w-3 h-3" />
-            </button>
-          </div>
+            <div className="mt-1 flex items-center gap-1.5 text-[9px] font-bold text-emerald-500 uppercase tracking-widest hover:underline">
+              Ver Detalhes <ArrowRight className="w-3 h-3" />
+            </div>
+          </Link>
         </div>
       </div>
 

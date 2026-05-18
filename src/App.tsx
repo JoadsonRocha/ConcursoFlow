@@ -17,7 +17,8 @@ import {
   Compass,
   Crown,
   AlertTriangle,
-  X
+  X,
+  Timer
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -47,6 +48,8 @@ import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import Dashboard from './pages/Dashboard';
+import FocusMode from './pages/FocusMode';
+import Estatisticas from './pages/Estatisticas';
 
 const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string }) => (
   <Link 
@@ -260,6 +263,54 @@ export default function App() {
     }
   }, [user, profile, authLoading, dataLoading]);
 
+  // Daily reminder notifications
+  useEffect(() => {
+    if (!currentContest || !currentContest.schedule) return;
+
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const checkAndNotify = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+
+      // Check if it's exactly 09:00, 14:00, or 20:00
+      const isReminderTime = 
+        (currentHour === 9 && currentMinute === 0) ||
+        (currentHour === 14 && currentMinute === 0) ||
+        (currentHour === 20 && currentMinute === 0);
+
+      if (isReminderTime) {
+        const startDate = currentContest.scheduleStartDate || new Date().toISOString();
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const dNow = new Date();
+        dNow.setHours(0, 0, 0, 0);
+        const diffTime = Math.max(0, dNow.getTime() - start.getTime());
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const todayDayNumber = Math.max(1, diffDays + 1);
+
+        const hasPendingTasks = currentContest.schedule?.some(
+          d => d.dayNumber <= todayDayNumber && !d.completed
+        );
+
+        if (hasPendingTasks && "Notification" in window && Notification.permission === "granted") {
+          new Notification("Lembrete de Estudo 📚", {
+            body: "Você tem tarefas pendentes no seu cronograma. Vamos continuar avançando?",
+            icon: "/logo.png"
+          });
+        }
+      }
+    };
+
+    checkAndNotify();
+    const interval = setInterval(checkAndNotify, 60000);
+    
+    return () => clearInterval(interval);
+  }, [currentContest]);
+
   const handleJoyrideCallback = async (data: any) => {
     const { status } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
@@ -315,6 +366,20 @@ export default function App() {
     } catch (err: any) {
       console.error("Erro ao salvar edital:", err);
       toast.error("Falha de segurança ao salvar no Firestore: " + err.message);
+    }
+  };
+
+  const handleSwitchContest = async (contest: Contest) => {
+    setCurrentContest(contest);
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, { 
+        currentContestId: contest.id,
+        updatedAt: serverTimestamp() 
+      });
+    } catch (err: any) {
+      console.error("Erro ao salvar edital selecionado:", err);
     }
   };
 
@@ -504,9 +569,10 @@ export default function App() {
               <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
             </nav>
@@ -665,9 +731,11 @@ export default function App() {
         <div className="p-5 md:p-10 max-w-7xl mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
-              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={setCurrentContest} onDelete={handleDeleteContest} />} />
+              <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />
+              <Route path="/foco" element={currentContest ? <FocusMode contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={setCurrentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
+              <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />
