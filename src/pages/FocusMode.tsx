@@ -194,12 +194,12 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   };
 
   return (
-    <div className="h-[100dvh] w-full bg-bg text-text-main overflow-hidden relative flex flex-col">
+    <div className="w-full bg-bg text-text-main relative flex flex-col min-h-[calc(100vh-140px)] rounded-3xl">
       {/* Abstract Background */}
-      <div className={cn("absolute inset-0 bg-gradient-to-b transition-colors duration-1000 select-none pointer-events-none", getGradient(mode))} />
+      <div className={cn("absolute inset-0 rounded-3xl bg-gradient-to-b transition-colors duration-1000 select-none pointer-events-none", getGradient(mode))} />
       
       {/* Header */}
-      <header className="relative z-10 flex items-center justify-between p-6">
+      <header className="relative z-10 flex items-center justify-between p-4 sm:p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
             <Timer className="w-5 h-5 text-primary" />
@@ -239,13 +239,13 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full max-w-7xl mx-auto overflow-y-auto hide-scrollbar">
-        <div className="w-full h-full flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 items-center md:items-start justify-center py-4">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 w-full max-w-7xl mx-auto overflow-y-auto hide-scrollbar">
+        <div className="w-full min-h-full flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 items-center md:items-start justify-center py-6">
           
           {/* Left Column: Timer */}
           <div className="flex-1 flex flex-col items-center w-full max-w-md">
             {/* Mode & Duration Selectors */}
-            <div className={cn("w-full flex flex-col gap-3 mb-8 md:mb-12 transition-opacity", isActive && "opacity-50 pointer-events-none")}>
+            <div className={cn("w-full flex flex-col gap-3 mb-6 md:mb-12 transition-opacity", isActive && "opacity-50 pointer-events-none")}>
               <div className="flex w-full bg-white rounded-2xl p-1.5 border border-border shadow-sm">
                 <button 
                   onClick={() => setMode('work')}
@@ -308,7 +308,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
             </div>
 
             {/* Timer Display */}
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 flex items-center justify-center mb-10 group cursor-pointer" onClick={toggleTimer}>
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 flex shrink-0 items-center justify-center mb-8 group cursor-pointer" onClick={toggleTimer}>
               <svg className="absolute inset-0 w-full h-full -z-10 drop-shadow-sm opacity-50" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="48" fill="none" strokeWidth="1.5" stroke="currentColor" className="text-slate-200" />
                 <motion.circle 

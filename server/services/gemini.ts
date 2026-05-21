@@ -22,7 +22,7 @@ export async function generateFlashcards(topic: string, count: number = 5) {
   DIRETRIZ DE FORMATO: Retorne um JSON com array de objetos contendo "front" e "back".`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -51,7 +51,7 @@ export async function generateSummary(text: string) {
   Retorne o resumo formatado em Markdown limpo.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
   return response.text;
@@ -64,7 +64,7 @@ export async function generateMindMap(subject: string) {
   JSON: nodes {id, data: {label}, position: {x,y}}, edges {id, source, target}`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -101,7 +101,7 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -130,7 +130,7 @@ export async function parseEdital(rawText: string) {
   Retorne JSON com name, role, examDate e subjects [ {id, name, topics: [] } ]`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -159,7 +159,7 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
   'questionGoal' (meta de questões sugerida, número inteiro) e 'revisionTask' (tarefa de revisão, ex: Flashcards, Mapa Mental).`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -187,7 +187,7 @@ export async function generateSVGMap(title: string, prompt: string, quantity: nu
   const genAI = getAiClient();
 
   const response = await genAI.models.generateContent({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     contents: [{ role: "user", parts: [{ text: `Crie ${quantity} códigos SVG para mapas mentais sobre "${title}". Foco: ${prompt}. Retorne como array JSON de strings.` }] }]
   });
   

@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
-import { createServer as createViteServer } from 'vite';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
@@ -182,13 +181,15 @@ app.get('/api/health', (req, res) => res.json({
 }));
 
 if (process.env.NODE_ENV !== 'production') {
-  createViteServer({ server: { middlewareMode: true }, appType: 'spa' }).then((vite) => {
-    app.use(vite.middlewares);
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+  import('vite').then(({ createServer: createViteServer }) => {
+    createViteServer({ server: { middlewareMode: true }, appType: 'spa' }).then((vite) => {
+      app.use(vite.middlewares);
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    }).catch((err) => {
+      console.error('Vite initialization error:', err);
     });
-  }).catch((err) => {
-    console.error('Vite initialization error:', err);
   });
 } else {
   const distPath = path.join(process.cwd(), 'dist');

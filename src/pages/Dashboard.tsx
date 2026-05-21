@@ -225,14 +225,17 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     let newSchedule = contest.schedule;
     let newSubjects = [...contest.subjects];
 
+    const inputHours = typeof logForm.hours === 'number' ? logForm.hours : 0;
+    const inputQuestions = typeof logForm.questions === 'number' ? logForm.questions : 0;
+
     if (todayTask) {
       newSchedule = contest.schedule?.map(day => {
         if (day.id === todayTask.id) {
           return {
             ...day,
             completed: true,
-            actualHours: typeof logForm.hours === 'number' ? logForm.hours : (contest.dailyGoalHours || 0),
-            actualQuestions: typeof logForm.questions === 'number' ? logForm.questions : (contest.dailyGoalQuestions || 0)
+            actualHours: inputHours > 0 ? inputHours : (day.actualHours || 0),
+            actualQuestions: inputQuestions > 0 ? inputQuestions : (day.actualQuestions || 0)
           };
         }
         return day;
@@ -292,23 +295,23 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     }
 
     const today = getLocalDateStr(new Date());
-    const newHistoryEntry = { 
-      date: today, 
-      hours: typeof logForm.hours === 'number' ? logForm.hours : (contest.dailyGoalHours || 0), 
-      questions: typeof logForm.questions === 'number' ? logForm.questions : (contest.dailyGoalQuestions || 0) 
-    };
-
     let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
-    const existingIndex = newHistory.findIndex(h => h.date === today);
     
-    if (existingIndex >= 0) {
-      newHistory[existingIndex] = {
-         ...newHistory[existingIndex],
-         hours: newHistory[existingIndex].hours + newHistoryEntry.hours,
-         questions: newHistory[existingIndex].questions + newHistoryEntry.questions,
-      };
-    } else {
-      newHistory.push(newHistoryEntry);
+    if (inputHours > 0 || inputQuestions > 0) {
+      const existingIndex = newHistory.findIndex(h => h.date === today);
+      if (existingIndex >= 0) {
+        newHistory[existingIndex] = {
+           ...newHistory[existingIndex],
+           hours: newHistory[existingIndex].hours + inputHours,
+           questions: newHistory[existingIndex].questions + inputQuestions,
+        };
+      } else {
+        newHistory.push({
+          date: today,
+          hours: inputHours,
+          questions: inputQuestions
+        });
+      }
     }
 
     onUpdate({ 
