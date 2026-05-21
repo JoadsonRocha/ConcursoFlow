@@ -9,6 +9,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       GeminiService.generateSchedule(subjectsSummary, days)
     );
   } catch (error: any) {
-    if (!res.headersSent) res.status(500).json({ error: error.message });
+    if (!res.headersSent) res.status(500).json({ error: String(error.message || error) });
   }
 }

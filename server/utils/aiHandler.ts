@@ -21,11 +21,16 @@ export function initFirebase() {
   if (admin.apps.length === 0) {
     try {
       if (hasServiceAccount) {
-        const sa = JSON.parse(serviceAccountJson as string);
-        admin.initializeApp({
-          credential: admin.credential.cert(sa),
-          projectId: sa.project_id
-        });
+        try {
+          const sa = JSON.parse(serviceAccountJson as string);
+          admin.initializeApp({
+            credential: admin.credential.cert(sa),
+            projectId: sa.project_id
+          });
+        } catch (parseErr) {
+          console.error('Invalid Service Account JSON:', parseErr);
+          admin.initializeApp({ projectId: DB_PROJECT_ID });
+        }
       } else {
         admin.initializeApp({ projectId: DB_PROJECT_ID });
       }
@@ -37,8 +42,10 @@ export function initFirebase() {
   try {
     const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
     if (hasServiceAccount) {
-      const sa = JSON.parse(serviceAccountJson as string);
-      authConfig.credential = admin.credential.cert(sa);
+      try {
+        const sa = JSON.parse(serviceAccountJson as string);
+        authConfig.credential = admin.credential.cert(sa);
+      } catch (e) {}
     }
     admin.initializeApp(authConfig, 'auth');
   } catch (err) {
@@ -100,54 +107,62 @@ export async function handleAiRequestServerless(
   if (!user) return;
   const userId = user.uid;
 
-  const db = getDb();
+  let db: any = null;
   try {
-    await db.runTransaction(async (transaction) => {
-      const userRef = db.collection('users').doc(userId);
-      const userDoc = await transaction.get(userRef);
+    db = getDb();
+  } catch (error) {
+    console.warn("Could not get db for tracking, skipping tracking:", error);
+  }
 
-      if (!userDoc.exists) return; // skip tracking
+  if (db) {
+    try {
+      await db.runTransaction(async (transaction: any) => {
+        const userRef = db.collection('users').doc(userId);
+        const userDoc = await transaction.get(userRef);
 
-      const data = userDoc.data();
-      const plan = data?.userPlan || 'free'; 
-      let usage = data?.[usageField] || 0;
-      const limits = PLANS[plan] || PLANS.free;
-      const limit = (limits as any)[limitField] || 0;
+        if (!userDoc.exists) return; // skip tracking
 
-      const now = new Date();
-      const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
-      let needsReset = false;
-      
-      if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
-        needsReset = true;
-        usage = 0;
+        const data = userDoc.data();
+        const plan = data?.userPlan || 'free'; 
+        let usage = data?.[usageField] || 0;
+        const limits = PLANS[plan] || PLANS.free;
+        const limit = (limits as any)[limitField] || 0;
+
+        const now = new Date();
+        const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
+        let needsReset = false;
+        
+        if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+          needsReset = true;
+          usage = 0;
+        }
+
+        if (usage >= limit) {
+          throw new Error(`Limite atingido para o seu plano. Faça upgrade para continuar.`);
+        }
+
+        const updateData: any = {
+          [usageField]: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp()
+        };
+
+        if (needsReset) {
+          updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
+          updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
+          updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
+          updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
+          updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
+          updateData.lastUsageReset = FieldValue.serverTimestamp();
+        }
+
+        transaction.update(userRef, updateData);
+      });
+    } catch (transactionErr: any) {
+      if (transactionErr.message?.includes('Limite atingido')) {
+        return res.status(403).json({ error: transactionErr.message });
       }
-
-      if (usage >= limit) {
-        throw new Error(`Limite atingido para o seu plano. Faça upgrade para continuar.`);
-      }
-
-      const updateData: any = {
-        [usageField]: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp()
-      };
-
-      if (needsReset) {
-        updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
-        updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
-        updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
-        updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
-        updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
-        updateData.lastUsageReset = FieldValue.serverTimestamp();
-      }
-
-      transaction.update(userRef, updateData);
-    });
-  } catch (transactionErr: any) {
-    if (transactionErr.message.includes('Limite atingido')) {
-      return res.status(403).json({ error: transactionErr.message });
+      console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr.message || transactionErr);
     }
-    console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr.message || transactionErr);
   }
 
   try {
@@ -159,6 +174,6 @@ export async function handleAiRequestServerless(
     if (error.status === 429 || error.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || error.status === 503 || errorMsg.includes('503')) {
       return res.status(error.status || 429).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
     }
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: error.message || String(error) });
   }
 }

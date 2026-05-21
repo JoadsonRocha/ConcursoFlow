@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     console.error("Vercel top-level error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Erro interno no servidor', details: error.message });
+      res.status(500).json({ error: 'Erro interno no servidor', details: String(error.message || error) });
     }
   }
 }
