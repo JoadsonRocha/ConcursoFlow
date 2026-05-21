@@ -61,20 +61,22 @@ export function useContestStats(contest: Contest | null) {
     const isSpecific = (s: Subject) => {
       const cat = (s.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const name = (s.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (cat.includes('especific')) return true;
+      const fullText = cat + ' ' + name;
+      if (fullText.includes('especific')) return true;
       const terms = [
         'tecnico', 'foco', 'modulo 2', 'modulo ii', 
         'parte 2', 'parte ii', 'conhecimentos e', 'especializad', 'profission', 'mod 2',
         'eixo tematico 2', 'eixo 2'
       ];
-      return terms.some(term => cat.includes(term) || name.includes(term));
+      return terms.some(term => fullText.includes(term));
     };
 
     const isLaw = (s: Subject) => {
       const cat = (s.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const name = (s.name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const fullText = cat + ' ' + name;
       const lawTerms = ['direito', 'lei', 'legislaca', 'juridico', 'normas', 'constit']
-      return lawTerms.some(term => cat.includes(term) || name.includes(term));
+      return lawTerms.some(term => fullText.includes(term));
     };
 
     const specificProgressProps = calculateCategoryProgress(subs.filter(s => isSpecific(s)));

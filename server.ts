@@ -192,14 +192,21 @@ async function startServer() {
       app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
     }
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
+    // Do not listen if running in a Serverless environment like Vercel
+    if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    }
+
+    return app;
   } catch (error) {
     console.error('❌ Critical error starting server:', error);
     process.exit(1);
   }
 }
 
-startServer();
+// Start the server and optionally export it for Serverless environments
+const appPromise = startServer();
+export default appPromise;
 

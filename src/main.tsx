@@ -5,6 +5,15 @@ import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
+// Check and remove old service workers to clear aggressive caching
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister()
+    } 
+  });
+}
+
 import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 

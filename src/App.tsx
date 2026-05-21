@@ -177,42 +177,8 @@ export default function App() {
     const contestsRef = collection(db, 'users', user.uid, 'contests');
     const q = query(contestsRef);
     
-    // Migration Logic
-    if (!migrated) {
-      const runMigration = async () => {
-        try {
-          const potentialKeys = ['contests', 'stratis_contests', 'strat_contests'];
-          for (const key of potentialKeys) {
-            const localStr = localStorage.getItem(key);
-            if (localStr) {
-              const localData = JSON.parse(localStr);
-              if (Array.isArray(localData) && localData.length > 0) {
-                let allSuccess = true;
-                for (const c of localData) {
-                  if (!c.id) continue;
-                  try {
-                    const docRef = doc(db, 'users', user.uid, 'contests', c.id);
-                    await setDoc(docRef, { ...c, ownerId: user.uid, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
-                  } catch (e) {
-                    console.error("Failed to migrate contest", c.id, e);
-                    allSuccess = false;
-                  }
-                }
-                if (allSuccess) {
-                  localStorage.removeItem(key);
-                }
-              } else {
-                 localStorage.removeItem(key);
-              }
-            }
-          }
-        } catch (e) {
-          console.error("Migration error:", e);
-        }
-        setMigrated(true);
-      };
-      runMigration();
-    }
+    // Migration logic removed to prevent ghost data for new users sharing browsers
+    setMigrated(true);
 
     const sanitizeSubjects = (subjects: any[]) => {
       return (subjects || []).map((s: any) => ({
