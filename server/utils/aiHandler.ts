@@ -9,8 +9,12 @@ import * as path from 'path';
 // Firebase initialization for serverless environments
 export function initFirebase() {
   let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
-    serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
+  try {
+    if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
+      serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
+    }
+  } catch (e) {
+    console.warn("Could not read service_account.json", e);
   }
   const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
 

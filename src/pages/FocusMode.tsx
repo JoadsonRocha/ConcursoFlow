@@ -156,6 +156,42 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
     };
   }, [isActive, timeLeft, mode, duration, soundEnabled]);
 
+  // Keep screen awake while active
+  useEffect(() => {
+    let wakeLock: any = null;
+
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator && isActive) {
+        try {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+        } catch (err) {
+          console.error(`Wake Lock error: ${err}`);
+        }
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLock !== null) {
+        try {
+          await wakeLock.release();
+          wakeLock = null;
+        } catch (err) {
+          console.error(`Wake Lock release error: ${err}`);
+        }
+      }
+    };
+
+    if (isActive) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+
+    return () => {
+      releaseWakeLock();
+    };
+  }, [isActive]);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});

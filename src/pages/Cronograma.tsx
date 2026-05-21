@@ -295,7 +295,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
            <div className="flex gap-2">
              <button 
-              onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: undefined }) }}
+              onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: [] }) }}
               className="p-3.5 bg-red-500/5 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
               title="Reiniciar Cronograma"
              >

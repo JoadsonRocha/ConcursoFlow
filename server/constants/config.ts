@@ -1,11 +1,25 @@
 // Firebase Configuration for Server-side (Admin SDK)
 // In AI Studio, we use the DATABASE_ID from the provisioned project.
 
-import firebaseConfig from '../../firebase-applet-config.json';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// The project used for Auth verification (must match the client's Firebase config)
-export const AUTH_PROJECT_ID = firebaseConfig.projectId;
+let projectId = '';
+let firestoreDatabaseId = '';
 
-// Use the project ID from the configuration for the Admin SDK
-export const DB_PROJECT_ID = firebaseConfig.projectId;
-export const DATABASE_ID = firebaseConfig.firestoreDatabaseId || '';
+try {
+  const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    projectId = config.projectId || '';
+    firestoreDatabaseId = config.firestoreDatabaseId || '';
+  }
+} catch (e) {
+  console.warn('⚠️ Could not load firebase-applet-config.json', e);
+}
+
+// Fallbacks
+export const AUTH_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || projectId || 'gen-lang-client-0925764429';
+export const DB_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID || projectId || 'gen-lang-client-0925764429';
+export const DATABASE_ID = process.env.VITE_FIREBASE_DATABASE_ID || firestoreDatabaseId || 'ai-studio-ef378564-20e2-44ad-ad66-d81251638619';
+

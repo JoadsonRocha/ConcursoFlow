@@ -98,6 +98,9 @@ export default function Auth() {
       let msg = 'Erro ao entrar com Google';
       if (err.code === 'auth/popup-closed-by-user') msg = 'O login foi cancelado pelo usuário. Se o popup não abrir, tente acessar por uma nova aba.';
       if (err.code === 'auth/cancelled-popup-request') msg = 'O login foi cancelado devido a múltiplas requisições ou bloqueio de pop-up.';
+      if (err.message?.includes('Cross-Origin-Opener-Policy') || err.message?.includes('window.closed')) {
+        msg = 'Seu navegador bloqueou o pop-up do Google. Por favor, abra o aplicativo em uma nova guia para fazer login.';
+      }
       setError(msg);
     } finally {
       setLoading(false);
