@@ -7,6 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Firebase initialization for serverless environments
+let hasServiceAccount = false;
+
 export function initFirebase() {
   let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   try {
@@ -16,17 +18,13 @@ export function initFirebase() {
   } catch (e) {
     console.warn("Could not read service_account.json", e);
   }
-  const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
+  hasServiceAccount = !!(serviceAccountJson && !serviceAccountJson.includes('...'));
 
-  const defaultApp = admin.apps.find(app => app.name === '[DEFAULT]');
-  if (!defaultApp) {
+  if (admin.apps.length === 0) {
     try {
       if (hasServiceAccount) {
         try {
           const sa = JSON.parse(serviceAccountJson as string);
-          if (sa.private_key) {
-            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-          }
           admin.initializeApp({
             credential: admin.credential.cert(sa),
             projectId: sa.project_id
@@ -43,23 +41,17 @@ export function initFirebase() {
     }
   }
 
-  const authApp = admin.apps.find(app => app.name === 'auth');
-  if (!authApp) {
-    try {
-      const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
-      if (hasServiceAccount) {
-        try {
-          const sa = JSON.parse(serviceAccountJson as string);
-          if (sa.private_key) {
-            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-          }
-          authConfig.credential = admin.credential.cert(sa);
-        } catch (e) {}
-      }
-      admin.initializeApp(authConfig, 'auth');
-    } catch (err) {
-      console.error('❌ Firebase Admin Utils: Erro na inicialização do app auth:', err);
+  try {
+    const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+    if (hasServiceAccount) {
+      try {
+        const sa = JSON.parse(serviceAccountJson as string);
+        authConfig.credential = admin.credential.cert(sa);
+      } catch (e) {}
     }
+    admin.initializeApp(authConfig, 'auth');
+  } catch (err) {
+    // Expected to throw if 'auth' app already exists
   }
 }
 
@@ -118,10 +110,14 @@ export async function handleAiRequestServerless(
   const userId = user.uid;
 
   let db: any = null;
-  try {
-    db = getDb();
-  } catch (error) {
-    console.warn("Could not get db for tracking, skipping tracking:", error);
+  if (hasServiceAccount) {
+    try {
+      db = getDb();
+    } catch (error) {
+      console.warn("Could not get db for tracking, skipping tracking:", error);
+    }
+  } else {
+    console.warn("No service account configured. Skipping usage tracking on serverless endpoint.");
   }
 
   if (db) {
