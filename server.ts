@@ -13,30 +13,20 @@ import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/
 dotenv.config();
 
 // Initialize Firebase Admin
+let adminApp: admin.app.App | null = null;
+let authApp: admin.app.App | null = null;
+
 let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
   serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
 }
-
-let sa: any = null;
-let hasServiceAccount = false;
-if (serviceAccountJson && !serviceAccountJson.includes('...')) {
-  try {
-    sa = JSON.parse(serviceAccountJson);
-    if (sa && sa.private_key) {
-      sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-    }
-    hasServiceAccount = true;
-  } catch (parseErr) {
-    console.error('❌ Firebase Admin: Invalid Service Account JSON:', parseErr);
-  }
-}
+const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
 
 // Primary Admin App (for Firestore permissions)
-let adminApp = admin.apps.find(app => app?.name === '[DEFAULT]');
-if (!adminApp) {
+if (admin.apps.length === 0) {
   try {
-    if (hasServiceAccount && sa) {
+    if (hasServiceAccount) {
+      const sa = JSON.parse(serviceAccountJson);
       adminApp = admin.initializeApp({
         credential: admin.credential.cert(sa),
         projectId: sa.project_id
@@ -54,18 +44,16 @@ if (!adminApp) {
 }
 
 // Auth-specific App (to avoid audience mismatch if environment project != auth project)
-let authApp = admin.apps.find(app => app?.name === 'auth');
-if (!authApp) {
-  try {
-    const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
-    if (hasServiceAccount && sa) {
-      authConfig.credential = admin.credential.cert(sa);
-    }
-    authApp = admin.initializeApp(authConfig, 'auth');
-    console.log('✅ Firebase Auth App: Inicializado para o projeto:', AUTH_PROJECT_ID);
-  } catch (err) {
-    console.error('❌ Firebase Auth App: Erro na inicialização:', err);
+try {
+  const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+  if (hasServiceAccount) {
+    const sa = JSON.parse(serviceAccountJson as string);
+    authConfig.credential = admin.credential.cert(sa);
   }
+  authApp = admin.initializeApp(authConfig, 'auth');
+  console.log('✅ Firebase Auth App: Inicializado para o projeto:', AUTH_PROJECT_ID);
+} catch (err) {
+  console.warn('⚠️ Firebase Auth App: Já inicializado ou erro:', err);
 }
 
 const app = express();
