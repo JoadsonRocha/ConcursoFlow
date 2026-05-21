@@ -18,40 +18,55 @@ export function initFirebase() {
   } catch (e) {
     console.warn("Could not read service_account.json", e);
   }
-  hasServiceAccount = !!(serviceAccountJson && !serviceAccountJson.includes('...'));
 
-  if (admin.apps.length === 0) {
+  let sa: any = null;
+  if (serviceAccountJson && !serviceAccountJson.includes('...')) {
     try {
-      if (hasServiceAccount) {
-        try {
-          const sa = JSON.parse(serviceAccountJson as string);
-          admin.initializeApp({
-            credential: admin.credential.cert(sa),
-            projectId: sa.project_id
-          });
-        } catch (parseErr) {
-          console.error('Invalid Service Account JSON:', parseErr);
-          admin.initializeApp({ projectId: DB_PROJECT_ID });
-        }
+      sa = JSON.parse(serviceAccountJson);
+      if (sa && sa.private_key) {
+        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+      }
+      hasServiceAccount = true;
+    } catch (parseErr) {
+      console.error('Invalid Service Account JSON:', parseErr);
+      hasServiceAccount = false;
+    }
+  } else {
+    hasServiceAccount = false;
+  }
+
+  // Initialize default app if not already present
+  const defaultApp = admin.apps.find(app => app?.name === '[DEFAULT]');
+  if (!defaultApp) {
+    try {
+      if (hasServiceAccount && sa) {
+        admin.initializeApp({
+          credential: admin.credential.cert(sa),
+          projectId: sa.project_id
+        });
+        console.log('✅ Firebase Admin: Default app initialized with Service Account.');
       } else {
         admin.initializeApp({ projectId: DB_PROJECT_ID });
+        console.log('✅ Firebase Admin: Default app initialized with project ID:', DB_PROJECT_ID);
       }
     } catch (err) {
-      console.error('❌ Firebase Admin Utils: Erro na inicialização:', err);
+      console.error('❌ Firebase Admin: Erro na inicialização do [DEFAULT] app:', err);
     }
   }
 
-  try {
-    const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
-    if (hasServiceAccount) {
-      try {
-        const sa = JSON.parse(serviceAccountJson as string);
+  // Initialize auth app if not already present
+  const authApp = admin.apps.find(app => app?.name === 'auth');
+  if (!authApp) {
+    try {
+      const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+      if (hasServiceAccount && sa) {
         authConfig.credential = admin.credential.cert(sa);
-      } catch (e) {}
+      }
+      admin.initializeApp(authConfig, 'auth');
+      console.log('✅ Firebase Admin: Auth app initialized.');
+    } catch (err) {
+      console.error('❌ Firebase Admin: Erro na inicialização do auth app:', err);
     }
-    admin.initializeApp(authConfig, 'auth');
-  } catch (err) {
-    // Expected to throw if 'auth' app already exists
   }
 }
 
