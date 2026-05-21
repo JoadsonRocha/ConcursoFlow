@@ -6,7 +6,13 @@ export const generateStudySummary = async (subject: string, topic: string) => {
       method: "POST",
       body: JSON.stringify({ text: `${subject}: ${topic}` }),
     });
-    return data.summary || "Não foi possível gerar o resumo.";
+    if (typeof data === "string") {
+      return data;
+    }
+    if (data && typeof data.summary === "string") {
+      return data.summary;
+    }
+    return data?.summary || "Não foi possível gerar o resumo.";
   } catch (error: any) {
     console.error("Erro ao gerar resumo:", error);
     return error.message || "Erro ao gerar resumo. Tente novamente.";
@@ -27,10 +33,20 @@ export const generateMindMap = async (subject: string) => {
 
 export const generateSVGMap = async (title: string, prompt: string, quantity: number = 3) => {
   try {
-    return await fetchWithAuth("/api/ai/svg-map", {
+    const data = await fetchWithAuth("/api/ai/svg-map", {
       method: "POST",
       body: JSON.stringify({ title, prompt, quantity }),
     });
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray(data.mapSvgs)) {
+      return data.mapSvgs;
+    }
+    if (data && Array.isArray(data.svgs)) {
+      return data.svgs;
+    }
+    return [];
   } catch (error: any) {
     console.error("Erro ao gerar mapas SVG:", error);
     throw error;
@@ -39,10 +55,20 @@ export const generateSVGMap = async (title: string, prompt: string, quantity: nu
 
 export const generateQuizQuestions = async (subject: string, topic: string) => {
   try {
-    return await fetchWithAuth("/api/ai/quiz", {
+    const data = await fetchWithAuth("/api/ai/quiz", {
       method: "POST",
       body: JSON.stringify({ subject, topic }),
     });
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray(data.questions)) {
+      return data.questions;
+    }
+    if (data && Array.isArray(data.quiz)) {
+      return data.quiz;
+    }
+    return [];
   } catch (error: any) {
     console.error("Erro ao gerar questões:", error);
     throw error;
@@ -68,8 +94,9 @@ export const generateSchedule = async (subjectsSummary: string, days: number) =>
       body: JSON.stringify({ subjectsSummary, days }),
     });
     
+    const scheduleArray = Array.isArray(data) ? data : (data.schedule || data.days || []);
     // Add required ID for frontend logic
-    return data.map((day: any) => ({
+    return scheduleArray.map((day: any) => ({
       ...day,
       id: `day-${day.dayNumber}-${Date.now()}`,
       completed: false

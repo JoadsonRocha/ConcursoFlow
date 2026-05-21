@@ -172,6 +172,21 @@ export function useContestStats(contest: Contest | null) {
     const todayStrFull = localNow.toISOString().split('T')[0];
     const todayHistory = historyData.find(h => h.date === todayStrFull);
 
+    // MEPP Active Review Stats
+    const meppReviews = contest.meppReviews || [];
+    const totalMeppReviews = meppReviews.length;
+    const completedMeppReviews = meppReviews.filter(r => r.reviewType === 'completed').length;
+    const pendingMeppReviews = meppReviews.filter(r => r.dueDate <= todayStrFull && r.reviewType !== 'completed').length;
+    const scheduledMeppReviews = meppReviews.filter(r => r.dueDate > todayStrFull && r.reviewType !== 'completed').length;
+    
+    const reviews24h = meppReviews.filter(r => r.reviewType === '24h').length;
+    const reviews7d = meppReviews.filter(r => r.reviewType === '7d').length;
+    const reviews30d = meppReviews.filter(r => r.reviewType === '30d').length;
+
+    const meppComplianceRate = totalMeppReviews > 0 
+      ? Math.round((completedMeppReviews / totalMeppReviews) * 100) 
+      : 0;
+
     return {
       overallProgress,
       totalTopics,
@@ -186,7 +201,16 @@ export function useContestStats(contest: Contest | null) {
       lawProgressProps,
       todayDayNumber,
       todayTask,
-      todayHistory
+      todayHistory,
+      meppReviews,
+      totalMeppReviews,
+      completedMeppReviews,
+      pendingMeppReviews,
+      scheduledMeppReviews,
+      reviews24h,
+      reviews7d,
+      reviews30d,
+      meppComplianceRate
     };
   }, [contest]);
 }

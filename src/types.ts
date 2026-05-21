@@ -30,6 +30,17 @@ export interface ScheduleDay {
   actualQuestions?: number;
 }
 
+export interface MeppReview {
+  id: string;
+  topicName: string;
+  subjectName: string;
+  createdAt: string;
+  stagesCompleted?: string[]; // e.g., ['theory', 'review', 'practice', 'errors']
+  dueDate: string; // ISO String (split('T')[0])
+  reviewType: '24h' | '7d' | '30d' | 'completed';
+  completedAt?: string;
+}
+
 export interface Contest {
   id: string;
   name: string;
@@ -55,6 +66,7 @@ export interface Contest {
   createdAt?: any;
   updatedAt?: any;
   ownerIsCreator?: boolean;
+  meppReviews?: MeppReview[];
 }
 
 export interface UserProgress {

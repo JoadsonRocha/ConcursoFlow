@@ -26,8 +26,16 @@ import {
   Trash2,
   PieChart,
   Users,
-  Timer
+  Timer,
+  Sparkles,
+  Award,
+  AlertTriangle,
+  Bell,
+  CheckSquare,
+  Square,
+  Brain
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -135,6 +143,17 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   const { totalHours, totalQuestions, streak: streakDays, generalProgressProps: generalProgress, specificProgressProps: technicalProgress, overallProgress, todayDayNumber, todayTask, todayHistory } = stats;
 
   const isDefaultContest = !contest || !contest.ownerId;
+
+  // MEPP Method Helper
+  const getTodayISOString = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  };
+
+  const todayStrStr = getTodayISOString();
+  const allReviews = contest?.meppReviews || [];
+  const dueReviewsCount = allReviews.filter(r => r.dueDate <= todayStrStr && r.reviewType !== 'completed').length;
 
   useEffect(() => {
     async function fetchFeatured() {
@@ -494,17 +513,22 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           { label: 'Sequência', value: `${streakDays} dias`, icon: Target, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/20' },
           { label: 'Horas', value: `${totalHours}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
           { label: 'Questões', value: totalQuestions, icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
-        ].map((metric, i) => (
-          <div key={i} className="rise-card p-2 md:p-3 flex items-center gap-2 md:gap-3 border border-border bg-white shadow-sm hover:border-primary/30 transition-all">
-            <div className={cn("w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 border", metric.color, metric.bg, metric.border)}>
-              <metric.icon className="w-3.5 h-3.5 md:w-5 md:h-5" />
+        ].map((metric, i) => {
+          return (
+            <div 
+              key={i} 
+              className="rise-card p-2 md:p-3 flex items-center gap-2 md:gap-3 border border-border bg-white shadow-sm hover:border-primary/30 transition-all cursor-pointer"
+            >
+              <div className={cn("w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 border", metric.color, metric.bg, metric.border)}>
+                <metric.icon className="w-3.5 h-3.5 md:w-5 md:h-5" />
+              </div>
+              <div className="overflow-hidden">
+                 <div className="text-[9px] md:text-[10px] font-bold text-text-sub uppercase tracking-widest">{metric.label}</div>
+                 <div className="text-xs md:text-base font-display font-bold text-text-main leading-tight">{metric.value}</div>
+              </div>
             </div>
-            <div className="overflow-hidden">
-               <div className="text-[9px] md:text-[10px] font-bold text-text-sub uppercase tracking-widest">{metric.label}</div>
-               <div className="text-xs md:text-base font-display font-bold text-text-main leading-tight">{metric.value}</div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
 

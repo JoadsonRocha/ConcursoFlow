@@ -11,7 +11,13 @@ export async function generateFlashcards(topic: string, count: number = 5): Prom
       method: "POST",
       body: JSON.stringify({ topic, count }),
     });
-    return data.flashcards;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray(data.flashcards)) {
+      return data.flashcards;
+    }
+    return [];
   } catch (error: any) {
     console.error("Erro na geração de flashcards por IA:", error);
     throw error;

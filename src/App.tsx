@@ -18,7 +18,10 @@ import {
   Crown,
   AlertTriangle,
   X,
-  Timer
+  Timer,
+  Award,
+  Bell,
+  Brain
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -26,6 +29,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
 import Subjects from './pages/Subjects';
 import Microlearning from './pages/Microlearning';
+import MentorMepp from './pages/MentorMepp';
 import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
@@ -81,6 +85,18 @@ export default function App() {
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMeppNotificationOpen, setIsMeppNotificationOpen] = useState(false);
+
+  // MEPP Notification logic
+  const getTodayISOString = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  };
+  const todayStrStr = getTodayISOString();
+  const allReviews = currentContest?.meppReviews || [];
+  const dueMeppReviews = allReviews.filter(r => r.dueDate <= todayStrStr && r.reviewType !== 'completed');
+  const dueReviewsCount = dueMeppReviews.length;
   const [migrated, setMigrated] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [runTour, setRunTour] = useState(false);
@@ -567,6 +583,7 @@ export default function App() {
               <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Mentor MEPP" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
@@ -638,6 +655,83 @@ export default function App() {
                   Conectado 
                 </div>
               </div>
+
+              {/* MEPP Notification Icon (Dropdown/Badge) inside the top bar */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setIsMeppNotificationOpen(!isMeppNotificationOpen);
+                    setIsUserMenuOpen(false); // Close user menu if open
+                  }}
+                  className="p-2 bg-slate-50 border border-border hover:bg-slate-100 rounded-xl transition-all relative text-text-sub hover:text-indigo-600 flex items-center justify-center cursor-pointer"
+                  title="Notificações do Mentor MEPP"
+                >
+                  <Bell className={cn("w-5 h-5", dueReviewsCount > 0 ? "text-indigo-600" : "")} />
+                  {dueReviewsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4.5 h-4.5 bg-red-500 border border-white text-[8px] font-black text-white rounded-full flex items-center justify-center animate-bounce">
+                      {dueReviewsCount}
+                    </span>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {isMeppNotificationOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[90]" onClick={() => setIsMeppNotificationOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-3 w-80 bg-white border border-border rounded-2xl shadow-xl p-5 z-[100] text-left"
+                      >
+                        <div className="flex items-center gap-2 pb-3 border-b border-border mb-3">
+                          <Award className="w-4 h-4 text-indigo-500 animate-pulse" />
+                          <h4 className="text-xs font-black text-text-main uppercase tracking-wider">
+                            Mentor MEPP
+                          </h4>
+                        </div>
+
+                        {dueReviewsCount > 0 ? (
+                          <div className="space-y-3">
+                            <h5 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1">
+                              ⚠️ Curva do Esquecimento Ativada!
+                            </h5>
+                            <p className="text-xs font-semibold text-text-sub leading-relaxed">
+                              Você tem <strong>{dueReviewsCount} {dueReviewsCount === 1 ? 'revisão de matéria' : 'revisões de matérias'}</strong> pendentes ou programadas para hoje. O segredo da aprovação inteligente é revisar ativamente antes de iniciar um bloco de teoria nova.
+                            </p>
+                            <div className="pt-2 flex gap-2">
+                              <Link
+                                to="/mepp"
+                                onClick={() => setIsMeppNotificationOpen(false)}
+                                className="flex-1 text-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md shadow-indigo-600/10"
+                              >
+                                Ver Revisões
+                              </Link>
+                              <Link
+                                to="/microaprendizado"
+                                onClick={() => setIsMeppNotificationOpen(false)}
+                                className="flex-1 text-center py-2 bg-slate-100 hover:bg-slate-200 text-text-main rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                              >
+                                Praticar
+                              </Link>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 py-2 text-center text-text-sub">
+                            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center mx-auto mb-2 font-bold text-sm">
+                              ✓
+                            </div>
+                            <p className="text-[11px] font-semibold">
+                              Tudo em dia com o Mentor MEPP! Nenhuma revisão programada para hoje. Continue firme nos seus estudos teóricos!
+                            </p>
+                          </div>
+                        )}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <div className="relative">
                 <button 
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -732,6 +826,7 @@ export default function App() {
               <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/mepp" element={currentContest ? <MentorMepp contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />

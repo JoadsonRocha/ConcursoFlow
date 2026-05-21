@@ -57,7 +57,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -196,7 +196,7 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(distPath));
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 
-  if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+  if (process.env.VERCEL !== '1' && (process.env.NODE_ENV as string) !== 'test') {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
