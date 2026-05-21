@@ -20,7 +20,12 @@ export default defineConfig(({mode}) => {
           name: 'Stratis Planner',
           short_name: 'Stratis',
           description: 'Inteligência para concursos',
+          start_url: '/',
+          display: 'standalone',
+          background_color: '#ffffff',
           theme_color: '#3b82f6',
+          lang: 'pt-BR',
+          scope: '/',
           icons: [
             {
               src: '/logo.png',
