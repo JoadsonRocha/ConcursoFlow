@@ -39,9 +39,10 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getLocalDateStr = (d: Date) => {
-    const dt = new Date(d);
-    dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-    return dt.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Auto-select standard task on mount if not selected
@@ -193,9 +194,9 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text-main overflow-hidden relative flex flex-col">
+    <div className="h-[100dvh] w-full bg-bg text-text-main overflow-hidden relative flex flex-col">
       {/* Abstract Background */}
-      <div className={cn("absolute inset-0 bg-gradient-to-b transition-colors duration-1000", getGradient(mode))} />
+      <div className={cn("absolute inset-0 bg-gradient-to-b transition-colors duration-1000 select-none pointer-events-none", getGradient(mode))} />
       
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between p-6">
@@ -238,8 +239,8 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col md:flex-row items-center justify-center px-6 py-6 overflow-y-auto">
-        <div className="w-full max-w-5xl flex flex-col md:flex-row gap-8 lg:gap-16 items-center md:items-start justify-center">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full max-w-7xl mx-auto overflow-y-auto hide-scrollbar">
+        <div className="w-full h-full flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 items-center md:items-start justify-center py-4">
           
           {/* Left Column: Timer */}
           <div className="flex-1 flex flex-col items-center w-full max-w-md">

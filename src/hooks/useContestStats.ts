@@ -118,18 +118,20 @@ export function useContestStats(contest: Contest | null) {
     let streak = 0;
     const dObj = new Date();
     while (true) {
-      const localD = new Date(dObj);
-      localD.setMinutes(localD.getMinutes() - localD.getTimezoneOffset());
-      const dateStr = localD.toISOString().split('T')[0];
+      const year = dObj.getFullYear();
+      const month = String(dObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dObj.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       
       if (historyData.some(h => h.date === dateStr && (h.hours > 0 || h.questions > 0))) {
         streak++;
         dObj.setDate(dObj.getDate() - 1);
       } else {
         const todayDObj = new Date();
-        const todayLocalD = new Date(todayDObj);
-        todayLocalD.setMinutes(todayLocalD.getMinutes() - todayLocalD.getTimezoneOffset());
-        const todayStr = todayLocalD.toISOString().split('T')[0];
+        const tYear = todayDObj.getFullYear();
+        const tMonth = String(todayDObj.getMonth() + 1).padStart(2, '0');
+        const tDay = String(todayDObj.getDate()).padStart(2, '0');
+        const todayStr = `${tYear}-${tMonth}-${tDay}`;
 
         if (streak === 0 && dateStr === todayStr) {
            dObj.setDate(dObj.getDate() - 1);

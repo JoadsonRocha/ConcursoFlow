@@ -189,9 +189,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
   // Quick Metrics Calculations
   const getLocalDateStr = (d: Date) => {
-    const dt = new Date(d);
-    dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-    return dt.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const [showSimilarityModal, setShowSimilarityModal] = useState(false);
