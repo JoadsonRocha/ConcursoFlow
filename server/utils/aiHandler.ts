@@ -18,11 +18,15 @@ export function initFirebase() {
   }
   const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
 
-  if (admin.apps.length === 0) {
+  const defaultApp = admin.apps.find(app => app.name === '[DEFAULT]');
+  if (!defaultApp) {
     try {
       if (hasServiceAccount) {
         try {
           const sa = JSON.parse(serviceAccountJson as string);
+          if (sa.private_key) {
+            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+          }
           admin.initializeApp({
             credential: admin.credential.cert(sa),
             projectId: sa.project_id
@@ -39,17 +43,23 @@ export function initFirebase() {
     }
   }
 
-  try {
-    const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
-    if (hasServiceAccount) {
-      try {
-        const sa = JSON.parse(serviceAccountJson as string);
-        authConfig.credential = admin.credential.cert(sa);
-      } catch (e) {}
+  const authApp = admin.apps.find(app => app.name === 'auth');
+  if (!authApp) {
+    try {
+      const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+      if (hasServiceAccount) {
+        try {
+          const sa = JSON.parse(serviceAccountJson as string);
+          if (sa.private_key) {
+            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+          }
+          authConfig.credential = admin.credential.cert(sa);
+        } catch (e) {}
+      }
+      admin.initializeApp(authConfig, 'auth');
+    } catch (err) {
+      console.error('❌ Firebase Admin Utils: Erro na inicialização do app auth:', err);
     }
-    admin.initializeApp(authConfig, 'auth');
-  } catch (err) {
-    // Expected to throw if 'auth' app already exists
   }
 }
 

@@ -26,7 +26,10 @@ const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('..
 if (admin.apps.length === 0) {
   try {
     if (hasServiceAccount) {
-      const sa = JSON.parse(serviceAccountJson);
+      const sa = JSON.parse(serviceAccountJson as string);
+      if (sa.private_key) {
+        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+      }
       adminApp = admin.initializeApp({
         credential: admin.credential.cert(sa),
         projectId: sa.project_id
@@ -48,6 +51,9 @@ try {
   const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
   if (hasServiceAccount) {
     const sa = JSON.parse(serviceAccountJson as string);
+    if (sa.private_key) {
+      sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+    }
     authConfig.credential = admin.credential.cert(sa);
   }
   authApp = admin.initializeApp(authConfig, 'auth');
