@@ -40,7 +40,8 @@ export async function generateFlashcards(topic: string, count: number = 5) {
     },
   });
 
-  return JSON.parse(response.text || "[]");
+  const text = response.text || "[]";
+  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 }
 
 export async function generateSummary(text: string) {
@@ -91,7 +92,8 @@ export async function generateMindMap(subject: string) {
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  const text = response.text || "{}";
+  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 }
 
 export async function generateQuizQuestions(topic: string, subject: string) {
@@ -120,7 +122,8 @@ export async function generateQuizQuestions(topic: string, subject: string) {
     }
   });
 
-  return JSON.parse(response.text || "[]");
+  const text = response.text || "[]";
+  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 }
 
 export async function parseEdital(rawText: string) {
@@ -146,7 +149,8 @@ export async function parseEdital(rawText: string) {
     }
   });
 
-  return JSON.parse(response.text || "{}");
+  const text = response.text || "{}";
+  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 }
 
 export async function generateSchedule(subjectsSummary: string, days: number) {
@@ -180,7 +184,8 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
     }
   });
 
-  return JSON.parse(response.text || "[]");
+  const text = response.text || "[]";
+  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
 }
 
 export async function generateSVGMap(title: string, prompt: string, quantity: number = 3) {

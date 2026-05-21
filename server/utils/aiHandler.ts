@@ -170,10 +170,17 @@ export async function handleAiRequestServerless(
     res.status(200).json(result);
   } catch (error: any) {
     console.error(`AI Route Error (${usageField}):`, error);
-    const errorMsg = String(error.message || '');
-    if (error.status === 429 || error.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || error.status === 503 || errorMsg.includes('503')) {
-      return res.status(error.status || 429).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
+    try {
+      const errorMsg = String(error?.message || error);
+      const statusCode = typeof error?.status === 'number' && error.status >= 100 && error.status <= 599 ? error.status : 500;
+      
+      if (statusCode === 429 || error?.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || statusCode === 503 || errorMsg.includes('503')) {
+        return res.status(statusCode === 500 ? 429 : statusCode).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
+      }
+      res.status(statusCode === 500 ? 500 : statusCode).json({ error: errorMsg, rawError: String(error) });
+    } catch (fallbackError) {
+      console.error("Critical fallback route error", fallbackError);
+      res.status(500).json({ error: "Internal server crash", details: String(fallbackError) });
     }
-    res.status(400).json({ error: error.message || String(error) });
   }
 }
