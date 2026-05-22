@@ -45,7 +45,8 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
   const handleAiAsk = (e: React.MouseEvent, subjectName: string, topicId: string, topicName: string) => {
     e.stopPropagation();
     
-    // Check usage limits
+    // Check usage limits bypassed for PRO
+    /* 
     if (isPro) {
       if ((profile?.summaryUsage || 0) >= 50) {
         setProFeatureName('Limite de 50 Resumos atingido');
@@ -60,6 +61,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
         return;
       }
     }
+    */
 
     setSelectedTopic({ subId: subjectName, topicId, topicName }); // abusing subId to store name for UI
     setAiSummary(null);

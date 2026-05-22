@@ -30,6 +30,7 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
     if (!front || !back || !auth.currentUser) return;
     
     // Limit check
+    /* Bypassed for PRO
     if (isPro) {
       if ((profile?.flashcardUsage || 0) >= 300) {
         setShowProModal(true);
@@ -41,6 +42,7 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
         return;
       }
     }
+    */
 
     setLoading(true);
     try {
@@ -97,10 +99,12 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
     const limit = isPro ? 300 : 20;
     const currentUsage = isPro ? (profile?.flashcardUsage || 0) : currentCount;
 
+    /* Bypassed for PRO 
     if (currentUsage + generatedCards.length > limit) {
       setShowProModal(true);
       return;
     }
+    */
 
     setLoading(true);
     try {

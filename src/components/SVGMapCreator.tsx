@@ -23,6 +23,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   };
 
   const generateWithAI = async () => {
+    /* Bypassed for PRO unlimited
     if (isPro) {
       if ((profile?.mindmapUsage || 0) >= 50) {
         setShowProModal(true);
@@ -34,6 +35,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
         return;
       }
     }
+    */
     if (!prompt.trim() || !title.trim() || loading) {
       if (!title.trim()) toast.error('Dê um título ao seu mapa mental.');
       else if (!prompt.trim()) toast.error('Descreva o que deseja no mapa mental.');
@@ -53,6 +55,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
 
   const handleSave = async () => {
     // Re-check just in case
+    /* Bypassed for PRO
     if (isPro) {
       if ((profile?.mindmapUsage || 0) >= 50) {
         setShowProModal(true);
@@ -62,6 +65,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
       setShowProModal(true);
       return;
     }
+    */
     saveMap(svgs, title);
     
     // Update usage
