@@ -33,7 +33,8 @@ import {
   Bell,
   CheckSquare,
   Square,
-  Brain
+  Brain,
+  Play
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
@@ -313,6 +314,37 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       });
     }
 
+    // Auto-mark MEPP "Estudo Teórico Ativo" ('theory' stage) as completed
+    let newMeppReviews = contest.meppReviews ? [...contest.meppReviews] : [];
+    if (todayTask) {
+      const topicName = todayTask.specificTopic || todayTask.generalTopic || "Estudo do Dia";
+      const subjectName = contest.subjects.find(sub => 
+        sub.topics?.some(t => t.name === todayTask.specificTopic)
+      )?.name || "Geral";
+
+      const existingReviewIdx = newMeppReviews.findIndex(r => r.topicName === topicName && r.reviewType !== 'completed');
+      
+      if (existingReviewIdx === -1) {
+        newMeppReviews.push({
+          id: `mepp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          topicName,
+          subjectName,
+          createdAt: new Date().toISOString(),
+          stagesCompleted: ['theory'],
+          dueDate: todayStrStr,
+          reviewType: '24h' as const
+        });
+      } else {
+        const stages = newMeppReviews[existingReviewIdx].stagesCompleted || [];
+        if (!stages.includes('theory')) {
+          newMeppReviews[existingReviewIdx] = {
+            ...newMeppReviews[existingReviewIdx],
+            stagesCompleted: [...stages, 'theory']
+          };
+        }
+      }
+    }
+
     const today = getLocalDateStr(new Date());
     let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
     
@@ -337,7 +369,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       ...contest, 
       schedule: newSchedule,
       subjects: newSubjects,
-      dailyHistory: newHistory 
+      dailyHistory: newHistory,
+      meppReviews: newMeppReviews
     });
     
     setShowLogModal(false);
@@ -471,8 +504,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       {/* Main Countdown Card */}
       <div className="rise-card bg-primary text-white p-6 md:p-8 relative overflow-hidden shadow-lg border-none rounded-2xl group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary/90 transition-transform duration-700 group-hover:scale-105"></div>
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/20 blur-3xl rounded-full"></div>
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full"></div>
+        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 rounded-full"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
           <div className="text-center md:text-left space-y-3 md:flex-1 w-full">
@@ -593,149 +626,272 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       </div>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Today's Task */}
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
-             <div className="w-1 h-3 bg-primary rounded-full"></div>
-             Meta de Hoje {todayTask ? `- Dia ${todayTask.dayNumber}` : ''}
-          </h3>
-          <div className="rise-card p-4 md:p-6 flex flex-col items-center text-center space-y-5 bg-gradient-to-b from-white to-slate-50 border border-border shadow-sm">
-            {todayTask && !todayTask.completed ? (
-              <div className="space-y-4 w-full">
-                <div className="space-y-3 w-full">
-                  <div className="flex items-center justify-between pointer-events-auto">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-text-sub">Planejamento para agora</p>
-                    <button
-                      onClick={() => navigate('/foco')}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors border border-primary/20"
-                    >
-                      <Timer className="w-3.5 h-3.5" />
-                      Modo Foco
-                    </button>
+      {/* Priority Subjects Section (Focar Mais - Disciplinas do Pareto) */}
+      <div className="space-y-3">
+        <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
+           <div className="w-1 h-3 bg-secondary rounded-full"></div>
+           Focar Mais: Disciplinas Altamente Incidentes (Análise de Pareto)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {prioritySubjects.map((sub, idx) => {
+            const subProgress = stats.subjectProgress.find(s => s.name === sub.name);
+            const percent = subProgress ? subProgress.percentage : 0;
+            return (
+              <Link key={idx} to="/materias" className="rise-card p-4 flex items-center justify-between border border-border bg-white hover:border-secondary/30 transition-all">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className={cn(
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border border-border",
+                    sub.incidence === 'Muito Alta' ? "bg-red-500/10 text-red-500" : "bg-secondary/10 text-secondary"
+                  )}>
+                    <TrendingUp className="w-4 h-4" />
                   </div>
+                  <div className="overflow-hidden">
+                    <div className="text-[8px] font-bold text-text-sub uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                      {sub.incidence} <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span> {sub.category}
+                    </div>
+                    <div className="text-xs font-bold text-text-main whitespace-normal break-words tracking-tight leading-tight line-clamp-1">{sub.name}</div>
+                  </div>
+                </div>
+                <div className="text-right ml-3 shrink-0">
+                  <div className="text-sm md:text-base font-display font-bold text-text-main leading-none">{percent}%</div>
+                  <div className="text-[8px] font-black text-text-sub uppercase tracking-widest mt-0.5">Domínio</div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+
+      {/* Mentor MPP - Fluxo de Estudo Inteligente (Sessão de Estudo Ativo) */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1 pt-2">
+           <h3 className="text-xs font-display text-text-main uppercase font-bold tracking-wider flex items-center gap-2">
+              <Award className="w-5 h-5 text-indigo-500 animate-pulse" />
+              Sessão de Estudo
+           </h3>
+           <span className="text-[9px] font-black text-indigo-650 uppercase tracking-widest bg-indigo-50/75 px-2.5 py-1 rounded-full self-start">
+             PASSO 1: TEORIA & PRÁTICA INTERATIVA
+           </span>
+        </div>
+
+        {/* PASSO 1: SESSÃO DE ESTUDO (Destaque Foco) */}
+        <div className="rise-card bg-white border-2 border-indigo-100 rounded-3xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-indigo-400 transition-all">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/60 rounded-full group-hover:bg-indigo-100/60 transition-all" />
+          
+          <div className="space-y-4 relative z-10 w-full">
+            <div className="flex items-center justify-between border-b border-indigo-50/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                  1
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Sessão de Estudo Teórico</h4>
+                  <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest pl-0.5">Foco Máximo</p>
+                </div>
+              </div>
+              <span className="text-[8px] font-black bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                AGENDADO
+              </span>
+            </div>
+
+            {/* Session Core Info */}
+            {todayTask && !todayTask.completed ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+                <div className="space-y-3">
+                  <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-indigo-500" /> Meta do Dia no Ciclo (Dia {todayTask.dayNumber})
+                  </span>
                   
-                  <div className="space-y-2 text-left w-full">
+                  <div className="space-y-2">
                     {todayTask.generalTopic && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 p-3 bg-white rounded-xl border border-border/60 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-colors">
-                           <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1.5 mb-1 opacity-70">
-                              <div className="w-1 h-1 bg-slate-400 rounded-full" /> Geral
-                           </span>
-                           <div className="text-[11px] font-bold text-text-main leading-tight line-clamp-2">{todayTask.generalTopic}</div>
-                        </div>
-                        <button 
-                          onClick={() => handleSavePerformance()}
-                          className="w-10 h-10 shrink-0 bg-white border border-border rounded-xl flex items-center justify-center text-border hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm group"
-                          title="Marcar como Estudado"
-                        >
-                          <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
-                        </button>
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                        <span className="text-[8px] font-black uppercase text-slate-455 tracking-wider block">Matéria Geral (Básicas)</span>
+                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5">
+                          {todayTask.generalTopic}
+                        </p>
                       </div>
                     )}
-
                     {todayTask.specificTopic && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 p-3 bg-primary/5 rounded-xl border border-primary/20 shadow-sm relative overflow-hidden group hover:bg-primary/10 transition-colors">
-                           <span className="text-[8px] font-bold uppercase text-primary tracking-widest flex items-center gap-1.5 mb-1">
-                              <div className="w-1 h-1 bg-primary rounded-full" /> Específico
-                           </span>
-                           <div className="text-xs font-bold text-text-main leading-tight italic line-clamp-2">{todayTask.specificTopic}</div>
-                        </div>
-                        {!todayTask.generalTopic && (
-                          <button 
-                            onClick={() => handleSavePerformance()}
-                            className="w-10 h-10 shrink-0 bg-white border border-border rounded-xl flex items-center justify-center text-border hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm group"
-                            title="Marcar como Estudado"
-                          >
-                            <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
-                          </button>
-                        )}
+                      <div className="p-3 bg-indigo-50/40 border-2 border-indigo-100/30 rounded-xl">
+                        <span className="text-[8px] font-black uppercase text-indigo-700 tracking-wider block">Matéria Específica (Foco)</span>
+                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5 italic">
+                          ➔ {todayTask.specificTopic}
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-3 pt-2">
-                  <Link to="/cronograma" className="flex-1 bg-white border border-border text-text-main py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-all text-center flex items-center justify-center gap-2 shadow-sm">
-                    Ver Ciclos <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <button 
-                    onClick={() => setShowLogModal(true)}
-                    className="flex-1 bg-primary text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Registrar
-                  </button>
+                
+                <div className="space-y-3 flex flex-col justify-center">
+                  <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider text-center lg:text-left bg-indigo-50/20 border border-indigo-100/40 rounded-xl p-3">
+                    Estude a teoria destas disciplinas e finalize respondendo a <span className="text-indigo-600 font-extrabold">{todayTask.questionGoal || 15} questões</span> no simulador.
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate('/foco')}
+                      className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
+                    >
+                      <Play className="w-4 h-4 fill-white" /> Iniciar Estudos
+                    </button>
+                    <button 
+                      onClick={() => handleSavePerformance()}
+                      className="p-3 bg-emerald-50 border border-emerald-150 rounded-xl text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center justify-center shrink-0"
+                      title="Marcar como Concluído"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="py-8 space-y-5 flex flex-col items-center w-full">
-                <div className="w-16 h-16 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center text-accent mx-auto">
-                   <Target className="w-8 h-8" />
+              <div className="py-4 flex flex-col items-center text-center space-y-2">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-200">
+                  <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-text-main tracking-tight">Missão Cumprida!</p>
-                  <p className="text-sm text-text-sub italic">Você finalizou todos os objetivos previstos.</p>
+                <div className="space-y-0.5">
+                  <p className="text-xs font-black text-text-main uppercase tracking-tight">Meta Concluída com Sucesso!</p>
+                  <p className="text-[9px] text-text-sub italic">Estudo teórico diário feito com sucesso. Próxima etapa calibrada.</p>
                 </div>
-                <div className="flex gap-2 w-full max-w-[200px] mt-4">
-                  <button onClick={() => setShowLogModal(true)} className="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-sm flex items-center justify-center gap-1">
-                    <Clock className="w-3.5 h-3.5"/> Registrar
-                  </button>
-                  <Link to="/cronograma" className="flex-1 bg-slate-100 text-text-main py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-200 transition-all text-center flex items-center justify-center">
-                    Ver Ciclos
-                  </Link>
-                </div>
+                <button 
+                  onClick={() => setShowLogModal(true)}
+                  className="mt-2 px-4 py-2 bg-slate-50 border border-border/80 hover:bg-slate-100 rounded-xl text-[10px] font-bold text-text-sub uppercase tracking-wider transition-colors"
+                >
+                  Registrar Horas Extras
+                </button>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Priority Subjects (Metrics) */}
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-bold text-text-sub uppercase tracking-widest px-1 flex items-center gap-2">
-             <div className="w-1 h-3 bg-secondary rounded-full"></div>
-             Focar Mais
-          </h3>
-          <div className="grid grid-cols-1 gap-2">
-            {prioritySubjects.map((sub, idx) => {
-              const subProgress = stats.subjectProgress.find(s => s.name === sub.name);
-              const percent = subProgress ? subProgress.percentage : 0;
-              return (
-                <Link key={idx} to="/materias" className="rise-card p-3 flex items-center justify-between border border-border bg-white hover:border-secondary/30 transition-all">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-border",
-                      sub.incidence === 'Muito Alta' ? "bg-red-500/10 text-red-500" : "bg-secondary/10 text-secondary"
-                    )}>
-                      <TrendingUp className="w-4 h-4" />
-                    </div>
-                    <div className="overflow-hidden">
-                      <div className="text-xs font-bold text-text-sub uppercase tracking-wider mb-0.5 flex items-center gap-1">
-                        {sub.incidence} <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span> {sub.category}
-                      </div>
-                      <div className="text-xs font-bold text-text-main whitespace-normal break-words tracking-tight">{sub.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right ml-3 shrink-0">
-                    <div className="text-sm md:text-base font-display font-bold text-text-main leading-none">{percent}%</div>
-                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-0.5">Domínio</div>
-                  </div>
-                </Link>
-              );
-            })}
-             
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                 <Link to="/microaprendizado" className="rise-card p-2 text-center border-border/60 hover:border-primary/40 transition-all flex flex-col items-center gap-1">
-                   <Star className="w-3 h-3 text-primary" />
-                   <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Revisão</span>
-                 </Link>
-                 <Link to="/comunidade" className="rise-card p-2 text-center border-border/60 hover:border-accent/40 transition-all flex flex-col items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-accent" />
-                    <span className="text-[10px] font-bold text-text-main uppercase tracking-widest">Comunidade</span>
-                 </Link>
-              </div>
+          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[9px] relative z-10">
+            <span className="text-text-sub font-semibold">Consistência e disciplina diária</span>
+            <Link to="/cronograma" className="text-indigo-600 font-bold uppercase hover:underline flex items-center gap-0.5">
+              ABRIR CRONOGRAMA DE CICLOS ➔
+            </Link>
           </div>
         </div>
+      </div>
 
+      {/* Mentor MPP - Sequência Inteligente (Passos 2 e 3) */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1 pt-2">
+           <h3 className="text-xs font-display text-text-main uppercase font-bold tracking-wider flex items-center gap-2">
+              <Brain className="w-5 h-5 text-indigo-500" />
+              Revisão Ativa
+           </h3>
+           <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full self-start">
+             ETAPAS DE ABSORÇÃO ATIVA
+           </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* PASSO 2: REVISÃO ESPAÇADA MEPP */}
+          <div className="rise-card bg-white border border-border rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-indigo-400/45 transition-all min-h-[220px]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/60 rounded-full transition-all" />
+            
+            <div className="space-y-4 relative z-10 text-left">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-black text-xs">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Revisão MEPP</h4>
+                    <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest pl-0.5">Fixação Ativa</p>
+                  </div>
+                </div>
+                {dueReviewsCount > 0 ? (
+                  <span className="text-[8px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                    {dueReviewsCount} Pendentes
+                  </span>
+                ) : (
+                  <span className="text-[8px] font-black bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                    Em Dia
+                  </span>
+                )}
+              </div>
+
+              {/* Revision content */}
+              <div className="space-y-3">
+                <div className="p-2.5 bg-indigo-50/30 border border-indigo-100/60 rounded-xl space-y-1">
+                  <div className="flex justify-between items-center text-[8px] font-bold text-indigo-650 uppercase tracking-widest">
+                    <span>Espaçamento 24h/7d/30d</span>
+                    <span>Total: {allReviews.length}</span>
+                  </div>
+                  <p className="text-[10px] text-text-main font-semibold leading-relaxed line-clamp-2">
+                    {dueReviewsCount > 0 
+                      ? `Você tem ${dueReviewsCount} tópicos agendados na curva do esquecimento para revisar.` 
+                      : "Sua memória de longo prazo está ótima! Nenhuma revisão expirada."}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Link 
+                    to="/mepp"
+                    className="py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
+                  >
+                    <Calendar className="w-3.5 h-3.5" /> Agendar Revisão
+                  </Link>
+                  <Link 
+                    to="/microaprendizado"
+                    className="py-2 bg-slate-50 border border-border hover:bg-slate-100 text-text-main rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
+                  >
+                    <Brain className="w-3.5 h-3.5 text-indigo-500" /> Praticar Revisão
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[9px] relative z-10">
+              <span className="text-text-sub font-semibold">Repetição espaçada</span>
+              <Link to="/mepp" className="text-indigo-600 font-bold uppercase hover:underline">Blindagem ➔</Link>
+            </div>
+          </div>
+
+          {/* PASSO 3: COMUNIDADE MPP */}
+          <div className="rise-card bg-white border border-border rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-accent/40 transition-all min-h-[220px]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50/50 rounded-full transition-all" />
+            
+            <div className="space-y-4 relative z-10 text-left">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-black text-xs">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Comunidade MPP</h4>
+                    <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest pl-0.5">Estudo Social</p>
+                  </div>
+                </div>
+                <span className="text-[8px] font-black bg-accent/10 text-accent px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  PASSO 3
+                </span>
+              </div>
+
+              {/* Community Content */}
+              <div className="space-y-3">
+                <div className="p-2.5 bg-amber-50/20 border border-amber-200/40 rounded-xl space-y-1">
+                  <span className="text-[8px] font-bold uppercase text-accent tracking-widest block font-display">Troca de Saberes</span>
+                  <p className="text-[10px] text-text-main font-semibold leading-relaxed line-clamp-2">
+                    Acesse resumos de aprovados, envie materiais e compartilhe ideias de estudo com o grupo.
+                  </p>
+                </div>
+
+                <Link 
+                  to="/comunidade"
+                  className="w-full py-2 bg-accent hover:brightness-110 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
+                >
+                  <Users className="w-3.5 h-3.5 text-white" /> Mural da Comunidade
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[9px] relative z-10">
+              <span className="text-text-sub font-semibold">Troque aprendizagem</span>
+              <span className="text-accent font-bold uppercase">Interativo ➔</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Relatórios Section */}
@@ -752,7 +908,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pb-4">
           <Link to="/pareto" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-accent/40 transition-all group overflow-hidden relative">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-accent/5 rounded-full blur-xl group-hover:bg-accent/10 transition-all" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-amber-50 rounded-full group-hover:bg-amber-100/50 transition-all" />
             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent border border-accent/20">
               <PieChart className="w-5 h-5" />
             </div>
@@ -766,7 +922,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </Link>
 
           <Link to="/materias" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-primary/40 transition-all group overflow-hidden relative">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-all" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-indigo-50 rounded-full group-hover:bg-indigo-100/50 transition-all" />
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary border border-primary/20">
               <BookOpen className="w-5 h-5" />
             </div>
@@ -783,7 +939,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             onClick={() => setShowSimilarityModal(true)}
             className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-indigo-400/40 transition-all group overflow-hidden relative text-left"
           >
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-indigo-500/5 rounded-full blur-xl group-hover:bg-indigo-500/10 transition-all" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-indigo-50 rounded-full group-hover:bg-indigo-100/50 transition-all" />
             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 border border-indigo-500/20">
               <Zap className="w-5 h-5" />
             </div>
@@ -797,7 +953,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </button>
 
           <Link to="/estatisticas" className="rise-card p-4 flex flex-col gap-3 border border-border bg-white hover:border-emerald-500/40 transition-all group overflow-hidden relative">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-all" />
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-emerald-50 rounded-full group-hover:bg-emerald-100/50 transition-all" />
             <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 border border-emerald-500/20">
               <TrendingUp className="w-5 h-5" />
             </div>

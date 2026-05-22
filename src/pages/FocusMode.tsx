@@ -47,7 +47,11 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
 
   // Auto-select standard task on mount if not selected
   useEffect(() => {
-    if (todayTask && !selectedSubject) {
+    const params = new URLSearchParams(window.location.search);
+    const subjectParam = params.get('subject');
+    if (subjectParam) {
+      setSelectedSubject(subjectParam);
+    } else if (todayTask && !selectedSubject) {
       setSelectedSubject(todayTask.generalTopic || todayTask.specificTopic || '');
     }
   }, [todayTask]);

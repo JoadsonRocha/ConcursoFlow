@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Contest, ScheduleDay } from '../types';
 import { cn } from '../lib/utils';
 import { 
@@ -16,7 +17,10 @@ import {
   Loader2,
   Target,
   Zap,
-  Lock
+  Lock,
+  Play,
+  Timer,
+  Award
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
@@ -33,6 +37,7 @@ interface CronogramaProps {
 
 export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const { user, profile, isPro } = useAuth();
+  const navigate = useNavigate();
   const [activeWeek, setActiveWeek] = useState(1);
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -121,6 +126,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     
     // Logic to sync with vertical edital (subjects)
     let newSubjects = [...contest.subjects];
+    let newMeppReviews = contest.meppReviews ? [...contest.meppReviews] : [];
     
     if (isNowCompleted) {
       const day = newSchedule[dayIndex];
@@ -171,6 +177,41 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             : extraCompleted
         };
       });
+
+      // Auto-mark MEPP "Estudo Teórico Ativo" ('theory' stage) as completed
+      const getTodayISOString = () => {
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+      };
+      const todayStrStr = getTodayISOString();
+
+      const topicName = day.specificTopic || day.generalTopic || "Estudo do Dia";
+      const subjectName = contest.subjects.find(sub => 
+        sub.topics?.some(t => t.name === day.specificTopic)
+      )?.name || "Geral";
+
+      const existingReviewIdx = newMeppReviews.findIndex(r => r.topicName === topicName && r.reviewType !== 'completed');
+      
+      if (existingReviewIdx === -1) {
+        newMeppReviews.push({
+          id: `mepp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          topicName,
+          subjectName,
+          createdAt: new Date().toISOString(),
+          stagesCompleted: ['theory'],
+          dueDate: todayStrStr,
+          reviewType: '24h' as const
+        });
+      } else {
+        const stages = newMeppReviews[existingReviewIdx].stagesCompleted || [];
+        if (!stages.includes('theory')) {
+          newMeppReviews[existingReviewIdx] = {
+            ...newMeppReviews[existingReviewIdx],
+            stagesCompleted: [...stages, 'theory']
+          };
+        }
+      }
     } else {
       // Reverting a day doesn't necessarily mean we should unmark topics, 
       // but for consistency we might want to if the user expects full sync.
@@ -178,7 +219,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       // We'll stick to marking as completed for now as requested.
     }
     
-    onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects });
+    onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects, meppReviews: newMeppReviews });
   };
 
   if (schedule.length === 0) {
@@ -345,52 +386,110 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               className={cn(
-                "rise-card p-0 border border-border transition-all duration-500 relative flex flex-col justify-between h-auto min-h-[350px] group overflow-hidden",
+                "rise-card p-0 border-2 transition-all duration-300 relative flex flex-col justify-between h-auto min-h-[385px] group overflow-hidden rounded-3xl text-left",
                 d.completed 
-                  ? "bg-slate-50 opacity-60" 
-                  : "bg-white hover:border-primary/30"
+                  ? "bg-slate-50 border-emerald-200/90 shadow-sm opacity-85" 
+                  : "bg-white border-slate-200 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-50/50"
               )} >
-                 <div className="p-6 md:p-8 space-y-8 flex flex-col flex-1">
-                <header className="flex items-center justify-between">
+              <div className="p-5 md:p-6 space-y-6 flex flex-col flex-1">
+                <header className="flex items-center justify-between border-b border-slate-100 pb-3">
                    <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-display text-base font-bold shadow-sm transition-colors duration-500 italic">
+                    <div className="w-12 h-12 bg-slate-900 border-2 border-slate-850 text-white rounded-2xl flex items-center justify-center font-display text-sm font-black shadow-sm italic text-[15px]">
                         {d.dayNumber}
                     </div>
-                   <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest">DIA</span>
+                    <div>
+                      <span className="text-[10px] font-black text-text-sub uppercase tracking-wider block">META DIÁRIA</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block -mt-1">FASE CONCURSO</span>
+                    </div>
                    </div>
-                   {d.completed && <CheckCircle2 className="w-6 h-6 text-accent" />}
+                   
+                   {d.completed ? (
+                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-805 text-[9px] font-black uppercase rounded-full tracking-wider border border-emerald-200/50 shadow-sm">
+                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> CONCLUÍDO
+                     </span>
+                   ) : (
+                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-full tracking-wider border border-indigo-100 shadow-sm">
+                       <Timer className="w-3.5 h-3.5 text-indigo-500" /> EM FOCO
+                     </span>
+                   )}
                 </header>
 
-                <div className="space-y-6 flex-1">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                       <div className="w-1 h-1 rounded-full bg-primary"></div>
-                       <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest">Prioridades</span>
+                <div className="space-y-4 flex-1">
+                  <div className="space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black text-text-sub uppercase tracking-widest flex items-center gap-1 ml-0.5">
+                        <BookOpen className="w-3.5 h-3.5 text-indigo-500" /> Matérias / Tópicos de Hoje
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                       <div className="p-3 md:p-4 bg-slate-50 rounded-xl border border-border">
-                        <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Específicas</span>
-                        <div className="text-[11px] font-semibold text-text-main leading-relaxed italic whitespace-normal break-words">{d.specificTopic}</div>
-                      </div>
-                      <div className="p-3 md:p-4 bg-slate-50 rounded-xl border border-border">
-                        <span className="text-[9px] text-text-sub font-bold uppercase tracking-widest block mb-1">Básicas</span>
-                        <div className="text-[11px] font-semibold text-text-sub leading-relaxed italic whitespace-normal break-words">{d.generalTopic}</div>
-                      </div>
+                    
+                    <div className="space-y-3">
+                      {/* Assunto Específico */}
+                      {d.specificTopic && (
+                        <div className="p-4 bg-indigo-50/40 border-2 border-indigo-100/60 rounded-2xl flex flex-col justify-between hover:bg-indigo-50/80 transition-all shadow-sm">
+                          <div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
+                              <Award className="w-3 h-3 text-indigo-600" /> Tópico Específico
+                            </span>
+                            <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
+                              {d.specificTopic}
+                            </p>
+                          </div>
+                          {!d.completed && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/foco?subject=${encodeURIComponent(d.specificTopic || '')}`);
+                              }}
+                              className="mt-3 w-full py-1.5 bg-[#4f46e5] text-white hover:bg-indigo-700 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Assunto de Conhecimentos Básicos */}
+                      {d.generalTopic && (
+                        <div className="p-4 bg-emerald-50/20 border-2 border-emerald-100/60 rounded-2xl flex flex-col justify-between hover:bg-emerald-50/45 transition-all shadow-sm">
+                          <div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-105/50 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
+                              <BrainCircuit className="w-3 h-3 text-emerald-700" /> Matéria Geral
+                            </span>
+                            <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
+                              {d.generalTopic}
+                            </p>
+                          </div>
+                          {!d.completed && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/foco?subject=${encodeURIComponent(d.generalTopic || '')}`);
+                              }}
+                              className="mt-3 w-full py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-250 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-border grid grid-cols-2 gap-4 items-end">
-                   <div className="space-y-1">
-                      <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Cadência</div>
-                      <div className="flex items-center gap-1.5 text-text-main">
-                         <Target className="w-3.5 h-3.5 text-primary" />
-                         <span className="text-xs font-bold">{d.questionGoal} itens</span>
+                <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 items-stretch">
+                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-left">
+                      <div className="text-[8px] font-black text-text-sub uppercase tracking-wider">Cadência</div>
+                      <div className="flex items-center gap-1 text-slate-850 mt-0.5">
+                         <Target className="w-3.5 h-3.5 text-indigo-500" />
+                         <span className="text-[11px] font-black tracking-tight">{d.questionGoal} itens</span>
                       </div>
                    </div>
-                   <div className="text-right space-y-1">
-                      <div className="text-xs font-bold text-text-sub uppercase tracking-wider">Retenção</div>
-                      <div className="text-xs font-semibold text-text-sub italic whitespace-normal break-words">{d.revisionTask}</div>
+                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-right flex flex-col justify-between">
+                      <div className="text-[8px] font-black text-text-sub uppercase tracking-wider">Retenção</div>
+                      <div className="flex items-center gap-1 text-slate-850 mt-0.5 justify-end">
+                         <Award className="w-3.5 h-3.5 text-amber-500" />
+                         <span className="text-[11px] font-black tracking-tight truncate">{d.revisionTask}</span>
+                      </div>
                    </div>
                 </div>
               </div>
@@ -398,13 +497,13 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                 <button 
                   onClick={(e) => { e.stopPropagation(); toggleDay(dayIdx)}}
                   className={cn(
-                    "w-full py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border shadow-sm",
+                    "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border-2 shadow-sm",
                     d.completed 
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-600 hover:text-white hover:border-emerald-600" 
-                      : "bg-white text-text-main border-border hover:bg-primary hover:text-white hover:border-primary active:scale-95"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-605" 
+                      : "bg-indigo-600/10 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white"
                   )}
                 >
-                  {d.completed ? 'Revisitar Dia' : 'Finalizar Metas'}
+                  {d.completed ? '➔ Revisitar Dia' : '✓ Finalizar Metas'}
                 </button>
               </div>
             </motion.div>
