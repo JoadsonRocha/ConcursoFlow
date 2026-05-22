@@ -170,7 +170,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
          dailyGoalHours: Number(dailyHours) || 0,
          dailyGoalQuestions: Number(dailyQuestions) || 0,
          dailyContentVolume: Number(dailyContentVolume) || 1,
-         scheduleStartDate: scheduleStartDate || undefined,
+         scheduleStartDate: scheduleStartDate || null,
          schedule: schedule,
        };
        
