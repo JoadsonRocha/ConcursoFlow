@@ -137,7 +137,9 @@ export async function parseEdital(rawText: string) {
   const genAI = getAiClient();
 
   const prompt = `Analise o edital: ${rawText}
-  Retorne JSON com name, role, examDate e subjects [ {id, name, topics: [] } ]`;
+  Retorne JSON com name, role, examDate e subjects. Cada subject deve ter id, name, category, topics.
+  "category" MUST be exactly either "gerais" (for conhecimentos gerais/básicos) or "especificas" (for conhecimentos específicos).
+  Para "topics", gere um array de itens com id, name e completed (inicie com false).`;
 
   const response = await genAI.models.generateContent({
     model: "gemini-3.5-flash",
@@ -150,7 +152,28 @@ export async function parseEdital(rawText: string) {
           name: { type: Type.STRING },
           role: { type: Type.STRING },
           examDate: { type: Type.STRING },
-          subjects: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING }, name: { type: Type.STRING }, topics: { type: Type.ARRAY, items: { type: Type.OBJECT } } } } }
+          subjects: { 
+            type: Type.ARRAY, 
+            items: { 
+              type: Type.OBJECT, 
+              properties: { 
+                id: { type: Type.STRING }, 
+                name: { type: Type.STRING },
+                category: { type: Type.STRING, enum: ["gerais", "especificas"] },
+                topics: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      name: { type: Type.STRING },
+                      completed: { type: Type.BOOLEAN }
+                    }
+                  } 
+                } 
+              } 
+            } 
+          }
         }
       }
     }
@@ -198,9 +221,20 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
 export async function generateSVGMap(title: string, prompt: string, quantity: number = 3) {
   const genAI = getAiClient();
 
+  const enhancedPrompt = `Você é um especialista em design de informação e geração vetorial. Crie ${quantity} códigos SVG para mapas mentais incrivelmente didáticos sobre o tema "${title}". Foco: ${prompt}.
+  
+  DIRETRIZES ESTRITAS PARA O SVG:
+  1. Tamanho e Canvas: Use SEMPRE viewBox="0 0 1200 800" (tamanho A4 otimizado para web), com width="100%" height="100%". O fundo deve ser agradável e claro.
+  2. Layout e Arranjo: Espalhe extensivamente os nós ao longo da tela utilizando TODO o espaço (esquerda, direita, cima e baixo) para garantir que NUNCA haja sobreposições (textos ou balões colidindo). 
+  3. Quebra de Linha de Texto: O texto NÃO PODE vazar das caixas! Mantenha os rótulos super concisos (máx 3-4 palavras) OU use <tspan x="..." dy="1.2em"> para separar as linhas no SVG e manter o texto contido nos shapes.
+  4. Hierarquia: O nó central deve ficar ao meio, com setas ou linhas curvas bezier (<path d="M... C...">) conectando aos subtópicos principais. 
+  5. Estética Minimalista: Cores pastéis modernas, fontes limpas (font-family="sans-serif", font-weight="bold").
+  
+  Retorne EXCLUSIVAMENTE um array de strings JSON, onde cada string é o código XML do SVG pronto para ser renderizado na web. Não adicione textos aleatórios.`;
+
   const response = await genAI.models.generateContent({
     model: "gemini-3.5-flash",
-    contents: [{ role: "user", parts: [{ text: `Crie ${quantity} códigos SVG para mapas mentais sobre "${title}". Foco: ${prompt}. Retorne como array JSON de strings.` }] }]
+    contents: [{ role: "user", parts: [{ text: enhancedPrompt }] }]
   });
   
   const text = response.text || "[]";

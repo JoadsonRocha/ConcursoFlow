@@ -38,7 +38,9 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
 
   const filteredSubjects = contest.subjects.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'Tudo' || s.category === filter;
+    const normalizedCategory = s.category?.toLowerCase() || '';
+    const mappedCategory = normalizedCategory.includes('espec') ? 'Específicos' : 'Gerais';
+    const matchesFilter = filter === 'Tudo' || mappedCategory === filter;
     return matchesSearch && matchesFilter;
   });
 

@@ -392,7 +392,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                   : "bg-white border-slate-200 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-50/50"
               )} >
               <div className="p-5 md:p-6 space-y-6 flex flex-col flex-1">
-                <header className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <header className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
                    <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-slate-900 border-2 border-slate-850 text-white rounded-2xl flex items-center justify-center font-display text-sm font-black shadow-sm italic text-[15px]">
                         {d.dayNumber}
@@ -404,11 +404,11 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                    </div>
                    
                    {d.completed ? (
-                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-805 text-[9px] font-black uppercase rounded-full tracking-wider border border-emerald-200/50 shadow-sm">
+                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full tracking-wider border border-emerald-200/50 shadow-sm whitespace-nowrap">
                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> CONCLUÍDO
                      </span>
                    ) : (
-                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-full tracking-wider border border-indigo-100 shadow-sm">
+                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-full tracking-wider border border-indigo-100 shadow-sm whitespace-nowrap">
                        <Timer className="w-3.5 h-3.5 text-indigo-500" /> EM FOCO
                      </span>
                    )}

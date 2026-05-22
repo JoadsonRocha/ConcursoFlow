@@ -328,7 +328,10 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           fileInputRef.current?.click();
                         }}
                         disabled={extractingPdf}
-                        className="w-full flex items-center justify-center gap-3 py-3 bg-gradient-to-r from-primary to-accent text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:scale-[1.02] transition-all shadow-lg relative group"
+                        className={cn(
+                          "w-full flex items-center justify-center gap-3 py-3 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg relative group",
+                          extractingPdf ? "bg-slate-500 cursor-not-allowed opacity-80" : "bg-gradient-to-r from-primary to-accent hover:scale-[1.02]"
+                        )}
                       >
                         {!isPro && (
                            <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
@@ -336,11 +339,16 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                            </div>
                         )}
                         {extractingPdf ? (
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                          <>
+                            <Loader2 className="w-5 h-5 text-white animate-spin" />
+                            <span>Processando PDF...</span>
+                          </>
                         ) : (
-                          <FileText className="w-5 h-5" />
+                          <>
+                            <FileText className="w-5 h-5" />
+                            <span>{rawText ? 'PDF Carregado! Importar Outro' : 'Importar PDF'}</span>
+                          </>
                         )}
-                        {extractingPdf ? 'Analisando...' : (rawText ? 'PDF Carregado! Importar Outro' : 'Importar PDF')}
                       </button>
                     </div>
 
@@ -537,9 +545,17 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 ) : (
                   <button 
                     onClick={handleFinalSave}
-                    className="flex-1 py-2.5 rounded-xl bg-text-main text-white font-bold hover:bg-text-main/90 transition-all text-[10px] uppercase tracking-wider"
+                    disabled={loading}
+                    className="flex-1 py-2.5 rounded-xl bg-text-main text-white font-bold hover:bg-text-main/90 disabled:bg-slate-400 disabled:cursor-not-allowed transition-all text-[10px] uppercase tracking-wider flex items-center justify-center gap-2"
                   >
-                    Analisar e Prosseguir
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Aguarde...
+                      </>
+                    ) : (
+                      "Analisar e Prosseguir"
+                    )}
                   </button>
                 )}
               </div>

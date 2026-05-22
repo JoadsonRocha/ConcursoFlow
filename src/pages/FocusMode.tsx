@@ -279,18 +279,18 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 w-full max-w-7xl mx-auto overflow-y-auto hide-scrollbar">
-        <div className="w-full min-h-full flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 items-center md:items-start justify-center py-6">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 w-full max-w-7xl mx-auto overflow-hidden">
+        <div className="w-full h-full flex flex-col md:flex-row gap-4 md:gap-8 items-center justify-center py-2 sm:py-4">
           
           {/* Left Column: Timer */}
-          <div className="flex-1 flex flex-col items-center w-full max-w-md">
+          <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md h-full">
             {/* Mode & Duration Selectors */}
-            <div className={cn("w-full flex flex-col gap-3 mb-6 md:mb-12 transition-opacity", isActive && "opacity-50 pointer-events-none")}>
+            <div className={cn("w-full flex flex-col gap-2 mb-4 md:mb-6 transition-opacity shrink-0", isActive && "opacity-50 pointer-events-none")}>
               <div className="flex w-full bg-white rounded-2xl p-1.5 border border-border shadow-sm">
                 <button 
                   onClick={() => setMode('work')}
                   className={cn(
-                    "flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
+                    "flex-1 py-2 sm:py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
                     mode === 'work' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-text-sub hover:bg-slate-50 hover:text-text-main"
                   )}
                 >
@@ -299,7 +299,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                 <button 
                   onClick={() => setMode('short_break')}
                   className={cn(
-                    "flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
+                    "flex-1 py-2 sm:py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
                     mode === 'short_break' ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : "text-text-sub hover:bg-slate-50 hover:text-text-main"
                   )}
                 >
@@ -308,7 +308,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                 <button 
                   onClick={() => setMode('long_break')}
                   className={cn(
-                    "flex-1 py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
+                    "flex-1 py-2 sm:py-3 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all",
                     mode === 'long_break' ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" : "text-text-sub hover:bg-slate-50 hover:text-text-main"
                   )}
                 >
@@ -319,28 +319,28 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
               <AnimatePresence>
                 {mode === 'work' && (
                   <motion.div 
-                    initial={{ opacity: 0, height: 0, marginTop: -12 }}
+                    initial={{ opacity: 0, height: 0, marginTop: -8 }}
                     animate={{ opacity: 1, height: 'auto', marginTop: 0 }}
-                    exit={{ opacity: 0, height: 0, marginTop: -12 }}
+                    exit={{ opacity: 0, height: 0, marginTop: -8 }}
                     className="flex w-full bg-white/50 backdrop-blur-sm rounded-2xl p-1.5 border border-slate-200/50"
                   >
                     <button
                       onClick={() => setDuration(25)}
                       className={cn(
-                        "flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
+                        "flex-1 py-1.5 sm:py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
                         duration === 25 ? "bg-white text-primary shadow-sm border border-primary/10" : "text-text-sub hover:text-text-main"
                       )}
                     >
-                      25 Minutos (Pomodoro)
+                      25 Minutos
                     </button>
                     <button
                       onClick={() => setDuration(50)}
                       className={cn(
-                        "flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
+                        "flex-1 py-1.5 sm:py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
                         duration === 50 ? "bg-white text-primary shadow-sm border border-primary/10" : "text-text-sub hover:text-text-main"
                       )}
                     >
-                      50 Minutos (Ultra)
+                      50 Minutos
                     </button>
                   </motion.div>
                 )}
@@ -348,7 +348,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
             </div>
 
             {/* Timer Display */}
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 flex shrink-0 items-center justify-center mb-8 group cursor-pointer" onClick={toggleTimer}>
+            <div className="relative w-[55vmin] h-[55vmin] max-w-[360px] max-h-[360px] md:w-[60vmin] md:h-[60vmin] md:max-w-[400px] md:max-h-[400px] flex shrink-0 items-center justify-center mb-4 md:mb-6 group cursor-pointer" onClick={toggleTimer}>
               <svg className="absolute inset-0 w-full h-full -z-10 drop-shadow-sm opacity-50" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="48" fill="none" strokeWidth="1.5" stroke="currentColor" className="text-slate-200" />
                 <motion.circle 
@@ -365,26 +365,26 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                   transform="rotate(-90 50 50)"
                 />
               </svg>
-              <div className="text-7xl sm:text-8xl lg:text-[9rem] font-black font-display tracking-tighter leading-none transition-colors group-hover:opacity-90">
+              <div className="text-[15vmin] md:text-[8rem] font-black font-display tracking-tighter leading-none transition-colors group-hover:opacity-90">
                 {formatTime(timeLeft)}
               </div>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center gap-6">
+            <div className="flex flex-row items-center gap-4 sm:gap-6 shrink-0 mt-auto md:mt-0">
               <button 
                 onClick={toggleTimer}
                 className={cn(
-                  "w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white shadow-xl transition-transform hover:scale-105 active:scale-95",
+                  "w-14 h-14 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white shadow-xl transition-transform hover:scale-105 active:scale-95",
                   mode === 'work' ? "bg-primary shadow-primary/30" : mode === 'short_break' ? "bg-emerald-500 shadow-emerald-500/30" : "bg-blue-500 shadow-blue-500/30"
                 )}
               >
-                {isActive ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current translate-x-1" />}
+                {isActive ? <Pause className="w-6 h-6 sm:w-8 sm:h-8 fill-current" /> : <Play className="w-6 h-6 sm:w-8 sm:h-8 fill-current translate-x-1" />}
               </button>
               
               <button 
                 onClick={resetTimer}
-                className="w-12 h-12 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center text-text-sub border border-border hover:text-text-main hover:bg-slate-50 transition-all shadow-sm"
+                className="w-10 h-10 sm:w-14 sm:h-14 bg-white rounded-full flex items-center justify-center text-text-sub border border-border hover:text-text-main hover:bg-slate-50 transition-all shadow-sm"
               >
                 <Square className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
               </button>
@@ -392,7 +392,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
           </div>
 
           {/* Right Column: Info & Settings */}
-          <div className="flex-1 flex flex-col gap-6 w-full max-w-md mt-10 md:mt-0">
+          <div className="flex-1 flex flex-col justify-center gap-4 sm:gap-6 w-full max-w-md mt-6 md:mt-0 h-full overflow-y-auto hide-scrollbar pb-6 md:pb-0">
             
             {/* Subject Selector Section */}
             <div className={cn("bg-white rounded-3xl p-6 sm:p-8 border border-border shadow-sm flex flex-col items-start text-left w-full relative overflow-visible transition-opacity", isActive && "opacity-50 pointer-events-none")}>
