@@ -196,9 +196,9 @@ export default function Settings({ onImport, contests }: SettingsProps) {
        setManualRole('');
        setStage('import');
        setWizardStep(0);
-       toast.success("Plano de estudos finalizado e pronto para uso!");
+       toast.success("Edital importado com sucesso! Redirecionando para seu cronograma...");
        // Trigger navigation to subjects
-       navigate('/materias');
+       navigate('/cronograma');
      } catch (err) {
        console.error(err);
        setError(err instanceof Error ? err.message : "Erro ao salvar metas.");

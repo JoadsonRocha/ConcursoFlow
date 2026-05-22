@@ -50,7 +50,6 @@ import { db } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import Dashboard from './pages/Dashboard';
 import FocusMode from './pages/FocusMode';
 import Estatisticas from './pages/Estatisticas';
@@ -842,7 +841,6 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
-    <SpeedInsights />
     </div>
   );
 }

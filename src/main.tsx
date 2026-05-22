@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
-import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from 'sonner';
 // Check and remove old service workers to clear aggressive caching
 if ('serviceWorker' in navigator) {
@@ -33,7 +32,6 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <App />
         <Toaster position="top-right" richColors />
-        <Analytics />
       </AuthProvider>
     </HashRouter>
   </StrictMode>,

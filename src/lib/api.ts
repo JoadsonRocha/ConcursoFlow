@@ -13,7 +13,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     'Content-Type': 'application/json',
   };
 
-  const response = await fetch(url, { ...options, headers });
+  // Prepend VITE_API_URL if it's defined and the URL is relative
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const finalUrl = (apiUrl && url.startsWith('/')) ? `${apiUrl}${url}` : url;
+
+  const response = await fetch(finalUrl, { ...options, headers });
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "");

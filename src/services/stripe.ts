@@ -11,7 +11,10 @@ export async function createCheckoutSession(priceId: string) {
   // For the backend, we use the IDs configured there.
   
   try {
-    const response = await fetch('/api/create-checkout-session', {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const finalUrl = apiUrl ? `${apiUrl}/api/create-checkout-session` : '/api/create-checkout-session';
+
+    const response = await fetch(finalUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
