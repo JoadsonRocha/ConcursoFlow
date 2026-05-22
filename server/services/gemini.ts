@@ -138,7 +138,7 @@ export async function parseEdital(rawText: string) {
 
   const prompt = `Analise o edital: ${rawText}
   Retorne JSON com name, role, examDate e subjects. Cada subject deve ter id, name, category, topics.
-  "category" MUST be exactly either "gerais" (for conhecimentos gerais/básicos) or "especificas" (for conhecimentos específicos).
+  "category" MUST be exactly either "Gerais" (for conhecimentos gerais/básicos) or "Específicos" (for conhecimentos específicos).
   Para "topics", gere um array de itens com id, name e completed (inicie com false).`;
 
   const response = await genAI.models.generateContent({
@@ -159,7 +159,7 @@ export async function parseEdital(rawText: string) {
               properties: { 
                 id: { type: Type.STRING }, 
                 name: { type: Type.STRING },
-                category: { type: Type.STRING, enum: ["gerais", "especificas"] },
+                category: { type: Type.STRING, enum: ["Gerais", "Específicos"] },
                 topics: { 
                   type: Type.ARRAY, 
                   items: { 

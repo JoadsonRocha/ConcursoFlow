@@ -1,7 +1,7 @@
 {
   "name": "Stratis Planner",
   "description": "Sistema avançado para concursos com foco em inclusão e produtividade PRO.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["screen-wake-lock", "wake-lock"],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

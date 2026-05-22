@@ -74,15 +74,39 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       if (existingEntryIndex >= 0) {
         newHistory[existingEntryIndex] = {
           ...newHistory[existingEntryIndex],
-          hours: newHistory[existingEntryIndex].hours + hoursToAdd,
+          hours: Number((newHistory[existingEntryIndex].hours + hoursToAdd).toFixed(2)),
         };
       } else {
         newHistory.push(newHistoryEntry);
       }
 
+      // Update subject progress
+      let newSubjects = [...contest.subjects];
+      if (selectedSubject && selectedSubject !== 'Estudo Livre') {
+        newSubjects = newSubjects.map(sub => {
+          if (sub.name === selectedSubject) {
+            let extraCompleted = (sub.completedTopics || 0);
+            if ((sub.topics?.length || 0) > 0) {
+              // Could potentially find an uncompleted topic to mark as done
+              const firstUncompleted = sub.topics?.findIndex(t => !t.completed);
+              if (firstUncompleted !== undefined && firstUncompleted !== -1 && sub.topics) {
+                const newTopics = [...sub.topics];
+                newTopics[firstUncompleted] = { ...newTopics[firstUncompleted], completed: true };
+                return { ...sub, topics: newTopics, completedTopics: newTopics.filter(t => t.completed).length };
+              }
+            } else {
+              extraCompleted = Math.min((sub.totalTopics || 1), extraCompleted + 1);
+              return { ...sub, completedTopics: extraCompleted };
+            }
+          }
+          return sub;
+        });
+      }
+
       onUpdate({
         ...contest,
-        dailyHistory: newHistory
+        dailyHistory: newHistory,
+        subjects: newSubjects
       });
     } catch (e) {
       console.error("Error saving focus time:", e);
@@ -111,10 +135,16 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
     }
   };
 
-  const playSound = () => {
+  // Improved audio play (still subject to browser restrictions)
+  const playSound = async () => {
     if (soundEnabled && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {}); // ignore auto-play errors
+      try {
+        audioRef.current.currentTime = 0;
+        await audioRef.current.play();
+      } catch (err) {
+        console.error("Audio play failed:", err);
+        // Fallback: inform user they need to click to hear sound
+      }
     }
   };
 
@@ -168,8 +198,12 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       if ('wakeLock' in navigator && isActive) {
         try {
           wakeLock = await (navigator as any).wakeLock.request('screen');
-        } catch (err) {
-          console.error(`Wake Lock error: ${err}`);
+        } catch (err: any) {
+          if (err.name !== 'NotAllowedError') {
+            console.error(`Wake Lock error: ${err}`);
+          } else {
+            console.warn('Wake Lock is blocked by permissions policy. Keep the tab active to prevent screen from sleeping.');
+          }
         }
       }
     };
@@ -403,7 +437,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                    <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Na sua mesa hoje
                  </h3>
                  <button onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)} className="text-[10px] text-primary hover:underline font-bold uppercase tracking-wider bg-transparent border-0">
-                    Trocar Matéria
+                    Alterar Disciplina
                  </button>
               </div>
               
@@ -446,7 +480,6 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                     <p className="text-sm mt-1">Sessão de foco livre.</p>
                   </div>
                 )}
-
                 {/* If selected subject is from dropdown (not today's default tasks) */}
                 {selectedSubject && todayTask && selectedSubject !== todayTask.generalTopic && selectedSubject !== todayTask.specificTopic && selectedSubject !== 'Estudo Livre' && (
                   <button 
@@ -457,7 +490,6 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                     <div className="font-bold text-text-main leading-snug">{selectedSubject}</div>
                   </button>
                 )}
-
                 <AnimatePresence>
                   {isSubjectDropdownOpen && (
                     <motion.div
@@ -466,7 +498,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-border shadow-2xl p-2 z-[100] max-h-64 overflow-y-auto"
                     >
-                      <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-text-sub">Todas as Matérias</p>
+                      <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-text-sub">Todas as Disciplinas</p>
                       {contest.subjects?.length > 0 ? (
                         contest.subjects.map(sub => (
                            <button
@@ -483,7 +515,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                            </button>
                         ))
                       ) : (
-                        <p className="px-3 py-2 text-xs text-slate-400">Nenhuma matéria encontrada.</p>
+                        <p className="px-3 py-2 text-xs text-slate-400">Nenhuma disciplina encontrada.</p>
                       )}
                       
                       <button
@@ -493,7 +525,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                             }}
                             className="w-full text-left px-3 py-2 mt-2 border-t border-slate-100 text-sm font-medium text-text-sub hover:bg-slate-50 hover:text-text-main rounded-xl transition-colors line-clamp-1 italic"
                            >
-                              Estudo Livre (Sem matéria específica)
+                              Estudo Livre (Sem disciplina específica)
                        </button>
                     </motion.div>
                   )}
