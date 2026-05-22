@@ -135,20 +135,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneDeck = async (deck: any) => {
     if (!user) return;
     
-    // Limit check
-    if (isPro) {
-      if (((profile?.flashcardUsage || 0) + deck.cards.length) > 300) {
-        setProFeatureName('Limite mensal de 300 Flashcards');
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      if ((personalFlashcardsCount + deck.cards.length) > 20) {
-        setProFeatureName('Flashcards (Máx: 20)');
-        setShowProModal(true);
-        return;
-      }
-    }
+    /* Bypass manual check for cloning deck as requested */
 
     try {
       const batch = deck.cards.map((card: any) => {
@@ -188,21 +175,8 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleClone = async (contest: Contest) => {
     if (!user) return;
     
-    // Limit check
-    if (isPro) {
-      if ((profile?.importUsage || 0) >= 10) {
-        setProFeatureName('Limite de 10 Importações/mês');
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      if (contests && contests.length >= 1) {
-        setProFeatureName('Múltiplos Editais');
-        setShowProModal(true);
-        return;
-      }
-    }
-
+    /* Bypass manual check for cloning contest as requested */
+    
     try {
       const clonedContest = {
         ...contest,
@@ -231,20 +205,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneMindMap = async (map: any) => {
     if (!user) return;
     
-    // Limit check
-    if (isPro) {
-      if ((profile?.mindmapUsage || 0) >= 50) {
-        setProFeatureName('Limite de 50 Mapas/mês');
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      if (personalMapsCount >= 3) {
-        setProFeatureName('Mapas Mentais (Máx: 3)');
-        setShowProModal(true);
-        return;
-      }
-    }
+    /* Bypass manual check for cloning mind map as requested */
 
     try {
       const clonedMap = {

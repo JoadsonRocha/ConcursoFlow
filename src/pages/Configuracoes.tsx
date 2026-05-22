@@ -97,20 +97,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
       return;
     }
     
-    if (isPro) {
-      if ((profile?.importUsage || 0) >= 10) {
-        setProFeatureName('Limite de 10 Importações/mês');
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      // Free users: original 1 contest limit
-      if (contests.length >= 1) {
-        setProFeatureName('Múltiplos Editais');
-        setShowProModal(true);
-        return;
-      }
-    }
+    /* Bypass manual check for import as requested */
     
     setLoading(true);
     setError(null);
