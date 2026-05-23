@@ -28,9 +28,10 @@ interface MentorMeppProps {
 }
 
 const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
-  const [showMeppExplainer, setShowMeppExplainer] = useState(true);
+  const [showMeppExplainer, setShowMeppExplainer] = useState(false);
   const [selectedSubjectNameReview, setSelectedSubjectNameReview] = useState('');
   const [selectedTopicNameReview, setSelectedTopicNameReview] = useState('');
+  const [isManualSchedulerOpen, setIsManualSchedulerOpen] = useState(false);
 
   const stats = useContestStats(contest);
   const { todayTask } = stats;
@@ -156,7 +157,7 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
       ...review,
       reviewType: nextType,
       dueDate: nextType === 'completed' ? review.dueDate : splitDateStr,
-      completedAt: nextType === 'completed' ? new Date().toISOString() : undefined,
+      ...(nextType === 'completed' ? { completedAt: new Date().toISOString() } : {}),
       stagesCompleted: nextType === 'completed' 
         ? [...(review.stagesCompleted || []), 'review'] 
         : review.stagesCompleted
@@ -172,6 +173,33 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
     } else {
       toast.success(`Recuperação ativa concluída! Próxima revisão (${nextType}) agendada para ${nextDueDate.toLocaleDateString('pt-BR')}.`);
     }
+  };
+
+  const handleCompleteAllDueReviews = async () => {
+    if (!contest) return;
+
+    const reviews = contest.meppReviews ? [...contest.meppReviews] : [];
+    
+    // Mark all overdue and pending reviews as completed
+    const updatedReviews = reviews.map(review => {
+      if (review.dueDate <= todayStrStr && review.reviewType !== 'completed') {
+        const nextType = 'completed';
+        return {
+          ...review,
+          reviewType: nextType,
+          completedAt: new Date().toISOString(),
+          stagesCompleted: [...(review.stagesCompleted || []), 'review']
+        };
+      }
+      return review;
+    });
+
+    onUpdate({
+      ...contest,
+      meppReviews: updatedReviews
+    });
+    
+    toast.success("Todas as revisões pendentes foram concluídas!");
   };
 
   const handleRemoveMeppReview = async (reviewId: string) => {
@@ -241,6 +269,12 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
             >
               Ir Para Recuperação Ativa (Praticar)
             </Link>
+            <button
+              onClick={handleCompleteAllDueReviews}
+              className="w-full md:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all text-center shrink-0 shadow-md shadow-emerald-500/10 active:scale-[0.98]"
+            >
+              Marcar Todas como Feitas
+            </button>
           </div>
         </div>
       )}
@@ -353,13 +387,22 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
               <Brain className="w-3.5 h-3.5 text-indigo-500" />
               Ciclo de Recuperação Ativa
             </h4>
-            <div className="text-[9px] font-bold text-text-sub">
-              Spaced Repetition System
+            <div className="flex items-center gap-2">
+               <button
+                 onClick={() => setIsManualSchedulerOpen(!isManualSchedulerOpen)}
+                 className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+               >
+                 {isManualSchedulerOpen ? "Ocultar Agendador" : "+ Agendar Nova Revisão"}
+               </button>
+               <div className="text-[9px] font-bold text-text-sub">
+                 Spaced Repetition System
+               </div>
             </div>
           </div>
 
           {/* Program new Active Review directly from Edital Topics Cascade */}
-          <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden">
+          {isManualSchedulerOpen && (
+            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl relative overflow-hidden">
             <h5 className="text-[9.5px] font-black text-indigo-950 uppercase tracking-widest mb-2.5 flex items-center gap-1">
               <Plus className="w-3.5 h-3.5 text-indigo-500" /> Agendar Nova Revisão Espaçada
             </h5>
@@ -421,9 +464,10 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
               </button>
             </div>
           </div>
+        )}
 
-          {/* Schedule Spaced List */}
-          <div className="flex-grow space-y-2 max-h-[340px] overflow-y-auto no-scrollbar">
+        {/* Schedule Spaced List */}
+        <div className="flex-grow space-y-2 max-h-[440px] overflow-y-auto no-scrollbar">
             {(() => {
               const reviews = contest?.meppReviews || [];
               const activeOnes = reviews.filter(r => r.reviewType !== 'completed');
@@ -507,8 +551,8 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
                   );
                 });
             })()}
-          </div>
         </div>
+      </div>
 
       </div>
 
