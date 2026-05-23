@@ -21,7 +21,8 @@ import {
   Timer,
   Award,
   Bell,
-  Brain
+  Brain,
+  Instagram
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -608,7 +609,20 @@ export default function App() {
           )}
         </div>
 
-        <div className="mt-auto pt-6 border-t border-border">
+        <div className="mt-auto pt-6 border-t border-border space-y-2">
+          <a
+            href="https://www.instagram.com/stratis.planner/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center gap-4 py-3 rounded-xl transition-all text-[11px] font-black text-text-sub hover:text-primary uppercase tracking-[0.15em]",
+              isSidebarOpen ? "px-4" : "justify-center px-0"
+            )}
+            title="Instagram"
+          >
+            <Instagram className="w-4 h-4 shrink-0" />
+            {isSidebarOpen && <span>Instagram</span>}
+          </a>
           <Link 
             id="tour-importar"
             to="/configuracoes"

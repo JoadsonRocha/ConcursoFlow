@@ -34,7 +34,8 @@ import {
   CheckSquare,
   Square,
   Brain,
-  Play
+  Play,
+  Instagram
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1087,6 +1088,26 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           <PencilLine className="w-6 h-6" />
         </button>
       </div>
+
+      <footer className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <BrandLogo size="sm" />
+          <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest opacity-40">
+            © {new Date().getFullYear()} Stratis Planner
+          </span>
+        </div>
+        <div className="flex items-center gap-6">
+          <a 
+            href="https://www.instagram.com/stratis.planner/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-[10px] font-black text-text-sub hover:text-primary uppercase tracking-[0.2em] transition-all"
+          >
+            <Instagram className="w-4 h-4" />
+            Instagram
+          </a>
+        </div>
+      </footer>
     </div>
   );
 };

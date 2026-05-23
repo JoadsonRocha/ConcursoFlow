@@ -183,7 +183,7 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
     // Mark all overdue and pending reviews as completed
     const updatedReviews = reviews.map(review => {
       if (review.dueDate <= todayStrStr && review.reviewType !== 'completed') {
-        const nextType = 'completed';
+        const nextType = 'completed' as const;
         return {
           ...review,
           reviewType: nextType,

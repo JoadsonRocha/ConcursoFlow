@@ -16,7 +16,8 @@ import {
   Smartphone,
   ChevronDown,
   CheckCircle2,
-  Star
+  Star,
+  Instagram
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -575,12 +576,28 @@ const Landing = () => {
                 Stratis Planner. Tecnologia de alto desempenho para concurseiros estrategistas.
               </p>
            </div>
-           <div className="grid grid-cols-2 gap-12 col-span-2">
+           <div className="grid grid-cols-2 lg:grid-cols-3 gap-12 col-span-2">
               <div className="space-y-4">
                  <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Ecossistema</h4>
                  <ul className="space-y-2 text-xs font-semibold text-text-sub">
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Painéis</li>
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Cronogramas</li>
+                 </ul>
+              </div>
+              <div className="space-y-4">
+                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Social</h4>
+                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
+                    <li>
+                      <a 
+                        href="https://www.instagram.com/stratis.planner/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 hover:text-primary transition-colors uppercase tracking-wider"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        Instagram
+                      </a>
+                    </li>
                  </ul>
               </div>
               <div className="space-y-4">
