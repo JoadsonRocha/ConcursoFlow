@@ -131,6 +131,9 @@ export interface Profile {
   fraseStatus?: string;
   isCreator?: boolean;
   
+  fcmToken?: string;
+  notificationsEnabled?: boolean;
+  
   lastUsageReset?: any;
   summaryUsage?: number;
   flashcardUsage?: number;

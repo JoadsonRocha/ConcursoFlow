@@ -1,6 +1,10 @@
 # Usa a imagem oficial do Node.js
 FROM node:20-alpine
 
+# Instala tzdata para suporte a fuso horário (necessário para o node-cron)
+RUN apk add --no-cache tzdata
+ENV TZ=America/Sao_Paulo
+
 # Define o diretório de trabalho dentro do container
 WORKDIR /app
 
@@ -16,12 +20,8 @@ COPY . .
 # Faz a build do Vite (frontend) e do Express (backend)
 RUN npm run build
 
-# O Cloud Run sempre define a variável PORT. Usamos 8080 como fallback padrão.
-ENV PORT=8080
+# Configurações de ambiente para Produção
 ENV NODE_ENV=production
-
-# Expõe a porta (é opcional no Cloud Run, mas bom como documentação)
-EXPOSE 8080
 
 # Inicia a aplicação usando o script configurado no package.json
 CMD ["npm", "start"]

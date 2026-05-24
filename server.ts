@@ -130,6 +130,61 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
 app.use(express.json({ limit: '50mb' }));
 
+/**
+ * Middleware para validar o App Check
+ * Protege contra acessos não autorizados fora do app
+ */
+const validateAppCheck = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const appCheckToken = req.header('X-Firebase-AppCheck');
+  if (!appCheckToken) {
+    // Em desenvolvimento, podemos ignorar se não houver token
+    if (process.env.NODE_ENV !== 'production') return next();
+    return res.status(401).json({ error: 'Faltando token do App Check' });
+  }
+
+  try {
+    const appCheckClaims = await admin.appCheck().verifyToken(appCheckToken);
+    // Token válido
+    return next();
+  } catch (err) {
+    console.error('App Check Token Invalido:', err);
+    return res.status(401).json({ error: 'Token do App Check inválido ou expirado' });
+  }
+};
+
+// Endpoint para disparar notificações (Exemplo de uso interno)
+app.post('/api/notify', async (req, res) => {
+  const { userId, title, body, icon } = req.body;
+  const db = getDb();
+
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) return res.status(404).json({ error: 'Usuário não encontrado' });
+    
+    const fcmToken = userDoc.data()?.fcmToken;
+    if (!fcmToken) return res.status(400).json({ error: 'Usuário não possui token de notificação registrado' });
+
+    const message = {
+      notification: {
+        title: title || 'Stratis Planner',
+        body: body || 'Chegou a hora dos seus estudos!',
+      },
+      token: fcmToken,
+      webpush: {
+        notification: {
+          icon: icon || '/pwa-192x192.png',
+        }
+      }
+    };
+
+    const response = await admin.messaging().send(message);
+    res.json({ success: true, messageId: response });
+  } catch (error: any) {
+    console.error('Erro ao enviar notificação:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Mount modular routes
 app.use('/api/ai', aiRoutes);
 
@@ -201,6 +256,56 @@ if (process.env.NODE_ENV !== 'production') {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   }
+}
+
+import cron from 'node-cron';
+
+// Cron Job Diário para Notificações MEPP e Cronograma
+// Roda todos os dias às 08:00 (Fuso horário de Brasília)
+if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
+  cron.schedule('0 8 * * *', async () => {
+    console.log('Executando cron job de notificações push (08:00 AM)...');
+    const db = getDb();
+    try {
+      const usersSnapshot = await db.collection('users')
+        .where('notificationsEnabled', '==', true)
+        .get();
+        
+      const notifications: Promise<any>[] = [];
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const fcmToken = userData.fcmToken;
+        
+        if (fcmToken) {
+          const message = {
+            notification: {
+              title: '🎯 Hora de Estudar!',
+              body: 'Bom dia! Já conferiu suas metas e revisões pendentes no Stratis Planner hoje?',
+            },
+            token: fcmToken,
+            webpush: {
+              notification: {
+                icon: '/pwa-192x192.png',
+              }
+            }
+          };
+          notifications.push(
+            admin.messaging().send(message)
+              .then((res) => console.log(`[Cron] Notificação enviada para ${userDoc.id}`))
+              .catch((err) => console.error(`[Cron] Erro ao notificar ${userDoc.id}:`, err))
+          );
+        }
+      }
+      
+      await Promise.allSettled(notifications);
+      console.log(`[Cron] Notificações em lote finalizadas.`);
+    } catch (error) {
+      console.error('[Cron] Erro geral no cron job:', error);
+    }
+  }, {
+    timezone: "America/Sao_Paulo"
+  });
 }
 
 export default app;

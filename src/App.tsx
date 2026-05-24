@@ -111,6 +111,34 @@ export default function App() {
   const location = useLocation();
   const mainRef = useRef<HTMLDivElement>(null);
 
+  // Notificações Push: Solicitar permissão e salvar token
+  useEffect(() => {
+    if (user && profile && !profile.fcmToken) {
+      const setupNotifications = async () => {
+        const { requestNotificationPermission, db } = await import('./lib/firebase');
+        const { doc, updateDoc } = await import('firebase/firestore');
+        const token = await requestNotificationPermission();
+        
+        if (token) {
+          try {
+            await updateDoc(doc(db, 'users', user.uid), {
+              fcmToken: token,
+              notificationsEnabled: true,
+              updatedAt: new Date()
+            });
+            console.log('Token FCM salvo com sucesso');
+          } catch (error) {
+            console.error('Erro ao salvar token FCM:', error);
+          }
+        }
+      };
+
+      // Pequeno atraso para não atrapalhar o carregamento inicial
+      const timer = setTimeout(setupNotifications, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, profile]);
+
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;

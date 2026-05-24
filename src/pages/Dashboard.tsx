@@ -1103,7 +1103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         </button>
       </div>
 
-      <footer className="mt-8 pt-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="mt-4 pt-2 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <BrandLogo size="sm" />
           <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest opacity-40">
@@ -1115,10 +1115,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             href="https://www.instagram.com/stratis.planner/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-[10px] font-black text-text-sub hover:text-primary uppercase tracking-[0.2em] transition-all"
+            className="flex items-center text-text-sub hover:text-primary transition-all"
+            title="Instagram Stratis Planner"
           >
-            <Instagram className="w-4 h-4" />
-            Instagram
+            <Instagram className="w-5 h-5" />
           </a>
         </div>
       </footer>
