@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in duration-700">
+    <div className="min-h-full bg-bg selection:bg-primary/20">
+      <div className="max-w-4xl mx-auto py-12 px-6 animate-in fade-in duration-700">
       <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-text-sub hover:text-primary transition-colors mb-12">
         <ChevronLeft className="w-4 h-4" />
         Voltar ao início
@@ -118,6 +119,7 @@ export default function PrivacyPolicy() {
           Proteção de Dados Garantida — Stratis Planner {new Date().getFullYear()}
         </p>
       </footer>
+    </div>
     </div>
   );
 }

@@ -89,7 +89,7 @@ export default function Explorar() {
   });
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-full bg-bg">
       <AnimatePresence mode="wait">
         {!selectedItem ? (
           <motion.div
@@ -100,7 +100,7 @@ export default function Explorar() {
             className="pb-20"
           >
             {/* Blog Header */}
-            <header className="bg-white border-b border-border sticky top-0 z-30 px-6 py-8">
+            <header className="bg-white border-b border-border px-6 py-8">
               <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-2">
@@ -182,7 +182,7 @@ export default function Explorar() {
               )}
 
               {/* Category Nav */}
-              <div className="sticky top-[112px] z-20 flex items-center gap-2 mb-12 overflow-x-auto py-4 px-2 no-scrollbar bg-bg/80 backdrop-blur-md">
+              <div className="sticky top-[73px] z-20 flex items-center gap-2 mb-12 overflow-x-auto py-4 px-2 no-scrollbar bg-bg/80 backdrop-blur-md">
                 <button 
                   onClick={() => setActiveTab('all')}
                   className={cn(
@@ -315,7 +315,7 @@ export default function Explorar() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="min-h-screen bg-white"
+            className="min-h-full bg-white"
           >
             {/* Reading Progress Bar */}
             <motion.div 

@@ -60,7 +60,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: str
     id={id}
     to={to} 
     className={cn(
-      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-300 group relative text-[13px] font-bold uppercase tracking-wider",
+      "flex items-center gap-3 py-2 rounded-lg transition-all duration-300 group relative text-[12px] font-bold uppercase tracking-wider",
       active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main",
       collapsed ? "justify-center px-0" : "px-4"
     )}
@@ -500,7 +500,7 @@ export default function App() {
 
   if (authLoading || (user && dataLoading) || (user && !currentContest && contests.length > 0)) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg gap-4">
+      <div className="h-[100dvh] w-screen flex flex-col items-center justify-center bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">
           {authLoading ? "Autenticando..." : "Sincronizando seus Dados..."}
@@ -511,15 +511,18 @@ export default function App() {
 
   if (!user) {
     return (
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/planos" element={<Planos />} />
-        <Route path="/termos" element={<TermsOfUse />} />
-        <Route path="/privacidade" element={<PrivacyPolicy />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <div className="h-[100dvh] w-full overflow-y-auto bg-bg">
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/planos" element={<Planos />} />
+          <Route path="/termos" element={<TermsOfUse />} />
+          <Route path="/privacidade" element={<PrivacyPolicy />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
     );
   }
 
@@ -598,20 +601,20 @@ export default function App() {
 
       {/* Sidebar - Desktop & Mobile Drawer */}
       <aside className={cn(
-        "bg-white border-r border-border transition-all duration-300 z-50",
+        "bg-white border-r border-border transition-all duration-300 z-50 overflow-hidden",
         "fixed inset-y-0 left-0 md:relative flex flex-col shrink-0 h-full",
         isSidebarOpen 
-          ? "translate-x-0 w-72 md:w-[280px] px-6 py-8 shadow-2xl md:shadow-none" 
-          : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-8"
+          ? "translate-x-0 w-72 md:w-[280px] px-6 py-6 shadow-2xl md:shadow-none" 
+          : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-6"
       )}>
-        <Link to="/" className="mb-14 px-2 hover:opacity-80 transition-opacity flex justify-center items-center">
+        <Link to="/" className="mb-8 px-2 hover:opacity-80 transition-opacity flex justify-center items-center">
           <BrandLogo showText={false} size={isSidebarOpen ? "md" : "sm"} />
         </Link>
 
-        <div className="space-y-6 flex-grow overflow-y-auto no-scrollbar">
+        <div className="space-y-1 flex-grow overflow-y-auto hide-scrollbar">
           <div>
-            {isSidebarOpen && <span className="block text-[12px] font-bold text-text-sub uppercase tracking-widest mb-3 ml-3 opacity-50">Principal</span>}
-            <nav className="space-y-1">
+            {isSidebarOpen && <span className="block text-[11px] font-bold text-text-sub uppercase tracking-widest mb-2 ml-3 opacity-50">Principal</span>}
+            <nav className="space-y-0.5">
               <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
@@ -649,7 +652,7 @@ export default function App() {
             id="tour-importar"
             to="/configuracoes"
             className={cn(
-              "flex items-center gap-4 py-3.5 rounded-xl transition-all mb-1 text-[13px] font-bold uppercase tracking-wider",
+              "flex items-center gap-4 py-2.5 rounded-xl transition-all mb-1 text-[13px] font-bold uppercase tracking-wider",
               location.pathname === '/configuracoes' ? "bg-slate-100 text-text-main" : "text-text-sub hover:bg-slate-50 ",
               isSidebarOpen ? "px-4" : "justify-center px-0"
             )}

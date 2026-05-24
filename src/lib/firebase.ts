@@ -13,7 +13,7 @@ import { getFirestore, doc, getDocFromServer, collection, addDoc } from 'firebas
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
-import { getAnalytics, isSupported, logEvent } from 'firebase/analytics';
+import { getAnalytics, isSupported, logEvent, setUserId } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const config = {
@@ -74,6 +74,12 @@ export const logPageView = (path: string, title?: string) => {
       page_path: path,
       page_title: title || document.title
     });
+  }
+};
+
+export const identifyUserForAnalytics = (uid: string) => {
+  if (analytics) {
+    setUserId(analytics, uid);
   }
 };
 export const googleProvider = new GoogleAuthProvider();

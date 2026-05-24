@@ -26,6 +26,11 @@
 }
 
 @layer base {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  
   body {
     @apply bg-bg text-text-main antialiased selection:bg-slate-200;
     font-family: var(--font-sans);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   BrainCircuit, 
   Target, 
@@ -36,13 +36,16 @@ const Landing = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
+    const el = scrollRef.current?.parentElement;
+    if (!el) return;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(el.scrollTop > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,7 +122,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg selection:bg-primary/20 relative overflow-hidden font-sans">
+    <div ref={scrollRef} className="min-h-full bg-bg selection:bg-primary/20 relative font-sans">
       {/* Background Orbs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/10 blur-[150px] rounded-full animate-pulse"></div>

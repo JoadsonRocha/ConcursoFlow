@@ -32,53 +32,54 @@ export default function Planos() {
       setLoading(null);
     }
   };
-    const plans = [
-      {
-        name: 'Estrategista PRO',
-        tagline: 'Alta performance garantida',
-        price: 'R$ 29,90',
-        period: 'por mês',
-        cta: 'Ser Estrategista',
-        color: 'bg-gradient-to-b from-indigo-900 to-indigo-800 text-white',
-        borderColor: 'border-indigo-500',
-        textColor: 'text-indigo-100',
-        annualPrice: 'R$ 197,90',
-        annualSavings: '(Economize mais de 40% ao ano)',
-        features: [
-          { name: 'Dashboard de Elite', desc: 'Visão completa e análise de desempenho.' },
-          { name: '300 Flashcards/mês', desc: 'Sua memória de longo prazo blindada.' },
-          { name: '50 Mapas Mentais/mês', desc: 'Toda a matéria mapeada visualmente.' },
-          { name: '10 Importações/mês', desc: 'Mude de edital ou atualize-se sem limites.' },
-          { name: '50 Resumos IA/mês', desc: 'IA que aprende o edital por você.' },
-          { name: 'Cronograma Infinito', desc: 'Pós-edital ou longo prazo sem travas.' },
-          { name: 'Prioridade Total', desc: 'Suas gerações de IA no topo da fila.' },
-          { name: 'Análise de Pareto', desc: 'Saiba exatamente o que a banca cobra.' },
-        ],
-        pro: true
-      },
-      {
-        name: 'Gratuito',
-        tagline: 'O primeiro passo na jornada',
-        price: 'R$ 0',
-        period: 'para sempre',
-        cta: 'Começar Agora',
-        color: 'bg-white',
-        borderColor: 'border-slate-200',
-        textColor: 'text-slate-800',
-        features: [
-          { name: '1 Edital Ativo', desc: 'Foque 100% em um cargo por vez.' },
-          { name: '20 Flashcards', desc: 'O essencial para fixar conceitos chave.' },
-          { name: '3 Mapas Mentais', desc: 'Visualize as matérias mais complexas.' },
-          { name: '10 Resumos/Edital', desc: 'Resumos gerados por IA para cada tema.' },
-          { name: 'Cronograma Básico', desc: 'Planejamento para até 4 semanas.' },
-          { name: 'Comunidade', desc: 'Leia e aprenda com outros estudantes.' },
-        ],
-        pro: false
-      }
-    ];
+
+  const plans = [
+    {
+      name: 'Estrategista PRO',
+      tagline: 'Alta performance garantida',
+      price: 'R$ 29,90',
+      period: 'por mês',
+      cta: 'Ser Estrategista',
+      color: 'bg-gradient-to-b from-indigo-900 to-indigo-800 text-white',
+      borderColor: 'border-indigo-500',
+      textColor: 'text-indigo-100',
+      annualPrice: 'R$ 197,90',
+      annualSavings: '(Economize mais de 40% ao ano)',
+      features: [
+        { name: 'Dashboard de Elite', desc: 'Visão completa e análise de desempenho.' },
+        { name: '300 Flashcards/mês', desc: 'Sua memória de longo prazo blindada.' },
+        { name: '50 Mapas Mentais/mês', desc: 'Toda a matéria mapeada visualmente.' },
+        { name: '10 Importações/mês', desc: 'Mude de edital ou atualize-se sem limites.' },
+        { name: '50 Resumos IA/mês', desc: 'IA que aprende o edital por você.' },
+        { name: 'Cronograma Infinito', desc: 'Pós-edital ou longo prazo sem travas.' },
+        { name: 'Prioridade Total', desc: 'Suas gerações de IA no topo da fila.' },
+        { name: 'Análise de Pareto', desc: 'Saiba exatamente o que a banca cobra.' },
+      ],
+      pro: true
+    },
+    {
+      name: 'Gratuito',
+      tagline: 'O primeiro passo na jornada',
+      price: 'R$ 0',
+      period: 'para sempre',
+      cta: 'Começar Agora',
+      color: 'bg-white',
+      borderColor: 'border-slate-200',
+      textColor: 'text-slate-800',
+      features: [
+        { name: '1 Edital Ativo', desc: 'Foque 100% em um cargo por vez.' },
+        { name: '20 Flashcards', desc: 'O essencial para fixar conceitos chave.' },
+        { name: '3 Mapas Mentais', desc: 'Visualize as matérias mais complexas.' },
+        { name: '10 Resumos/Edital', desc: 'Resumos gerados por IA para cada tema.' },
+        { name: 'Cronograma Básico', desc: 'Planejamento para até 4 semanas.' },
+        { name: 'Comunidade', desc: 'Leia e aprendas com outros estudantes.' },
+      ],
+      pro: false
+    }
+  ];
 
   return (
-    <div className="min-h-screen bg-bg selection:bg-primary/20">
+    <div className="min-h-full bg-bg selection:bg-primary/20">
       {/* Hero */}
       <section className="py-12 md:py-20 px-6 max-w-4xl mx-auto text-center space-y-6">
         <motion.div

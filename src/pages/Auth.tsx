@@ -108,7 +108,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col md:flex-row overflow-hidden relative">
+    <div className="h-[100dvh] bg-slate-50 flex flex-col md:flex-row overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[150px] rounded-full"></div>
       </div>
@@ -140,7 +140,7 @@ export default function Auth() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col px-4 py-4 md:px-8 md:py-4 relative overflow-y-auto bg-slate-50 justify-center">
+      <div className="flex-1 flex flex-col px-4 py-8 md:px-8 md:py-4 relative overflow-y-auto bg-slate-50 justify-start md:justify-center">
         <div className="max-w-sm mx-auto w-full space-y-3 md:space-y-4">
           <header className="space-y-2 md:space-y-3">
             <Link to="/" className="inline-flex items-center gap-3 text-text-sub hover:text-text-main transition-all text-xs font-bold uppercase tracking-wider group">
