@@ -14,6 +14,13 @@ export const PLANS: Record<string, PlanLimits> = {
     mindmapLimit: 5,
     importLimit: 1,
   },
+  beta: {
+    summaryLimit: 15,
+    flashcardLimit: 50,
+    quizLimit: 15,
+    mindmapLimit: 10,
+    importLimit: 2,
+  },
   monthly: {
     summaryLimit: 500,
     flashcardLimit: 1000,

@@ -11,7 +11,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   const [title, setTitle] = useState('');
   const [svgs, setSvgs] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
-  const [quantity, setQuantity] = useState<number>(3);
+  const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(false);
 
   const getLimit = () => {

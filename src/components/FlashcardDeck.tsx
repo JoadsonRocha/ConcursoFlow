@@ -26,12 +26,12 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [finishMode, setFinishMode] = useState(false);
 
-  const currentCard = cards[currentIndex];
+  const currentCard = cards && cards[currentIndex];
 
   const handleRate = async (quality: number) => {
     // Simple SRS logic
     // quality: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy)
-    if (!auth.currentUser) return;
+    if (!auth.currentUser || !currentCard) return;
 
     let newInterval = currentCard.interval || 0;
     let newEase = currentCard.ease || 2.5;
@@ -71,7 +71,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
     }
   };
 
-  if (finishMode) {
+  if (finishMode || !currentCard) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 animate-in zoom-in-95 duration-500">
         <div className="bg-white p-8 md:p-12 text-center space-y-8 w-full max-w-md rounded-3xl border border-border shadow-2xl">
@@ -102,12 +102,12 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
           </div>
           <div className="space-y-0.5">
             <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest leading-none">Flashcard</div>
-            <div className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">Restam {cards.length - currentIndex - 1}</div>
+            <div className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">Restam {Math.max(0, cards.length - currentIndex - 1)}</div>
           </div>
         </div>
-        {(currentCard.subjectName || currentCard.description) && (
+        {(currentCard?.subjectName || currentCard?.description) && (
           <div className="text-[10px] font-bold text-text-sub bg-slate-50 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest truncate max-w-[200px]">
-              {currentCard.subjectName || currentCard.description}
+              {currentCard?.subjectName || currentCard?.description}
           </div>
         )}
       </header>

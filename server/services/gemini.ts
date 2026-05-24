@@ -29,7 +29,7 @@ export async function generateFlashcards(topic: string, count: number = 5) {
   DIRETRIZ DE FORMATO: Retorne um JSON com array de objetos contendo "front" e "back".`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -59,7 +59,7 @@ export async function generateSummary(text: string) {
   Retorne o resumo formatado em Markdown limpo.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
   return response.text;
@@ -72,7 +72,7 @@ export async function generateMindMap(subject: string) {
   JSON: nodes {id, data: {label}, position: {x,y}}, edges {id, source, target}`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -110,7 +110,7 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -151,7 +151,7 @@ export async function parseEdital(rawText: string) {
   Cada tópico deve ter id, name, completed (false) e incidence.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -197,14 +197,17 @@ export async function parseEdital(rawText: string) {
 export async function generateSchedule(subjectsSummary: string, days: number) {
   const genAI = getAiClient();
 
-  const prompt = `Gere rigorosamente ${days} dias de cronograma de estudos baseados nos tópicos: ${subjectsSummary}.
-  Organize de forma progressiva e equilibrada. 
-  Para cada dia, o 'dayNumber' deve ser a sequência do dia (1 até ${days}).
-  Inclua 'specificTopic' (assunto principal do dia), 'generalTopic' (revisão de base ou lei seca),
-  'questionGoal' (meta de questões sugerida, número inteiro) e 'revisionTask' (tarefa de revisão, ex: Flashcards, Mapa Mental).`;
+  const prompt = `VOCÊ É UM ESTRATEGISTA DE ESTUDOS EXPERT EM PARETO (80/20).
+  Gere rigorosamente ${days} dias de cronograma de estudos baseados nos tópicos: ${subjectsSummary}.
+  
+  DIRETRIZES DE ESTRATÉGIA:
+  1. Priorize os assuntos com "Incidência Alta" ou "Muito Alta" para aparecerem mais cedo e com maior frequência.
+  2. Organize de forma progressiva e equilibrada (Básicas + Específicas por dia).
+  3. Para cada dia, o 'dayNumber' deve ser a sequência do dia (1 até ${days}).
+  4. Inclua 'specificTopic' (assunto principal), 'generalTopic' (revisão base), 'questionGoal' (número inteiro) e 'revisionTask' (ex: Flashcards).`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -244,7 +247,7 @@ export async function generateSVGMap(title: string, prompt: string, quantity: nu
   Retorne EXCLUSIVAMENTE um array de strings JSON, onde cada string é o código XML do SVG pronto para ser renderizado na web. Não adicione textos aleatórios.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: [{ role: "user", parts: [{ text: enhancedPrompt }] }]
   });
   

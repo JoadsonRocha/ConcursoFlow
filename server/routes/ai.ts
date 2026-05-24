@@ -39,7 +39,13 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
         if (!userDoc.exists) return; // if user not found, just skip tracking
 
         const data = userDoc.data();
-        const plan = 'pro'; 
+        let plan = data?.userPlan || 'free';
+        
+        // Hardcoded PRO for special user
+        if (data?.email === 'onrocha08@gmail.com') {
+          plan = 'pro';
+        }
+
         let usage = data?.[usageField] || 0;
         const limits = PLANS[plan] || PLANS.free;
         const limit = (limits as any)[limitField];
