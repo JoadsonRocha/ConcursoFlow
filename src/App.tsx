@@ -855,7 +855,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="p-5 md:p-10 max-w-7xl mx-auto space-y-10">
+        <div className="p-4 md:p-8 w-full max-w-[1536px] mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />

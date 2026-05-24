@@ -195,7 +195,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-3 animate-in fade-in duration-500 pb-4">
+    <div className="max-w-5xl mx-auto space-y-3 animate-in fade-in duration-500 pb-4">
       <header className="flex flex-row items-center justify-between gap-2">
         <div>
           <h1 className="text-xl md:text-3xl font-display text-text-main tracking-tight font-bold">
@@ -285,7 +285,41 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-border">
+                    <div className="pt-3 border-t border-border">
+                      <div className="flex flex-col gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <div className={cn(
+                            "w-4 h-4 rounded-md border transition-all flex items-center justify-center shrink-0",
+                            autoSchedule ? "bg-primary border-primary text-white" : "border-border bg-slate-50"
+                          )}>
+                            {autoSchedule && <CheckCircle2 className="w-3 h-3" />}
+                          </div>
+                          <input type="checkbox" className="hidden" checked={autoSchedule} onChange={(e) => setAutoSchedule(e.target.checked)} />
+                          <span className="text-xs font-bold text-text-main group-hover:text-primary transition-colors uppercase tracking-wider">Gerar Cronograma Automático</span>
+                        </label>
+
+                        {autoSchedule && (
+                          <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
+                            {[2, 4, 8, 12].map((w) => (
+                              <button
+                                key={w}
+                                onClick={() => setScheduleWeeks(w)}
+                                className={cn(
+                                  "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center",
+                                  scheduleWeeks === w 
+                                    ? "bg-white text-text-main shadow-sm" 
+                                    : "text-text-sub hover:text-text-main"
+                                )}
+                              >
+                                {w} Sem.
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-4 border-t border-border">
                       <div className="flex justify-between items-center">
                         <h3 className="text-[10px] font-bold text-text-main mt-1">Conteúdo Programático</h3>
                         {rawText && (
@@ -293,7 +327,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                         )}
                       </div>
                       <textarea
-                        className="w-full h-20 bg-slate-50 border border-border rounded-lg p-2 text-[10px] text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
+                        className="w-full h-24 bg-slate-50 border border-border rounded-lg p-2 text-[10px] text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
                         placeholder="Cole o edital aqui..."
                         value={rawText}
                         onChange={(e) => setRawText(e.target.value)}

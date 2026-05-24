@@ -304,7 +304,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const currentWeekDays = schedule.slice((activeWeek - 1) * 7, activeWeek * 7);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 overflow-x-hidden">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-border pb-6 md:pb-8">
         <div className="space-y-2 md:space-y-3">
           <div className="flex items-center gap-3 text-primary font-bold text-[10px] uppercase tracking-widest">
@@ -347,169 +347,174 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       </header>
 
       {/* Week Selector */}
-      <div className="flex bg-slate-100 border border-border p-1.5 rounded-2xl gap-2 overflow-x-auto no-scrollbar shadow-inner">
-        {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => {
-          const isDisabled = !isPro && w > 4;
-          return (
-            <button
-              key={w}
-              onClick={() => {
-                if (isDisabled) {
-                  setProFeatureName(`Acesso à Semana ${w}`);
-                  setShowProModal(true);
-                } else {
-                  setActiveWeek(w);
-                }
-              }}
-              className={cn(
-                "px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0 flex items-center gap-2",
-                activeWeek === w 
-                  ? "bg-white text-text-main shadow-sm border border-border" 
-                  : "text-text-sub hover:text-text-main",
-                isDisabled && "opacity-50"
-              )}
-            >
-              Semana {w}
-              {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
-            </button>
-          );
-        })}
+      <div className="w-full">
+        <div className="flex bg-slate-100 border border-border p-1.5 rounded-2xl gap-2 overflow-x-auto no-scrollbar shadow-inner select-none">
+          {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => {
+            const isDisabled = !isPro && w > 4;
+            return (
+              <button
+                key={w}
+                onClick={() => {
+                  if (isDisabled) {
+                    setProFeatureName(`Acesso à Semana ${w}`);
+                    setShowProModal(true);
+                  } else {
+                    setActiveWeek(w);
+                  }
+                }}
+                className={cn(
+                  "px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0 flex items-center gap-2 whitespace-nowrap",
+                  activeWeek === w 
+                    ? "bg-white text-text-main shadow-sm border border-border" 
+                    : "text-text-sub hover:text-text-main",
+                  isDisabled && "opacity-50"
+                )}
+              >
+                Semana {w}
+                {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {currentWeekDays.map((d, index) => {
-          const dayIdx = (activeWeek - 1) * 7 + index;
-          return (
-            <motion.div 
-              key={dayIdx}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              className={cn(
-                "rise-card p-0 border-2 transition-all duration-300 relative flex flex-col justify-between h-auto min-h-[385px] group overflow-hidden rounded-3xl text-left",
-                d.completed 
-                  ? "bg-slate-50 border-emerald-200/90 shadow-sm opacity-85" 
-                  : "bg-white border-slate-200 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-50/50"
-              )} >
-              <div className="p-5 md:p-6 space-y-6 flex flex-col flex-1">
-                <header className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
-                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-slate-900 border-2 border-slate-850 text-white rounded-2xl flex items-center justify-center font-display text-sm font-black shadow-sm italic text-[15px]">
-                        {d.dayNumber}
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-black text-text-sub uppercase tracking-wider block">META DIÁRIA</span>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block -mt-1">FASE CONCURSO</span>
-                    </div>
-                   </div>
-                   
-                   {d.completed ? (
-                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full tracking-wider border border-emerald-200/50 shadow-sm whitespace-nowrap">
-                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> CONCLUÍDO
-                     </span>
-                   ) : (
-                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-full tracking-wider border border-indigo-100 shadow-sm whitespace-nowrap">
-                       <Timer className="w-3.5 h-3.5 text-indigo-500" /> EM FOCO
-                     </span>
-                   )}
-                </header>
+      <div className="w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+          {currentWeekDays.map((d, index) => {
+            const dayIdx = (activeWeek - 1) * 7 + index;
+            return (
+              <motion.div 
+                key={dayIdx}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                className={cn(
+                  "rise-card p-0 border-2 transition-all duration-300 relative flex flex-col justify-between h-auto min-h-[385px] group overflow-hidden rounded-3xl text-left min-w-0",
+                  d.completed 
+                    ? "bg-slate-50 border-emerald-200/90 shadow-sm opacity-85" 
+                    : "bg-white border-slate-200 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-50/50"
+                )} >
+                <div className="p-5 md:p-6 space-y-6 flex flex-col flex-1 min-w-0">
+                  <header className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+                     <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-slate-900 border-2 border-slate-850 text-white rounded-2xl flex items-center justify-center font-display text-sm font-black shadow-sm italic text-[15px]">
+                          {d.dayNumber}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-black text-text-sub uppercase tracking-wider block">META DIÁRIA</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block -mt-1">FASE CONCURSO</span>
+                      </div>
+                     </div>
+                     
+                     {d.completed ? (
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase rounded-full tracking-wider border border-emerald-200/50 shadow-sm whitespace-nowrap">
+                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> CONCLUÍDO
+                       </span>
+                     ) : (
+                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase rounded-full tracking-wider border border-indigo-100 shadow-sm whitespace-nowrap">
+                         <Timer className="w-3.5 h-3.5 text-indigo-500" /> EM FOCO
+                       </span>
+                     )}
+                  </header>
 
-                <div className="space-y-4 flex-1">
-                  <div className="space-y-3.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black text-text-sub uppercase tracking-widest flex items-center gap-1 ml-0.5">
-                        <BookOpen className="w-3.5 h-3.5 text-indigo-500" /> Matérias / Tópicos de Hoje
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {/* Assunto Específico */}
-                      {d.specificTopic && (
-                        <div className="p-4 bg-indigo-50/40 border-2 border-indigo-100/60 rounded-2xl flex flex-col justify-between hover:bg-indigo-50/80 transition-all shadow-sm">
-                          <div>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
-                              <Award className="w-3 h-3 text-indigo-600" /> Tópico Específico
-                            </span>
-                            <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
-                              {d.specificTopic}
-                            </p>
+                  <div className="space-y-4 flex-1 min-w-0">
+                    <div className="space-y-3.5 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-text-sub uppercase tracking-widest flex items-center gap-1 ml-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                          <BookOpen className="w-3.5 h-3.5 text-indigo-500" /> Matérias / Tópicos de Hoje
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-3 min-w-0">
+                        {/* Assunto Específico */}
+                        {d.specificTopic && (
+                          <div className="p-4 bg-indigo-50/40 border-2 border-indigo-100/60 rounded-2xl flex flex-col justify-between hover:bg-indigo-50/80 transition-all shadow-sm min-w-0 overflow-hidden">
+                            <div className="min-w-0">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
+                                <Award className="w-3 h-3 text-indigo-600" /> Tópico Específico
+                              </span>
+                              <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
+                                {d.specificTopic}
+                              </p>
+                            </div>
+                            {!d.completed && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/foco?subject=${encodeURIComponent(d.specificTopic || '')}`);
+                                }}
+                                className="mt-3 w-full py-1.5 bg-[#4f46e5] text-white hover:bg-indigo-700 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
+                              </button>
+                            )}
                           </div>
-                          {!d.completed && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/foco?subject=${encodeURIComponent(d.specificTopic || '')}`);
-                              }}
-                              className="mt-3 w-full py-1.5 bg-[#4f46e5] text-white hover:bg-indigo-700 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
-                            </button>
-                          )}
-                        </div>
-                      )}
+                        )}
 
-                      {/* Assunto de Conhecimentos Básicos */}
-                      {d.generalTopic && (
-                        <div className="p-4 bg-emerald-50/20 border-2 border-emerald-100/60 rounded-2xl flex flex-col justify-between hover:bg-emerald-50/45 transition-all shadow-sm">
-                          <div>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-105/50 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
-                              <BrainCircuit className="w-3 h-3 text-emerald-700" /> Matéria Geral
-                            </span>
-                            <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
-                              {d.generalTopic}
-                            </p>
+                        {/* Assunto de Conhecimentos Básicos */}
+                        {d.generalTopic && (
+                          <div className="p-4 bg-emerald-50/20 border-2 border-emerald-100/60 rounded-2xl flex flex-col justify-between hover:bg-emerald-50/45 transition-all shadow-sm min-w-0 overflow-hidden">
+                            <div className="min-w-0">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-800 bg-emerald-105/50 px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
+                                <BrainCircuit className="w-3 h-3 text-emerald-700" /> Matéria Geral
+                              </span>
+                              <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
+                                {d.generalTopic}
+                              </p>
+                            </div>
+                            {!d.completed && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/foco?subject=${encodeURIComponent(d.generalTopic || '')}`);
+                                }}
+                                className="mt-3 w-full py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-250 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
+                              </button>
+                            )}
                           </div>
-                          {!d.completed && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/foco?subject=${encodeURIComponent(d.generalTopic || '')}`);
-                              }}
-                              className="mt-3 w-full py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-250 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 shadow-sm active:scale-95"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" /> Iniciar Estudo
-                            </button>
-                          )}
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 items-stretch">
-                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-left">
-                      <div className="text-[8px] font-black text-text-sub uppercase tracking-wider">Cadência</div>
-                      <div className="flex items-center gap-1 text-slate-850 mt-0.5">
-                         <Target className="w-3.5 h-3.5 text-indigo-500" />
-                         <span className="text-[11px] font-black tracking-tight">{d.questionGoal} itens</span>
-                      </div>
-                   </div>
-                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-right flex flex-col justify-between">
-                      <div className="text-[8px] font-black text-text-sub uppercase tracking-wider">Retenção</div>
-                      <div className="flex items-center gap-1 text-slate-850 mt-0.5 justify-end">
-                         <Award className="w-3.5 h-3.5 text-amber-500" />
-                         <span className="text-[11px] font-black tracking-tight truncate">{d.revisionTask}</span>
-                      </div>
-                   </div>
+                  <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-3 items-stretch min-w-0">
+                     <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-left min-w-0">
+                        <div className="text-[8px] font-black text-text-sub uppercase tracking-wider truncate">Cadência</div>
+                        <div className="flex items-center gap-1 text-slate-850 mt-0.5 overflow-hidden">
+                           <Target className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                           <span className="text-[11px] font-black tracking-tight truncate">{d.questionGoal} itens</span>
+                        </div>
+                     </div>
+                     <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-right flex flex-col justify-between min-w-0">
+                        <div className="text-[8px] font-black text-text-sub uppercase tracking-wider truncate">Retenção</div>
+                        <div className="flex items-center gap-1 text-slate-850 mt-0.5 justify-end overflow-hidden">
+                           <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                           <span className="text-[11px] font-black tracking-tight truncate">{d.revisionTask}</span>
+                        </div>
+                     </div>
+                  </div>
                 </div>
-              </div>
-              <div className="p-4 pt-0">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); toggleDay(dayIdx)}}
-                  className={cn(
-                    "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border-2 shadow-sm",
-                    d.completed 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-605" 
-                      : "bg-indigo-600/10 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white"
-                  )}
-                >
-                  {d.completed ? '➔ Revisitar Dia' : '✓ Finalizar Metas'}
-                </button>
-              </div>
-            </motion.div>
-          );
-        })}
+                <div className="p-4 pt-0">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toggleDay(dayIdx)}}
+                    className={cn(
+                      "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all border-2 shadow-sm",
+                      d.completed 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-605" 
+                        : "bg-indigo-600/10 text-indigo-700 border-indigo-200 hover:bg-indigo-600 hover:text-white"
+                    )}
+                  >
+                    {d.completed ? '➔ Revisitar Dia' : '✓ Finalizar Metas'}
+                  </button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
+
       <ProModal 
         isOpen={showProModal} 
         onClose={() => setShowProModal(false)} 
@@ -518,6 +523,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     </div>
   );
 }
+
 
 export function ShieldCheck({ className }: { className?: string }) {
   return (
