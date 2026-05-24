@@ -47,7 +47,7 @@ import Explorar from './pages/Explorar';
 import Planos from './pages/Planos';
 import BrandLogo from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
-import { db } from './lib/firebase';
+import { db, requestNotificationPermission, logPageView } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
@@ -115,21 +115,19 @@ export default function App() {
   useEffect(() => {
     if (user && profile && !profile.fcmToken) {
       const setupNotifications = async () => {
-        const { requestNotificationPermission, db } = await import('./lib/firebase');
-        const { doc, updateDoc } = await import('firebase/firestore');
-        const token = await requestNotificationPermission();
-        
-        if (token) {
-          try {
+        try {
+          const token = await requestNotificationPermission();
+          
+          if (token) {
             await updateDoc(doc(db, 'users', user.uid), {
               fcmToken: token,
               notificationsEnabled: true,
               updatedAt: new Date()
             });
             console.log('Token FCM salvo com sucesso');
-          } catch (error) {
-            console.error('Erro ao salvar token FCM:', error);
           }
+        } catch (error) {
+          console.error('Erro ao salvar token FCM:', error);
         }
       };
 
@@ -142,6 +140,10 @@ export default function App() {
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
+    }
+    // Track de visualização de página no Analytics
+    if (logPageView) {
+      logPageView(location.pathname);
     }
   }, [location]);
 
@@ -522,7 +524,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg font-sans overflow-hidden relative">
+    <div className="flex h-[100dvh] w-full bg-bg font-sans overflow-hidden relative">
       {/* Beta Modal */}
       <AnimatePresence>
         {user && showBetaModal && (
@@ -660,8 +662,8 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main ref={mainRef} className="flex-1 h-screen overflow-y-auto bg-bg relative scroll-smooth">
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex items-center justify-between border-b border-border">
+      <main ref={mainRef} className="flex-1 overflow-y-auto bg-bg relative scroll-smooth flex flex-col">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex shrink-0 items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}

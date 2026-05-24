@@ -9,10 +9,11 @@ import {
   sendPasswordResetEmail,
   updateProfile
 } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, collection, addDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { getAnalytics, isSupported, logEvent } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const config = {
@@ -58,6 +59,23 @@ export const db = (databaseId && databaseId !== '(default)')
   : getFirestore(app);
 export const storage = getStorage(app);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+export let analytics: any = null;
+if (typeof window !== 'undefined') {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  });
+}
+
+export const logPageView = (path: string, title?: string) => {
+  if (analytics) {
+    logEvent(analytics, 'page_view', {
+      page_path: path,
+      page_title: title || document.title
+    });
+  }
+};
 export const googleProvider = new GoogleAuthProvider();
 
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
@@ -82,8 +100,6 @@ export const requestNotificationPermission = async () => {
     return null;
   }
 };
-
-import { collection, addDoc } from 'firebase/firestore';
 
 /**
  * Envia um email através da extensão do Resend para o Firebase

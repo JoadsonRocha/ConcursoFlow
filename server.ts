@@ -261,10 +261,28 @@ if (process.env.NODE_ENV !== 'production') {
 import cron from 'node-cron';
 
 // Cron Job Diário para Notificações MEPP e Cronograma
-// Roda todos os dias às 08:00 (Fuso horário de Brasília)
+// Roda às 08:00, 13:00 e 19:00 (Fuso horário de Brasília)
 if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
-  cron.schedule('0 8 * * *', async () => {
-    console.log('Executando cron job de notificações push (08:00 AM)...');
+  cron.schedule('0 8,13,19 * * *', async () => {
+    const now = new Date();
+    const hourStr = now.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", hour: 'numeric' });
+    const hour = parseInt(hourStr, 10);
+    console.log(`Executando cron job de notificações push (${hour}:00)...`);
+    
+    let title = '🎯 Hora de Estudar!';
+    let body = 'Já conferiu suas metas e revisões pendentes no Stratis Planner hoje?';
+    
+    if (hour === 8) {
+      title = '🌅 Bom dia! Hora de Estudar!';
+      body = 'Vamos começar o dia batendo as metas no Stratis Planner!';
+    } else if (hour === 13) {
+      title = '☀️ Boa tarde! Foco nos Estudos!';
+      body = 'Já fez suas revisões hoje? Acesse o Stratis Planner e continue progredindo!';
+    } else if (hour === 19) {
+      title = '🌙 Boa noite! Último gás do dia!';
+      body = 'Ainda dá tempo de revisar matérias e fechar o dia com chave de ouro.';
+    }
+
     const db = getDb();
     try {
       const usersSnapshot = await db.collection('users')
@@ -273,15 +291,48 @@ if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
         
       const notifications: Promise<any>[] = [];
 
+      // Pega data atual no fuso do Brasil em YYYY-MM-DD
+      const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const yyyy = tzDate.getFullYear();
+      const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(tzDate.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
         const fcmToken = userData.fcmToken;
         
         if (fcmToken) {
+          // Verifica se precisa notificar o usuário (se não cumpriu a meta do dia ainda)
+          let needsStudyNotification = true;
+          
+          if (userData.currentContestId) {
+            const contestDoc = await db.collection('contests').doc(userData.currentContestId).get();
+            if (contestDoc.exists) {
+              const contestData = contestDoc.data() || {};
+              
+              // Verifica se tem registro de estudo (horas/questões) HOJE
+              const hasStudiedToday = contestData.dailyHistory?.some((hist: any) => hist.date === todayStr);
+              
+              // Verifica se existem revisões atrasadas ou do dia que ainda NÃO foram concluídas
+              const pendingRevisions = contestData.meppReviews?.filter((rev: any) => rev.dueDate <= todayStr && !rev.completedAt) || [];
+              
+              // Se o usuário já estudou alguma coisa útil hoje E não deixou nenhuma revisão obrigatória pra trás:
+              if (hasStudiedToday && pendingRevisions.length === 0) {
+                needsStudyNotification = false; 
+              }
+            }
+          }
+
+          if (!needsStudyNotification) {
+            console.log(`[Cron] Usuário ${userDoc.id} já completou os estudos hoje. Ignorando notificação.`);
+            continue; // Pula para o próximo sem notificar
+          }
+
           const message = {
             notification: {
-              title: '🎯 Hora de Estudar!',
-              body: 'Bom dia! Já conferiu suas metas e revisões pendentes no Stratis Planner hoje?',
+              title,
+              body,
             },
             token: fcmToken,
             webpush: {
