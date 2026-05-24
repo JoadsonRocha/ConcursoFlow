@@ -3,14 +3,13 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
 // O Firebase Messaging precisa das mesmas configurações do App
-// Em produção, isso pode ser preenchido via script de build ou injetado
 firebase.initializeApp({
-  apiKey: "API_KEY_PLACEHOLDER",
-  authDomain: "AUTH_DOMAIN_PLACEHOLDER",
-  projectId: "PROJECT_ID_PLACEHOLDER",
-  storageBucket: "STORAGE_BUCKET_PLACEHOLDER",
-  messagingSenderId: "SENDER_ID_PLACEHOLDER",
-  appId: "APP_ID_PLACEHOLDER"
+  apiKey: "AIzaSyANWdIvng5P-cf9Tpi7P4AbNSk9qscf2y4",
+  authDomain: "gen-lang-client-0925764429.firebaseapp.com",
+  projectId: "gen-lang-client-0925764429",
+  storageBucket: "gen-lang-client-0925764429.firebasestorage.app",
+  messagingSenderId: "684995404002",
+  appId: "1:684995404002:web:e71faf4f0cb7fc0110febb"
 });
 
 const messaging = firebase.messaging();
