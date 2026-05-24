@@ -876,6 +876,8 @@ export default function App() {
               <Route path="/privacidade" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>
         </div>
