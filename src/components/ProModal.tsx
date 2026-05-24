@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Zap, CheckCircle2, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface ProModalProps {
 
 export default function ProModal({ isOpen, onClose, featureName }: ProModalProps) {
   const navigate = useNavigate();
+  const { planType } = useAuth();
 
   if (!isOpen) return null;
 
@@ -21,6 +23,11 @@ export default function ProModal({ isOpen, onClose, featureName }: ProModalProps
     'Mesclar disciplinas entre editais',
     'Geração ilimitada de cronogramas'
   ];
+
+  const getTargetPlan = () => {
+    if (planType === 'free') return 'BETA';
+    return 'PRO';
+  };
 
   return (
     <AnimatePresence>
@@ -53,13 +60,13 @@ export default function ProModal({ isOpen, onClose, featureName }: ProModalProps
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-white leading-tight mb-3">
-                Desbloqueie o PRO
+                Subir para {getTargetPlan()}
               </h2>
               <p className="text-indigo-100 text-sm sm:text-base font-medium leading-relaxed">
                 {featureName ? (
-                  <>A funcionalidade <strong className="text-white font-bold">{featureName}</strong> é exclusiva do plano PRO.</>
+                  <>A funcionalidade <strong className="text-white font-bold">{featureName}</strong> exige um plano superior.</>
                 ) : (
-                  <>Ative o plano PRO para ter acesso a funcionalidades avançadas e exclusivas.</>
+                  <>Ative o plano {getTargetPlan()} para ter acesso a funcionalidades avançadas e exclusivas.</>
                 )}
               </p>
             </div>

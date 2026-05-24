@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster, toast } from 'sonner';
 import { 
   LayoutDashboard, 
@@ -85,7 +85,7 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: str
  * navegação (Sidebar), autenticação e o tour de boas-vindas.
  */
 export default function App() {
-  const { user, profile, loading: authLoading, logout, isPro } = useAuth();
+  const { user, profile, loading: authLoading, logout, isPro, planType } = useAuth();
   const [contests, setContests] = useState<Contest[]>([]);
   const [currentContest, setCurrentContest] = useState<Contest | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -109,6 +109,7 @@ export default function App() {
     return sessionStorage.getItem('betaModalShown') !== 'true';
   });
   const location = useLocation();
+  const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Notificações Push: Solicitar permissão e salvar token
@@ -379,6 +380,22 @@ export default function App() {
 
   const handleImportEdital = async (newContest: Contest) => {
     if (!user) return;
+    
+    // Limits check
+    const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+    
+    if (contests.length >= limit) {
+      const planName = planType === 'free' ? 'GRATUITO' : 'BETA';
+      toast.error(`Limite de ${limit} edital atingido no plano ${planName}. Faça o upgrade para expandir seus limites!`, {
+        action: {
+          label: "Ver Planos",
+          onClick: () => navigate("/planos")
+        },
+        duration: 5000
+      });
+      return;
+    }
+
     try {
       const contestId = `dynamic-${Date.now()}`;
       const docRef = doc(db, 'users', user.uid, 'contests', contestId);
@@ -674,14 +691,17 @@ export default function App() {
             >
               <Menu className={cn("w-5 h-5 transition-transform", isSidebarOpen ? "rotate-90" : "rotate-0")} />
             </button>
-            <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
-              <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
-                STRATIS PLANNER
-              </h2>
-              <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
-                Estratégia para Concursos
-              </span>
-            </Link>
+              <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
+                    STRATIS PLANNER
+                  </h2>
+                  <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">BETA</span>
+                </div>
+                <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
+                  Estratégia para Concursos
+                </span>
+              </Link>
           </div>
 
           <div className="flex items-center gap-5">
@@ -803,9 +823,9 @@ export default function App() {
                           </div>
                           <div className={cn(
                             "px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest shrink-0 ml-2",
-                            isPro ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
+                            isPro ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"
                           )}>
-                            {isPro ? 'PRO' : 'FREE'}
+                            {isPro ? 'BETA (PRO)' : 'FREE'}
                           </div>
                         </div>
                         <Link 

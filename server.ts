@@ -67,14 +67,19 @@ const getStripe = () => {
 const getDb = () => {
   try {
     const currentDbId = DATABASE_ID;
+    const currentProjId = DB_PROJECT_ID;
+    
+    // Log apenas uma vez ou em depuração
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Firestore Admin] Inicializando DB. Proj: ${currentProjId}, DB ID: ${currentDbId || '(default)'}`);
+    }
+
     if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
-      console.log(`[Firestore Admin] Usando banco de dados específico: ${currentDbId}`);
       return getFirestore(admin.app(), currentDbId);
     }
-    console.log('[Firestore Admin] Usando banco de dados (default)');
     return getFirestore();
   } catch (e) {
-    console.warn(`⚠️ Firestore Admin: Falha ao obter banco específico, tentando fallback...`, e);
+    console.warn(`⚠️ Firestore Admin: Falha ao obter banco, tentando fallback...`, e);
     return getFirestore();
   }
 };
@@ -284,21 +289,29 @@ if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
     }
 
     const db = getDb();
+    let usersSnapshot;
     try {
-      const usersSnapshot = await db.collection('users')
+      console.log(`[Cron] Buscando usuários com notificações ativas...`);
+      usersSnapshot = await db.collection('users')
         .where('notificationsEnabled', '==', true)
         .get();
+      console.log(`[Cron] Snapshot obtido. Total: ${usersSnapshot.size}`);
+    } catch (queryErr: any) {
+      console.error('[Cron] Falha Crítica na consulta de usuários:', queryErr.message || queryErr);
+      return; // Encerra o job pois não consegue nem listar usuários
+    }
         
-      const notifications: Promise<any>[] = [];
+    const notifications: Promise<any>[] = [];
 
-      // Pega data atual no fuso do Brasil em YYYY-MM-DD
-      const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-      const yyyy = tzDate.getFullYear();
-      const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(tzDate.getDate()).padStart(2, '0');
-      const todayStr = `${yyyy}-${mm}-${dd}`;
+    // Pega data atual no fuso do Brasil em YYYY-MM-DD
+    const tzDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const yyyy = tzDate.getFullYear();
+    const mm = String(tzDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(tzDate.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
 
-      for (const userDoc of usersSnapshot.docs) {
+    for (const userDoc of usersSnapshot.docs) {
+      try {
         const userData = userDoc.data();
         const fcmToken = userData.fcmToken;
         
@@ -307,53 +320,46 @@ if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
           let needsStudyNotification = true;
           
           if (userData.currentContestId) {
-            const contestDoc = await db.collection('contests').doc(userData.currentContestId).get();
+            const contestDoc = await db.collection('users').doc(userDoc.id).collection('contests').doc(userData.currentContestId).get();
             if (contestDoc.exists) {
               const contestData = contestDoc.data() || {};
-              
-              // Verifica se tem registro de estudo (horas/questões) HOJE
               const hasStudiedToday = contestData.dailyHistory?.some((hist: any) => hist.date === todayStr);
-              
-              // Verifica se existem revisões atrasadas ou do dia que ainda NÃO foram concluídas
               const pendingRevisions = contestData.meppReviews?.filter((rev: any) => rev.dueDate <= todayStr && !rev.completedAt) || [];
               
-              // Se o usuário já estudou alguma coisa útil hoje E não deixou nenhuma revisão obrigatória pra trás:
               if (hasStudiedToday && pendingRevisions.length === 0) {
                 needsStudyNotification = false; 
               }
             }
           }
 
-          if (!needsStudyNotification) {
-            console.log(`[Cron] Usuário ${userDoc.id} já completou os estudos hoje. Ignorando notificação.`);
-            continue; // Pula para o próximo sem notificar
+          if (needsStudyNotification) {
+            const message = {
+              notification: { title, body },
+              token: fcmToken,
+              webpush: { notification: { icon: '/logo_pwa.png' } }
+            };
+            
+            notifications.push(
+              admin.messaging().send(message)
+                .then(() => console.log(`[Cron] Sucesso: ${userDoc.id}`))
+                .catch((err) => {
+                  if (err.code === 'messaging/registration-token-not-registered') {
+                    console.log(`[Cron] Token inválido para ${userDoc.id}, limpando...`);
+                    db.collection('users').doc(userDoc.id).update({ fcmToken: null, notificationsEnabled: false }).catch(() => {});
+                  } else {
+                    console.error(`[Cron] Erro FCM para ${userDoc.id}:`, err.message || err);
+                  }
+                })
+            );
           }
-
-          const message = {
-            notification: {
-              title,
-              body,
-            },
-            token: fcmToken,
-            webpush: {
-              notification: {
-                icon: '/logo_pwa.png',
-              }
-            }
-          };
-          notifications.push(
-            admin.messaging().send(message)
-              .then((res) => console.log(`[Cron] Notificação enviada para ${userDoc.id}`))
-              .catch((err) => console.error(`[Cron] Erro ao notificar ${userDoc.id}:`, err))
-          );
         }
+      } catch (userLoopErr: any) {
+        console.error(`[Cron] Erro ao processar usuário ${userDoc.id}:`, userLoopErr.message || userLoopErr);
       }
-      
-      await Promise.allSettled(notifications);
-      console.log(`[Cron] Notificações em lote finalizadas.`);
-    } catch (error) {
-      console.error('[Cron] Erro geral no cron job:', error);
     }
+    
+    await Promise.allSettled(notifications);
+    console.log(`[Cron] Ciclo finalizado.`);
   }, {
     timezone: "America/Sao_Paulo"
   });

@@ -47,6 +47,7 @@ import { db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useContestStats } from '../hooks/useContestStats';
 import EmptyState from '../components/EmptyState';
+import ProModal from '../components/ProModal';
 
 interface DashboardProps {
   contest: Contest;
@@ -133,10 +134,12 @@ const ContestSelectorItem = ({
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest, onDelete }) => {
-  const { user } = useAuth();
+  const { user, isPro, isBeta } = useAuth();
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showLogModal, setShowLogModal ] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('');
   const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [featuredContests, setFeaturedContests] = useState<Contest[]>([]);
@@ -491,6 +494,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     {contests.length > 1 && (
                       <button 
                         onClick={() => {
+                          if (!isPro && !isBeta) {
+                             setShowProModal(true);
+                             setProFeatureName('Comparar Similaridade entre Editais');
+                             setIsSelectorOpen(false);
+                             return;
+                          }
                           setShowSimilarityModal(true);
                           setIsSelectorOpen(false);
                         }}
@@ -1122,6 +1131,12 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </a>
         </div>
       </footer>
+
+      <ProModal 
+        isOpen={showProModal} 
+        onClose={() => setShowProModal(false)} 
+        featureName={proFeatureName} 
+      />
     </div>
   );
 };

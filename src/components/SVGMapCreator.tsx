@@ -6,13 +6,19 @@ import { useAuth } from '../contexts/AuthContext';
 import ProModal from './ProModal';
 
 export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onClose: () => void, saveMap: (svgData: string[], title: string) => void, currentCount: number }) {
-  const { profile, updateProfile, isPro } = useAuth();
+  const { profile, updateProfile, isPro, planType } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [title, setTitle] = useState('');
   const [svgs, setSvgs] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
   const [quantity, setQuantity] = useState<number>(3);
   const [loading, setLoading] = useState(false);
+
+  const getLimit = () => {
+    if (planType === 'pro') return 50;
+    if (planType === 'beta') return 10;
+    return 3;
+  };
 
   const addSvg = () => {
     if (svgs.length < 5) {
@@ -23,19 +29,10 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   };
 
   const generateWithAI = async () => {
-    /* Bypassed for PRO unlimited
-    if (isPro) {
-      if ((profile?.mindmapUsage || 0) >= 50) {
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      if (currentCount >= 3) {
-        setShowProModal(true);
-        return;
-      }
+    if (currentCount >= getLimit()) {
+      setShowProModal(true);
+      return;
     }
-    */
     if (!prompt.trim() || !title.trim() || loading) {
       if (!title.trim()) toast.error('Dê um título ao seu mapa mental.');
       else if (!prompt.trim()) toast.error('Descreva o que deseja no mapa mental.');
@@ -54,18 +51,10 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   };
 
   const handleSave = async () => {
-    // Re-check just in case
-    /* Bypassed for PRO
-    if (isPro) {
-      if ((profile?.mindmapUsage || 0) >= 50) {
-        setShowProModal(true);
-        return;
-      }
-    } else if (currentCount >= 3) {
+    if (currentCount >= getLimit()) {
       setShowProModal(true);
       return;
     }
-    */
     saveMap(svgs, title);
     
     // Update usage

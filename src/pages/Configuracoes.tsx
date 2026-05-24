@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrainCircuit, Upload, AlertCircle, CheckCircle2, Calendar, FileText, Loader2, Plus, Trash2, Save, Wand2, Target, Settings as SettingsIcon } from 'lucide-react';
+import { BrainCircuit, Upload, AlertCircle, CheckCircle2, Calendar, FileText, Loader2, Plus, Trash2, Save, Wand2, Target, Settings as SettingsIcon, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { parseEdital, generateSchedule } from '../services/gemini';
 import { Contest, Subject } from '../types';
@@ -22,7 +22,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onImport, contests }: SettingsProps) {
-  const { profile, updateProfile, isPro } = useAuth();
+  const { profile, updateProfile, isPro, isBeta } = useAuth();
   const navigate = useNavigate();
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
@@ -205,12 +205,28 @@ export default function Settings({ onImport, contests }: SettingsProps) {
             Configure seu plano rapidamente.
           </p>
         </div>
-        <Link 
-          to="/comunidade" 
-          className="text-[10px] uppercase font-bold text-text-sub hover:text-primary transition-all whitespace-nowrap"
-        >
-          Buscar na Comunidade
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (!isPro && !isBeta) {
+                setProFeatureName('Exportação de Plano de Estudo (PDF)');
+                setShowProModal(true);
+                return;
+              }
+              toast.info("Função de exportação sendo preparada para seu nível PRO!");
+            }}
+            className="hidden sm:flex items-center gap-2 bg-white border border-border px-4 py-2 hover:bg-slate-50 transition-colors rounded-xl text-text-sub text-[10px] font-bold uppercase tracking-wider shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5 text-primary" />
+            Exportar Plano
+          </button>
+          <Link 
+            to="/comunidade" 
+            className="text-[10px] uppercase font-bold text-text-sub hover:text-primary transition-all whitespace-nowrap"
+          >
+            Buscar na Comunidade
+          </Link>
+        </div>
       </header>
 
       {/* Mode Switcher */}
@@ -222,7 +238,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
             activeTab === 'ai' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
           )}
         >
-          {!isPro && (
+          {!isPro && !isBeta && (
              <div className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
                PRO
              </div>
@@ -327,8 +343,8 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                         )}
                       </div>
                       <textarea
-                        className="w-full h-24 bg-slate-50 border border-border rounded-lg p-2 text-[10px] text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
-                        placeholder="Cole o edital aqui..."
+                        className="w-full min-h-[300px] md:min-h-[400px] bg-slate-50 border border-border rounded-xl p-4 text-xs text-text-main focus:border-primary/50 transition-all outline-none resize-none leading-relaxed custom-scrollbar placeholder:text-slate-400"
+                        placeholder="Cole o edital aqui (Matérias, tópicos e sub-tópicos)..."
                         value={rawText}
                         onChange={(e) => setRawText(e.target.value)}
                       />
@@ -354,7 +370,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
                       <button 
                         onClick={() => {
-                          if (!isPro) {
+                          if (!isPro && !isBeta) {
                             setProFeatureName('Importação de Edital via PDF');
                             setShowProModal(true);
                             return;
@@ -367,7 +383,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           extractingPdf ? "bg-slate-500 cursor-not-allowed opacity-80" : "bg-gradient-to-r from-primary to-accent hover:scale-[1.02]"
                         )}
                       >
-                        {!isPro && (
+                        {!isPro && !isBeta && (
                            <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
                              PRO
                            </div>

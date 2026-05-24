@@ -159,12 +159,19 @@ export default function Auth() {
                 {authMode === 'recover' && 'Recuperar Senha'}
                 {authMode === 'success_recover' && 'E-mail Enviado'}
               </h2>
-              <p className="text-text-sub font-medium text-sm">
-                {authMode === 'login' && 'Acesse seu sistema estratégico.'}
-                {authMode === 'signup' && 'Inicie sua jornada com ferramentas de elite.'}
-                {authMode === 'recover' && 'Enviaremos instruções para redefinir sua senha.'}
-                {authMode === 'success_recover' && 'Verifique sua caixa de entrada para redefinir a senha.'}
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-text-sub font-medium text-sm">
+                  {authMode === 'login' && 'Acesse seu sistema estratégico.'}
+                  {authMode === 'signup' && 'Inicie sua jornada com ferramentas de elite.'}
+                  {authMode === 'recover' && 'Enviaremos instruções para redefinir sua senha.'}
+                  {authMode === 'success_recover' && 'Verifique sua caixa de entrada para redefinir a senha.'}
+                </p>
+                {authMode === 'signup' && (
+                  <div className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md mt-1 w-fit">
+                    Acesso PRO Liberado (BETA)
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 

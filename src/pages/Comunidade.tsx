@@ -11,7 +11,7 @@ import ProModal from '../components/ProModal';
 import { toast } from 'sonner';
 
 export default function Comunidade({ onImport, contests }: { onImport: (contest: Contest) => void, contests?: Contest[] }) {
-  const { user, profile, updateProfile, isPro } = useAuth();
+  const { user, profile, updateProfile, isPro, planType } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
   const [activeTab, setActiveTab] = useState<'contests' | 'flashcards' | 'mindmaps'>('contests');
@@ -135,7 +135,12 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneDeck = async (deck: any) => {
     if (!user) return;
     
-    /* Bypass manual check for cloning deck as requested */
+    const limit = planType === 'pro' ? 1000 : (planType === 'beta' ? 50 : 20);
+    if (personalFlashcardsCount + deck.cards.length > limit) {
+      setProFeatureName(`Limite de ${limit} Flashcards atingido`);
+      setShowProModal(true);
+      return;
+    }
 
     try {
       const batch = deck.cards.map((card: any) => {
@@ -175,7 +180,12 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleClone = async (contest: Contest) => {
     if (!user) return;
     
-    /* Bypass manual check for cloning contest as requested */
+    const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+    if (contests && contests.length >= limit) {
+       setProFeatureName(`Limite de ${limit} Edital atingido`);
+       setShowProModal(true);
+       return;
+    }
     
     try {
       const clonedContest = {
@@ -205,7 +215,12 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneMindMap = async (map: any) => {
     if (!user) return;
     
-    /* Bypass manual check for cloning mind map as requested */
+    const limit = planType === 'pro' ? 50 : (planType === 'beta' ? 10 : 3);
+    if (personalMapsCount >= limit) {
+      setProFeatureName(`Limite de ${limit} Mapas Mentais atingido`);
+      setShowProModal(true);
+      return;
+    }
 
     try {
       const clonedMap = {

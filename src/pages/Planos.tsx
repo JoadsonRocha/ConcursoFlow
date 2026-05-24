@@ -36,43 +36,58 @@ export default function Planos() {
   const plans = [
     {
       name: 'Estrategista PRO',
-      tagline: 'Alta performance garantida',
+      tagline: 'O auge da produtividade',
       price: 'R$ 29,90',
       period: 'por mês',
-      cta: 'Ser Estrategista',
+      cta: 'Ser Elite',
       color: 'bg-gradient-to-b from-indigo-900 to-indigo-800 text-white',
       borderColor: 'border-indigo-500',
       textColor: 'text-indigo-100',
-      annualPrice: 'R$ 197,90',
-      annualSavings: '(Economize mais de 40% ao ano)',
+      isPro: true,
       features: [
-        { name: 'Dashboard de Elite', desc: 'Visão completa e análise de desempenho.' },
-        { name: '300 Flashcards/mês', desc: 'Sua memória de longo prazo blindada.' },
-        { name: '50 Mapas Mentais/mês', desc: 'Toda a matéria mapeada visualmente.' },
-        { name: '10 Importações/mês', desc: 'Mude de edital ou atualize-se sem limites.' },
-        { name: '50 Resumos IA/mês', desc: 'IA que aprende o edital por você.' },
-        { name: 'Cronograma Infinito', desc: 'Pós-edital ou longo prazo sem travas.' },
-        { name: 'Prioridade Total', desc: 'Suas gerações de IA no topo da fila.' },
-        { name: 'Análise de Pareto', desc: 'Saiba exatamente o que a banca cobra.' },
+        { name: 'Editais Ilimitados', desc: 'Gerencie múltiplos concursos simultâneos.' },
+        { name: 'Sem Limites de IA', desc: 'Flashcards e Mapas mentais sem travas.' },
+        { name: 'Prioridade Total', desc: 'Gerações 5x mais rápidas que o gratuito.' },
+        { name: 'Exportação PDF', desc: 'Leve seu plano de estudo para onde quiser.' },
+        { name: 'Suporte VIP', desc: 'Contato direto com nosso time técnico.' },
       ],
       pro: true
     },
     {
-      name: 'Gratuito',
-      tagline: 'O primeiro passo na jornada',
+      name: 'Acesso BETA',
+      tagline: 'Equilíbrio e performance',
+      price: 'R$ 0',
+      period: 'gratuito temporário',
+      cta: 'Experimentar Beta',
+      color: 'bg-white border-2 border-amber-500/30',
+      borderColor: 'border-amber-500/50',
+      textColor: 'text-slate-800',
+      isBeta: true,
+      features: [
+        { name: '2 Editais Ativos', desc: 'Perfeito para quem foca em áreas similares.' },
+        { name: '50 Flashcards', desc: 'Espaço de sobra para fixar os pontos cegos.' },
+        { name: '10 Mapas Mentais', desc: 'Mapeie as matérias mais difíceis com IA.' },
+        { name: '25 Resumos/Edital', desc: 'Estude o triplo com a ajuda da nossa IA.' },
+        { name: 'Acesso Antecipado', desc: 'Teste novas funções antes de todo mundo.' },
+      ],
+      pro: false,
+      beta: true
+    },
+    {
+      name: 'Plano Semente',
+      tagline: 'O início da jornada',
       price: 'R$ 0',
       period: 'para sempre',
-      cta: 'Começar Agora',
-      color: 'bg-white',
+      cta: 'Começar Grátis',
+      color: 'bg-slate-50',
       borderColor: 'border-slate-200',
-      textColor: 'text-slate-800',
+      textColor: 'text-slate-600',
       features: [
-        { name: '1 Edital Ativo', desc: 'Foque 100% em um cargo por vez.' },
-        { name: '20 Flashcards', desc: 'O essencial para fixar conceitos chave.' },
-        { name: '3 Mapas Mentais', desc: 'Visualize as matérias mais complexas.' },
-        { name: '10 Resumos/Edital', desc: 'Resumos gerados por IA para cada tema.' },
-        { name: 'Cronograma Básico', desc: 'Planejamento para até 4 semanas.' },
-        { name: 'Comunidade', desc: 'Leia e aprendas com outros estudantes.' },
+        { name: '1 Edital Ativo', desc: 'Foque 100% em um único objetivo.' },
+        { name: '20 Flashcards', desc: 'O essencial para os temas mais cobrados.' },
+        { name: '3 Mapas Mentais', desc: 'Inicie sua organização visual.' },
+        { name: '10 Resumos/Edital', desc: 'Resumos estratégicos via IA.' },
+        { name: 'Comunidade AI', desc: 'Compartilhe e aprenda com outros.' },
       ],
       pro: false
     }
@@ -85,9 +100,9 @@ export default function Planos() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 bg-primary/5 text-primary text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 rounded-full border border-primary/10"
+          className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-600 text-[10px] font-black uppercase tracking-[0.3em] px-5 py-2 rounded-full border border-amber-500/20 shadow-sm"
         >
-          <Sparkles className="w-3.5 h-3.5" /> Investimento no Futuro
+          <Sparkles className="w-3.5 h-3.5" /> Fase Beta Inicial
         </motion.div>
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
@@ -95,8 +110,8 @@ export default function Planos() {
           transition={{ delay: 0.1 }}
           className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight leading-[1.1]"
         >
-          Escolha o plano que vai <br />
-          <span className="text-primary italic">mudar sua vida</span>
+          Acesso <span className="text-primary italic">PRO 100% Gratuito</span> <br />
+          enquanto durar o Beta
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -104,13 +119,13 @@ export default function Planos() {
           transition={{ delay: 0.2 }}
           className="text-text-sub text-sm md:text-base font-medium max-w-xl mx-auto"
         >
-          Sabemos que cada jornada é única. Por isso, criamos opções que respeitam o seu momento e aceleram sua evolução.
+          Estamos em fase de lançamento. No momento, todos os usuários possuem acesso ilimitado às ferramentas de IA e produtividade como forma de agradecimento pelo feedback inicial.
         </motion.p>
       </section>
 
       {/* Plans Grid */}
-      <section className="px-6 py-10 max-w-5xl mx-auto mb-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      <section className="px-6 py-10 max-w-7xl mx-auto mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -118,15 +133,18 @@ export default function Planos() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ delay: 0.3 + (i * 0.1) }}
               className={cn(
-                "p-6 sm:p-8 rounded-[2rem] border relative overflow-hidden flex flex-col h-full",
+                "p-6 sm:p-7 rounded-[2rem] border relative overflow-hidden flex flex-col h-full",
                 plan.borderColor,
                 plan.color,
                 plan.pro ? "shadow-2xl shadow-indigo-900/20 md:scale-105 z-10 border-indigo-500/50" : "shadow-md"
               )}
             >
-              {plan.pro && (
-                <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-bl-xl shadow-lg">
-                  Mais Vendido
+              {(plan.pro || plan.beta) && (
+                <div className={cn(
+                  "absolute top-0 right-0 text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-bl-xl shadow-lg",
+                  plan.pro ? "bg-amber-500 text-white" : "bg-indigo-500 text-white"
+                )}>
+                  {plan.pro ? 'ELITE 💎' : 'PRESENTE 🎁'}
                 </div>
               )}
               
@@ -135,7 +153,7 @@ export default function Planos() {
                   "text-[10px] font-black uppercase tracking-[0.25em] px-3 py-1 rounded-full inline-block",
                   plan.pro ? "bg-indigo-500/20 text-indigo-200 border border-indigo-500/30" : "bg-slate-100 text-slate-500 border border-slate-200"
                 )}>
-                  {plan.pro ? '🏆 Plano Estrategista' : '🌱 Plano Semente'}
+                  {plan.pro ? '⚡ Acesso Ilimitado' : '🌱 Plano Padrão'}
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-display font-bold leading-tight">{plan.name}</h2>
                 <p className={cn("font-medium italic text-sm", plan.pro ? "text-indigo-200" : "text-slate-500")}>"{plan.tagline}"</p>
@@ -145,12 +163,6 @@ export default function Planos() {
                      <span className="text-4xl sm:text-5xl font-black tracking-tight">{plan.price}</span>
                      <span className={cn("text-xs font-bold uppercase tracking-wider", plan.pro ? "text-indigo-300" : "text-slate-400")}>{plan.period}</span>
                    </div>
-                   {plan.annualPrice && (
-                     <div className="mt-3 bg-indigo-950/50 border border-indigo-500/30 rounded-xl p-3 inline-block w-full text-center">
-                        <div className="text-[10px] font-black text-indigo-300 uppercase tracking-widest leading-none mb-1">Destaque Anual</div>
-                        <div className="text-sm font-bold text-white tracking-tight">{plan.annualPrice} <span className="text-xs text-indigo-200 block sm:inline">{plan.annualSavings}</span></div>
-                     </div>
-                   )}
                 </div>
               </div>
 
@@ -176,35 +188,20 @@ export default function Planos() {
 
               <div className="mt-10 space-y-3">
                  <button 
-                   onClick={() => handleSubscribe('monthly')}
-                   disabled={!!loading}
+                   onClick={() => plan.pro ? navigate('/') : null}
                    className={cn(
                      "w-full py-4 rounded-xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2",
                      plan.pro 
-                      ? "bg-indigo-500 text-white shadow-xl shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] hover:bg-indigo-400" 
-                      : "bg-slate-900 border text-white hover:bg-slate-800",
-                     loading === 'monthly' && "opacity-70 cursor-wait"
+                      ? "bg-amber-500 text-white shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] hover:bg-amber-400" 
+                      : "bg-slate-900 border text-white hover:bg-slate-800"
                    )}
                  >
-                   {loading === 'monthly' ? <Loader2 className="w-4 h-4 animate-spin" /> : plan.cta}
+                   {plan.pro ? 'Aproveitar Agora' : 'Em Breve'}
                    {!loading && <ArrowRight className="w-4 h-4" />}
                  </button>
-
-                 {plan.pro && (
-                   <button 
-                     onClick={() => handleSubscribe('annual')}
-                     disabled={!!loading}
-                     className={cn(
-                       "w-full py-3 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 bg-indigo-950 text-indigo-200 hover:bg-indigo-900 hover:text-white border border-indigo-800",
-                       loading === 'annual' && "opacity-70 cursor-wait"
-                     )}
-                   >
-                     {loading === 'annual' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Quero Plano Anual (-17%)'}
-                   </button>
-                 )}
                  
                  <p className={cn("text-center text-[9px] font-bold uppercase tracking-widest mt-3 opacity-60", plan.pro ? "text-indigo-300" : "text-slate-400")}>
-                   {plan.pro ? 'Garantia de 7 dias ou seu dinheiro de volta' : 'Sem necessidade de cartão de crédito'}
+                   {plan.pro ? 'Válido até o fim da fase de testes beta' : 'O plano clássico retornará em breve'}
                  </p>
               </div>
             </motion.div>

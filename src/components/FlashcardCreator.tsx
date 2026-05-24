@@ -14,7 +14,7 @@ interface FlashcardCreatorProps {
 }
 
 export default function FlashcardCreator({ onClose, subjects, currentCount }: FlashcardCreatorProps) {
-  const { profile, updateProfile, isPro } = useAuth();
+  const { profile, updateProfile, isPro, planType } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [mode, setMode] = useState<'manual' | 'ai'>('ai');
   const [front, setFront] = useState('');
@@ -26,23 +26,20 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const getLimit = () => {
+    if (planType === 'pro') return 1000;
+    if (planType === 'beta') return 50;
+    return 20;
+  };
+
   const handleManualSave = async () => {
     if (!front || !back || !auth.currentUser) return;
     
     // Limit check
-    /* Bypassed for PRO
-    if (isPro) {
-      if ((profile?.flashcardUsage || 0) >= 300) {
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      if (currentCount >= 20) {
-        setShowProModal(true);
-        return;
-      }
+    if (currentCount >= getLimit()) {
+      setShowProModal(true);
+      return;
     }
-    */
 
     setLoading(true);
     try {
@@ -96,15 +93,10 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
   const handleSaveAllGenerated = async () => {
     if (!auth.currentUser || generatedCards.length === 0) return;
     
-    const limit = isPro ? 300 : 20;
-    const currentUsage = isPro ? (profile?.flashcardUsage || 0) : currentCount;
-
-    /* Bypassed for PRO 
-    if (currentUsage + generatedCards.length > limit) {
+    if (currentCount + generatedCards.length > getLimit()) {
       setShowProModal(true);
       return;
     }
-    */
 
     setLoading(true);
     try {

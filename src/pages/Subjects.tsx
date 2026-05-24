@@ -21,7 +21,7 @@ import { generateStudySummary } from '../services/gemini';
 
 import { CopyPlus } from 'lucide-react';
 export default function Subjects({ contest, contests, onUpdate }: { contest: Contest, contests?: Contest[], onUpdate: (contest: Contest) => void }) {
-  const { profile, updateProfile, isPro } = useAuth();
+  const { profile, updateProfile, isPro, planType } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('Funcionalidade PRO');
   
@@ -44,26 +44,22 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
     return matchesSearch && matchesFilter;
   });
 
+  const getLimit = () => {
+    if (planType === 'pro') return 500;
+    if (planType === 'beta') return 25;
+    return 10;
+  };
+
   const handleAiAsk = (e: React.MouseEvent, subjectName: string, topicId: string, topicName: string) => {
     e.stopPropagation();
     
-    // Check usage limits bypassed for PRO
-    /* 
-    if (isPro) {
-      if ((profile?.summaryUsage || 0) >= 50) {
-        setProFeatureName('Limite de 50 Resumos atingido');
-        setShowProModal(true);
-        return;
-      }
-    } else {
-      // Free users: original 10 per contest limit
-      if ((contest.summaryUsage || 0) >= 10) {
-        setProFeatureName('Resumos Estratégicos (Máx: 10)');
-        setShowProModal(true);
-        return;
-      }
+    // Limits check
+    const limit = getLimit();
+    if ((contest.summaryUsage || 0) >= limit) {
+      setProFeatureName(`Resumos Estratégicos (Máx: ${limit})`);
+      setShowProModal(true);
+      return;
     }
-    */
 
     setSelectedTopic({ subId: subjectName, topicId, topicName }); // abusing subId to store name for UI
     setAiSummary(null);
@@ -72,8 +68,11 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
       setAiSummary(summary);
       setIsLoadingAi(false);
       
-      // Update global usage - MOVED TO SERVER
-      
+      // Update global usage
+      onUpdate({ 
+        ...contest, 
+        summaryUsage: (contest.summaryUsage || 0) + 1 
+      });
     }).catch(() => {
       setAiSummary("Erro ao gerar resumo.");
       setIsLoadingAi(false);

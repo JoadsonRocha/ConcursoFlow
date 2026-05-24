@@ -118,7 +118,7 @@ export interface Profile {
   email: string;
   displayName?: string;
   photoURL?: string;
-  userPlan?: 'free' | 'pro' | 'monthly' | 'annual';
+  userPlan?: 'free' | 'beta' | 'pro' | 'monthly' | 'annual';
   subscriptionId?: string;
   currentContestId?: string | null;
   tourCompleted?: boolean;

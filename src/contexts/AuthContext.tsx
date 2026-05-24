@@ -16,6 +16,8 @@ interface AuthContextType {
   profile: Profile | null;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   isPro: boolean;
+  isBeta: boolean;
+  planType: 'free' | 'beta' | 'pro';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updatedAt: serverTimestamp(),
                 currentContestId: null,
                 tourCompleted: false,
-                userPlan: 'pro',
+                userPlan: 'beta',
                 lastUsageReset: serverTimestamp(),
                 summaryUsage: 0,
                 flashcardUsage: 0,
@@ -70,11 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } else {
               const data = userDoc.data() as Profile;
-              // Force PRO mode
-              if (data.userPlan !== 'pro') {
-                data.userPlan = 'pro';
-                updateDoc(userRef, { userPlan: 'pro', updatedAt: serverTimestamp() }).catch(console.error);
-              }
               setProfile(data);
               // Background check for reset
               checkMonthlyReset(user.uid, data);
@@ -126,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: res.user.uid,
       email: email,
       displayName: name,
-      userPlan: 'pro',
+      userPlan: 'beta',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       currentContestId: null,
@@ -155,6 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sendPasswordResetEmail(auth, email, actionCodeSettings);
   };
 
+    const plan = profile?.userPlan || 'beta';
+    const isSpecialUser = profile?.email === 'onrocha08@gmail.com';
+    const effectivePlan = isSpecialUser ? 'pro' : plan;
+    const planType = (effectivePlan === 'pro' || effectivePlan === 'monthly' || effectivePlan === 'annual') ? 'pro' : (effectivePlan === 'beta' ? 'beta' : 'free');
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -166,7 +168,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       profile,
       updateProfile: updateProfileData,
-      isPro: true
+      isPro: planType === 'pro',
+      isBeta: planType === 'beta',
+      planType
     }}>
       {children}
     </AuthContext.Provider>
