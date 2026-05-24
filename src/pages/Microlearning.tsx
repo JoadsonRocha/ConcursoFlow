@@ -62,6 +62,15 @@ export default function Microlearning({ contest }: { contest: Contest }) {
   const [publishType, setPublishType] = useState<'map' | 'flashcard'>('map');
   const [publishForm, setPublishForm] = useState({ title: '', description: '' });
 
+  const shuffle = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   useEffect(() => {
     if (!auth.currentUser) return;
 
@@ -77,7 +86,8 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         const reviewDate = card.nextReview.toDate();
         return reviewDate <= now;
       });
-      setDueCards(due);
+      // Shuffle due cards to avoid predictable sequence
+      setDueCards(shuffle(due));
       setIsLibraryLoading(false);
     }, (err) => {
       console.error(err);
@@ -754,7 +764,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         {librarySubTab === 'flashcards' && flashcards.length > 0 && (
           <div className="flex justify-end">
             <button 
-              onClick={() => setStudyModeCards(flashcards)}
+              onClick={() => setStudyModeCards(shuffle(flashcards))}
               className="flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-accent/20"
             >
               <Play className="w-4 h-4 fill-current" />
@@ -783,7 +793,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
               }, {})).map(([groupName, groupCards]: [string, any]) => (
                 <div 
                   key={groupName} 
-                  onClick={() => setStudyModeCards(groupCards)}
+                  onClick={() => setStudyModeCards(shuffle(groupCards))}
                   className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
                 >
                   <div className="aspect-square bg-white rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100 shadow-inner">
@@ -807,6 +817,22 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                         Coleção
                       </p>
                       <div className="flex items-center gap-0.5 shrink-0">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPublishType('flashcard');
+                            // Use the first card as preview for the publishing form setup, 
+                            // or ideally we'd have a deck-level publishing. 
+                            // But based on existing publishItem logic, it expects a single previewFlashcard.
+                            setPreviewFlashcard(groupCards[0]); 
+                            setPublishForm({ title: groupName, description: '' });
+                            setShowPublishModal(true);
+                          }}
+                          className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                          title="Compartilhar na Comunidade"
+                        >
+                          <Globe className="w-4 h-4 md:w-3 md:h-3" />
+                        </button>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -958,17 +984,10 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <div className="flex gap-2 mt-2">
                  <button 
                   onClick={() => setShowCreator(true)}
-                  className="flex-1 bg-slate-100 text-text-main py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                  className="w-full bg-accent text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-accent/20"
                  >
                    <Plus className="w-3.5 h-3.5" />
-                   Criar
-                 </button>
-                 <button 
-                  onClick={() => setActiveTab('flashcards')}
-                  disabled={dueCards.length === 0}
-                  className="flex-[2] bg-accent text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20 disabled:opacity-50 disabled:shadow-none"
-                 >
-                  Revisar Cartões
+                   Criar Flashcards
                  </button>
                </div>
             </div>
@@ -989,57 +1008,14 @@ export default function Microlearning({ contest }: { contest: Contest }) {
                 <p className="text-text-sub text-xs leading-relaxed italic">Visualize conexões de qualquer assunto.</p>
               </div>
             </div>
-            <div className="pt-4 relative z-10">
-                 <button 
-                  onClick={() => setShowMindMapCreator(true)}
-                  className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-indigo-500/20 mb-3"
-                 >
-                  Criar Novo Mapa
-                 </button>
-                 <div className="space-y-2 mt-3 max-h-32 overflow-y-auto pr-1">
-                    {personalMindMaps.map(m => (
-                      <div 
-                        key={m.id} 
-                        className="group/item flex flex-col gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-all cursor-pointer"
-                        onClick={() => setPreviewMindMap(m)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-indigo-800 font-bold truncate italic flex-1">{m.title}</span>
-                          <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                            {!m.isPublic && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPublishType('map');
-                                  setPreviewMindMap(m);
-                                  setPublishForm({ title: m.title, description: '' });
-                                  setShowPublishModal(true);
-                                }}
-                                className="p-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"
-                                title="Publicar na Comunidade"
-                              >
-                                <Share2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button 
-                              onClick={(e) => deleteMindMap(e, m.id)} 
-                              className="p-1.5 rounded-lg bg-white border border-red-100 text-slate-400 hover:text-red-500 hover:border-red-200 transition-all"
-                              title="Apagar"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                        {m.isPublic && (
-                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Publicado
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                 </div>
-            </div>
+             <div className="pt-4 relative z-10">
+                  <button 
+                   onClick={() => setShowMindMapCreator(true)}
+                   className="w-full bg-indigo-600 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md shadow-indigo-500/20 mb-3"
+                  >
+                   Criar Novo Mapa
+                  </button>
+             </div>
           </div>
         </div>
         

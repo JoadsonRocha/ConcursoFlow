@@ -233,7 +233,7 @@ export default function Perfil() {
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
                 <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary/5 border-primary/20 text-primary">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  Premium Ativo
+                  Plano PRO Ativo
                 </div>
                 <div className="inline-flex items-center gap-2 bg-accent/5 border border-accent/20 text-accent text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
                   <TrendingUp className="w-3.5 h-3.5" />
@@ -369,7 +369,7 @@ export default function Perfil() {
               <h3 className="text-[11px] font-black text-[#5C7187] uppercase tracking-[0.2em]">SITUAÇÃO DA CONTA</h3>
             </div>
             <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-primary/10 text-primary border border-primary/20">
-              Acesso Premium Completo (Beta)
+              Assinatura PRO Ativa
             </div>
           </div>
           <p className="text-[10px] text-text-sub font-medium leading-relaxed opacity-60">

@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       profile,
       updateProfile: updateProfileData,
-      isPro: planType === 'pro',
+      isPro: planType === 'pro' || planType === 'beta',
       isBeta: planType === 'beta',
       planType
     }}>

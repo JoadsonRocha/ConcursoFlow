@@ -385,7 +385,7 @@ export default function App() {
     const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
     
     if (contests.length >= limit) {
-      const planName = planType === 'free' ? 'GRATUITO' : 'BETA';
+      const planName = planType === 'pro' ? 'PRO' : (planType === 'beta' ? 'BETA' : 'GRATUITO');
       toast.error(`Limite de ${limit} edital atingido no plano ${planName}. Faça o upgrade para expandir seus limites!`, {
         action: {
           label: "Ver Planos",
@@ -825,7 +825,7 @@ export default function App() {
                             "px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest shrink-0 ml-2",
                             isPro ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"
                           )}>
-                            {isPro ? 'BETA (PRO)' : 'FREE'}
+                            {isPro ? 'PRO' : 'FREE'}
                           </div>
                         </div>
                         <Link 

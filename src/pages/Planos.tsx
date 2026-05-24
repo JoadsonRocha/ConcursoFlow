@@ -110,8 +110,8 @@ export default function Planos() {
           transition={{ delay: 0.1 }}
           className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight leading-[1.1]"
         >
-          Acesso <span className="text-primary italic">PRO 100% Gratuito</span> <br />
-          enquanto durar o Beta
+          Acesso <span className="text-primary italic">Beta Estratégico</span> <br />
+          com Limites Estendidos
         </motion.h1>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -119,7 +119,7 @@ export default function Planos() {
           transition={{ delay: 0.2 }}
           className="text-text-sub text-sm md:text-base font-medium max-w-xl mx-auto"
         >
-          Estamos em fase de lançamento. No momento, todos os usuários possuem acesso ilimitado às ferramentas de IA e produtividade como forma de agradecimento pelo feedback inicial.
+          Estamos em fase de lançamento. Novos usuários possuem acesso ao Plano Beta, permitindo o uso avançado das ferramentas de IA com limites controlados durante os testes.
         </motion.p>
       </section>
 

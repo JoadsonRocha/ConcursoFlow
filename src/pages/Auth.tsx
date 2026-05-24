@@ -168,7 +168,7 @@ export default function Auth() {
                 </p>
                 {authMode === 'signup' && (
                   <div className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md mt-1 w-fit">
-                    Acesso PRO Liberado (BETA)
+                    Acesso PRO Ativado
                   </div>
                 )}
               </div>
