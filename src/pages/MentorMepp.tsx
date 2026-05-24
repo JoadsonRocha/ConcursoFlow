@@ -36,6 +36,10 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
   const stats = useContestStats(contest);
   const { todayTask } = stats;
 
+  /**
+   * Helper para obter a data atual formatada como ISO (YYYY-MM-DD)
+   * tratando problemas de fuso horário.
+   */
   const getTodayISOString = () => {
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -44,9 +48,17 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
 
   const todayStrStr = getTodayISOString();
 
-  // Stages completed for today's topic
+  /**
+   * Obtém as etapas concluídas (checklist) para o tópico da meta de hoje.
+   */
   const currentMeppStages = contest?.meppReviews?.find(r => r.topicName === todayTask?.specificTopic)?.stagesCompleted || [];
 
+  /**
+   * Lógica Principal: Alternar etapas do checklist diário (MEPP).
+   * Se for a primeira etapa marcada, cria um novo "Ciclo de Revisão" para este tópico.
+   * Se todas as etapas (Teoria, Recall, Prática, Erros) forem marcadas, 
+   * o sistema valida automaticamente o dia no Cronograma.
+   */
   const handleToggleMeppStage = async (stageKey: string) => {
     if (!contest || !todayTask) {
        toast.error("Para usar o checklist diário MEPP, garanta que você tem uma meta de estudos para hoje!");
@@ -61,21 +73,23 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
 
     const existingReviewIdx = reviews.findIndex(r => r.topicName === topicName && r.reviewType !== 'completed');
     
+    let updatedStages: string[] = [];
     if (existingReviewIdx === -1) {
-      // Create lazy MEPP review mapping if not already scheduled
+      // Cria o registro MEPP caso não exista ("Lazy Initialization")
+      updatedStages = [stageKey];
       const newReviewItem = {
         id: `mepp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         topicName,
         subjectName,
         createdAt: new Date().toISOString(),
-        stagesCompleted: [stageKey],
+        stagesCompleted: updatedStages,
         dueDate: todayStrStr,
         reviewType: '24h' as const
       };
       reviews.push(newReviewItem);
     } else {
       const stages = reviews[existingReviewIdx].stagesCompleted || [];
-      const updatedStages = stages.includes(stageKey) 
+      updatedStages = stages.includes(stageKey) 
         ? stages.filter(s => s !== stageKey) 
         : [...stages, stageKey];
       
@@ -85,14 +99,35 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
       };
     }
 
+    // SINCRONIZAÇÃO COM CRONOGRAMA: Se as 4 etapas principais forem concluídas,
+    // marca a tarefa do cronograma de hoje como feita.
+    const coreStages = ['theory', 'recall', 'practice', 'errors'];
+    const allDone = coreStages.every(s => updatedStages.includes(s));
+    
+    let newSchedule = contest.schedule;
+    if (allDone && todayTask && !todayTask.completed) {
+      newSchedule = contest.schedule?.map(day => {
+        if (day.id === todayTask.id) {
+          return { ...day, completed: true };
+        }
+        return day;
+      });
+      toast.success("Parabéns! Você completou todas as etapas do dia. Meta do cronograma validada! 🏆");
+    }
+
     onUpdate({
       ...contest,
-      meppReviews: reviews
+      meppReviews: reviews,
+      schedule: newSchedule
     });
 
     toast.success("Progresso do Ciclo Diário MEPP atualizado! 🚀");
   };
 
+  /**
+   * Agenda manualmente uma Revisão Ativa para um tópico escolhido.
+   * Útil quando o usuário quer revisar algo que não está na meta de hoje.
+   */
   const handleScheduleCustomReview = async () => {
     if (!selectedTopicNameReview) {
       toast.error("Por favor, selecione um tópico para agendar a revisão ativa!");
@@ -101,7 +136,6 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
 
     const reviews = contest?.meppReviews ? [...contest.meppReviews] : [];
     
-    // Check if review already exists and is active
     const alreadyExists = reviews.some(r => r.topicName === selectedTopicNameReview && r.reviewType !== 'completed');
     if (alreadyExists) {
       toast.warning("Já existe uma revisão ativa agendada para este tópico!");
@@ -113,8 +147,8 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
       topicName: selectedTopicNameReview,
       subjectName: selectedSubjectNameReview || "Geral",
       createdAt: new Date().toISOString(),
-      stagesCompleted: ['theory'], // Assumes theory is done
-      dueDate: todayStrStr, // Due today (immediate active recall request)
+      stagesCompleted: ['theory'], 
+      dueDate: todayStrStr,
       reviewType: '24h' as const
     };
 
@@ -128,6 +162,10 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
     setSelectedSubjectNameReview('');
   };
 
+  /**
+   * Lógica do Algoritmo de Repetição Espaçada:
+   * 24h -> 7d -> 30d -> Concluído.
+   */
   const handleCompleteActiveReviewStep = async (reviewId: string) => {
     if (!contest) return;
 
@@ -141,10 +179,10 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
 
     if (review.reviewType === '24h') {
       nextType = '7d';
-      daysToAdd = 6; // 7 days total
+      daysToAdd = 6; 
     } else if (review.reviewType === '7d') {
       nextType = '30d';
-      daysToAdd = 23; // 30 days total
+      daysToAdd = 23; 
     } else if (review.reviewType === '30d') {
       nextType = 'completed';
     }
@@ -163,9 +201,24 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
         : review.stagesCompleted
     };
 
+    // SINCRONIZAÇÃO: Se marcar como feito algo que é a meta de hoje, valida no cronograma.
+    let newSchedule = contest.schedule;
+    if (todayTask && !todayTask.completed) {
+       const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+       if (norm(review.topicName) === norm(todayTask.specificTopic || '') || 
+           norm(review.topicName) === norm(todayTask.generalTopic || '')) {
+          newSchedule = contest.schedule?.map(day => {
+            if (day.id === todayTask.id) return { ...day, completed: true };
+            return day;
+          });
+          toast.success("Meta do cronograma também validada por associação de tópico! 🚀");
+       }
+    }
+
     onUpdate({
       ...contest,
-      meppReviews: reviews
+      meppReviews: reviews,
+      schedule: newSchedule
     });
 
     if (nextType === 'completed') {
@@ -194,9 +247,28 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
       return review;
     });
 
+    // SYNC WITH SCHEDULE: If any of these completed reviews match today's topic, mark schedule as done
+    let newSchedule = contest.schedule;
+    if (todayTask && !todayTask.completed) {
+      const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const hasMatch = updatedReviews.some(r => 
+        (r.dueDate <= todayStrStr && r.reviewType === 'completed') && 
+        (norm(r.topicName) === norm(todayTask.specificTopic || '') || norm(r.topicName) === norm(todayTask.generalTopic || ''))
+      );
+
+      if (hasMatch) {
+        newSchedule = contest.schedule?.map(day => {
+          if (day.id === todayTask.id) return { ...day, completed: true };
+          return day;
+        });
+        toast.success("Meta do cronograma validada por conclusão em massa! 🎯");
+      }
+    }
+
     onUpdate({
       ...contest,
-      meppReviews: updatedReviews
+      meppReviews: updatedReviews,
+      schedule: newSchedule
     });
     
     toast.success("Todas as revisões pendentes foram concluídas!");
@@ -392,7 +464,7 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
                  onClick={() => setIsManualSchedulerOpen(!isManualSchedulerOpen)}
                  className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-wider hover:bg-indigo-100 transition-colors"
                >
-                 {isManualSchedulerOpen ? "Ocultar Agendador" : "+ Agendar Nova Revisão"}
+                 {isManualSchedulerOpen ? "Ocultar Agendador" : "+ Agendar Revisão"}
                </button>
                <div className="text-[9px] font-bold text-text-sub">
                  Spaced Repetition System

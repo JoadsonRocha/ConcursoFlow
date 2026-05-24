@@ -1,74 +1,103 @@
+/**
+ * Interface que representa um Tópico de estudo dentro de uma matéria.
+ */
 export interface Topic {
   id: string;
   name: string;
-  completed: boolean;
-  revision: boolean;
-  questions: boolean;
-  errorNote?: string;
+  completed: boolean;     // Se o estudo teórico foi concluído
+  revision: boolean;      // Se a revisão foi realizada
+  questions: boolean;     // Se as questões foram praticadas
+  errorNote?: string;     // Observações sobre erros cometidos
 }
 
+/**
+ * Interface que representa uma Disciplina/Matéria do concurso.
+ */
 export interface Subject {
   id: string;
   name: string;
   totalTopics: number;
   completedTopics: number;
   category: 'Gerais' | 'Específicos';
-  incidence: 'Baixa' | 'Média' | 'Alta' | 'Muito Alta';
-  briefing?: string;
+  incidence: 'Baixa' | 'Média' | 'Alta' | 'Muito Alta'; // Peso da matéria no concurso
+  briefing?: string;     // Resumo ou orientações da matéria
   topics?: Topic[];
 }
 
+/**
+ * Representa um dia individual dentro do Cronograma Estratégico.
+ */
 export interface ScheduleDay {
   id: string;
-  dayNumber: number;
-  generalTopic: string;
-  specificTopic: string;
-  questionGoal: number;
-  revisionTask: string;
-  completed: boolean;
-  actualHours?: number;
-  actualQuestions?: number;
+  dayNumber: number;      // Número do dia (ex: Dia 1, Dia 2)
+  generalTopic: string;   // Matéria principal do dia
+  specificTopic: string;  // Assunto específico a ser estudado
+  questionGoal: number;   // Meta de questões para o dia
+  revisionTask: string;   // Descrição da tarefa de revisão
+  completed: boolean;     // Status de conclusão do dia
+  actualHours?: number;   // Horas registradas pelo usuário
+  actualQuestions?: number; // Questões registradas pelo usuário
 }
 
+/**
+ * Interface do Ciclo de Revisão MEPP (Método de Estudo de Alta Performance).
+ * Utiliza o conceito de Repetição Espaçada (Spaced Repetition).
+ */
 export interface MeppReview {
   id: string;
-  topicName: string;
-  subjectName: string;
-  createdAt: string;
-  stagesCompleted?: string[]; // e.g., ['theory', 'review', 'practice', 'errors']
-  dueDate: string; // ISO String (split('T')[0])
-  reviewType: '24h' | '7d' | '30d' | 'completed';
-  completedAt?: string;
+  topicName: string;      // Nome do tópico sendo revisado
+  subjectName: string;    // Matéria associada
+  createdAt: string;      // Data de criação do ciclo
+  /**
+   * Etapas do dia de estudo (Método MEPP):
+   * - theory: Estudo Teórico
+   * - recall: Recuperação Ativa (Flashcards/Resumo)
+   * - practice: Prática de Questões
+   * - errors: Análise de Erros
+   */
+  stagesCompleted?: string[]; 
+  dueDate: string;        // Data em que a revisão deve ser feita (Formato YYYY-MM-DD)
+  reviewType: '24h' | '7d' | '30d' | 'completed'; // Gatilhos do Spaced Repetition
+  completedAt?: string;   // Data de conclusão efetiva
 }
 
+/**
+ * Objeto central do Concurso. Contém toda a base de dados do plano de estudos.
+ */
 export interface Contest {
   id: string;
-  name: string;
-  role: string;
-  examDate: string;
-  subjects: Subject[];
+  name: string;           // Nome do Concurso (ex: SEFAZ-SP)
+  role: string;           // Cargo pretendido
+  examDate: string;       // Data da prova
+  subjects: Subject[];    // Lista de matérias
   dailyGoalHours?: number;
   dailyGoalQuestions?: number;
   dailyContentVolume?: number;
-  schedule?: ScheduleDay[];
-  dailyHistory?: { date: string, hours: number, questions: number }[];
+  schedule?: ScheduleDay[];    // O cronograma gerado dia a dia
+  dailyHistory?: { date: string, hours: number, questions: number }[]; // Histórico de produtividade
   scheduleStartDate?: string;
-  ownerId?: string;
+  ownerId?: string;       // ID do usuário criador (Firebase Auth UID)
   ownerName?: string;
   likesCount?: number;
-  isPublic?: boolean;
-  banca?: string;
+  isPublic?: boolean;     // Se o plano é público na comunidade
+  banca?: string;         // Banca examinadora (FGV, Cebraspe, etc)
+  
+  // Contadores de uso de IA (para planos limitados)
   summaryUsage?: number;
   flashcardUsage?: number;
   mindmapUsage?: number;
   importUsage?: number;
-  paretoAnalyzed?: boolean;
+  
+  paretoAnalyzed?: boolean; // Se a análise de incidência (Regra 80/20) foi feita
   createdAt?: any;
   updatedAt?: any;
   ownerIsCreator?: boolean;
-  meppReviews?: MeppReview[];
+  meppReviews?: MeppReview[]; // Todos os ciclos de revisão ativos do usuário
 }
 
+/**
+ * Progresso agregado do usuário no contexto de um concurso.
+ */
 export interface UserProgress {
   contestId: string;
   completedTopics: string[];
@@ -81,6 +110,9 @@ export interface UserProgress {
   }[];
 }
 
+/**
+ * Perfil completo do usuário no Stratis Planner.
+ */
 export interface Profile {
   uid: string;
   email: string;
@@ -93,15 +125,13 @@ export interface Profile {
   createdAt: any;
   updatedAt: any;
   
-  // Custom Profile fields
   phoneNumber?: string;
   concursoFoco?: string;
   nivelAtual?: string;
   fraseStatus?: string;
   isCreator?: boolean;
   
-  // Usage tracking
-  lastUsageReset?: any; // Timestamp
+  lastUsageReset?: any;
   summaryUsage?: number;
   flashcardUsage?: number;
   mindmapUsage?: number;

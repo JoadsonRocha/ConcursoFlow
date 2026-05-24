@@ -79,6 +79,11 @@ const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: str
 );
 
 // App Component
+/**
+ * Componente Raiz da Aplicação (App).
+ * Gerencia o estado global do concurso atual, sincronização com Firebase Firestore,
+ * navegação (Sidebar), autenticação e o tour de boas-vindas.
+ */
 export default function App() {
   const { user, profile, loading: authLoading, logout, isPro } = useAuth();
   const [contests, setContests] = useState<Contest[]>([]);
@@ -87,7 +92,7 @@ export default function App() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMeppNotificationOpen, setIsMeppNotificationOpen] = useState(false);
 
-  // MEPP Notification logic
+  // Lógica de Notificações MEPP: Verifica se há revisões pendentes para hoje
   const getTodayISOString = () => {
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -610,19 +615,6 @@ export default function App() {
         </div>
 
         <div className="mt-auto pt-6 border-t border-border space-y-2">
-          <a
-            href="https://www.instagram.com/stratis.planner/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "flex items-center gap-4 py-3 rounded-xl transition-all text-[11px] font-black text-text-sub hover:text-primary uppercase tracking-[0.15em]",
-              isSidebarOpen ? "px-4" : "justify-center px-0"
-            )}
-            title="Instagram"
-          >
-            <Instagram className="w-4 h-4 shrink-0" />
-            {isSidebarOpen && <span>Instagram</span>}
-          </a>
           <Link 
             id="tour-importar"
             to="/configuracoes"

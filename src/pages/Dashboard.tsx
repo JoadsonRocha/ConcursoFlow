@@ -240,6 +240,13 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     return Math.round((intersection / t1.size) * 100);
   };
 
+  /**
+   * Função Principal: Registra o desempenho do dia e atualiza o progresso.
+   * - Marca a tarefa do cronograma como concluída.
+   * - Tenta encontrar e marcar automaticamente o tópico estudado no edital (via similaridade de texto).
+   * - Inicia/Atualiza automaticamente o Ciclo de Revisão MEPP para o tópico estudado.
+   * - Registra no histórico de produtividade (horas e questões).
+   */
   const handleSavePerformance = async () => {
     if (!contest) return;
 
@@ -250,6 +257,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     const inputQuestions = typeof logForm.questions === 'number' ? logForm.questions : 0;
 
     if (todayTask) {
+      // 1. Marcar Cronograma como feito
       newSchedule = contest.schedule?.map(day => {
         if (day.id === todayTask.id) {
           return {
@@ -262,6 +270,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         return day;
       });
 
+      // 2. Normalização de texto para busca inteligente de tópicos no Edital
       const normalize = (s: string) => s.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
         .replace(/[^\w\s]/gi, ' ') 
@@ -272,6 +281,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       const topicsStr = [todayTask.specificTopic, todayTask.generalTopic].join(' ');
       const scheduleWords = normalize(topicsStr).split(/\s+/).filter(w => w.length > 2);
       
+      // 3. Cruzamento automático: Identifica se o que foi estudado hoje corresponde a um item do Edital
       newSubjects = newSubjects.map(subject => {
         const normalizedSubjectName = normalize(subject.name);
         const normSpecific = normalize(todayTask.specificTopic || '');
@@ -293,6 +303,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             const matchCount = topicWords.filter(tw => scheduleWords.some(sw => sw.includes(tw) || tw.includes(sw))).length;
             const matchRatio = topicWords.length > 0 ? matchCount / topicWords.length : 0;
 
+            // Se houver 45% de similiaridade nas palavras, marca como concluído automaticamente
             if (hasDirectMatch || matchRatio >= 0.45) {
               return { ...topic, completed: true };
             }
@@ -315,34 +326,37 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       });
     }
 
-    // Auto-mark MEPP "Estudo Teórico Ativo" ('theory' stage) as completed
+    // 4. Integração Automática com Ciclo de Revisão MEPP
+    // Ao finalizar o estudo no Dashboard, o sistema já agenda todas as etapas 
+    // de revisão (24h, 7d, 30d) para garantir a memorização.
     let newMeppReviews = contest.meppReviews ? [...contest.meppReviews] : [];
     if (todayTask) {
       const topicName = todayTask.specificTopic || todayTask.generalTopic || "Estudo do Dia";
-      const subjectName = contest.subjects.find(sub => 
+      const subjectSnapshot = contest.subjects.find(sub => 
         sub.topics?.some(t => t.name === todayTask.specificTopic)
-      )?.name || "Geral";
+      );
+      const subjectName = subjectSnapshot?.name || "Geral";
 
       const existingReviewIdx = newMeppReviews.findIndex(r => r.topicName === topicName && r.reviewType !== 'completed');
       
+      const fullStages = ['theory', 'recall', 'practice', 'errors'];
+
       if (existingReviewIdx === -1) {
         newMeppReviews.push({
           id: `mepp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           topicName,
           subjectName,
           createdAt: new Date().toISOString(),
-          stagesCompleted: ['theory'],
+          stagesCompleted: fullStages,
           dueDate: todayStrStr,
           reviewType: '24h' as const
         });
+        toast.info("Ciclo de Revisão MEPP agendado com sucesso! 🧠");
       } else {
-        const stages = newMeppReviews[existingReviewIdx].stagesCompleted || [];
-        if (!stages.includes('theory')) {
-          newMeppReviews[existingReviewIdx] = {
-            ...newMeppReviews[existingReviewIdx],
-            stagesCompleted: [...stages, 'theory']
-          };
-        }
+        newMeppReviews[existingReviewIdx] = {
+          ...newMeppReviews[existingReviewIdx],
+          stagesCompleted: fullStages
+        };
       }
     }
 
@@ -831,7 +845,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     to="/mepp"
                     className="py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
                   >
-                    <Calendar className="w-3.5 h-3.5" /> Agendar Revisão
+                    <Calendar className="w-3.5 h-3.5" /> Revisão Ativa
                   </Link>
                   <Link 
                     to="/microaprendizado"
@@ -1089,7 +1103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         </button>
       </div>
 
-      <footer className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="mt-8 pt-4 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <BrandLogo size="sm" />
           <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest opacity-40">
