@@ -172,7 +172,7 @@ app.post('/api/notify', async (req, res) => {
       token: fcmToken,
       webpush: {
         notification: {
-          icon: icon || '/pwa-192x192.png',
+          icon: icon || '/logo_pwa.png',
         }
       }
     };
@@ -337,7 +337,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
             token: fcmToken,
             webpush: {
               notification: {
-                icon: '/pwa-192x192.png',
+                icon: '/logo_pwa.png',
               }
             }
           };
