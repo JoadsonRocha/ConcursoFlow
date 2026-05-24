@@ -63,8 +63,14 @@ export let analytics: any = null;
 if (typeof window !== 'undefined') {
   isSupported().then((supported) => {
     if (supported) {
-      analytics = getAnalytics(app);
+      try {
+        analytics = getAnalytics(app);
+      } catch (e) {
+        console.warn("Analytics initialization failed, skipping:", e);
+      }
     }
+  }).catch((e) => {
+    console.warn("Analytics isSupported check failed, skipping:", e);
   });
 }
 

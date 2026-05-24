@@ -152,8 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sendPasswordResetEmail(auth, email, actionCodeSettings);
   };
 
-    const plan = profile?.userPlan || 'beta';
-    const isSpecialUser = profile?.email === 'onrocha08@gmail.com';
+    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrochaRR@gmail.com'].includes(profile?.email || '');
+    const plan = (profile?.userPlan === 'pro' && !isSpecialUser) ? 'beta' : (profile?.userPlan || 'beta');
     const effectivePlan = isSpecialUser ? 'pro' : plan;
     const planType = (effectivePlan === 'pro' || effectivePlan === 'monthly' || effectivePlan === 'annual') ? 'pro' : (effectivePlan === 'beta' ? 'beta' : 'free');
 

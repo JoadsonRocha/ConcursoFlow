@@ -57,8 +57,13 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   }, [todayTask]);
 
   const handleSaveTime = async (minutes: number) => {
-    if (!user || !contest) return;
+    console.log("Saving time:", minutes, "Contest:", !!contest, "User:", !!user);
+    if (!user || !contest) {
+      console.error("Missing user or contest:", !!user, !!contest);
+      return;
+    }
     try {
+      console.log("Attempting to save history entry...");
       const today = getLocalDateStr(new Date());
       const hoursToAdd = Number((minutes / 60).toFixed(2));
       
@@ -103,11 +108,13 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
         });
       }
 
+      console.log("Calling onUpdate with new data...");
       onUpdate({
         ...contest,
         dailyHistory: newHistory,
         subjects: newSubjects
       });
+      console.log("onUpdate called successfully.");
     } catch (e) {
       console.error("Error saving focus time:", e);
     }
@@ -115,7 +122,13 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
 
   // Initialize audio
   useEffect(() => {
-    audioRef.current = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+    const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    
+    audio.onerror = (e) => {
+      console.error("Audio failed to load:", e);
+    };
+
+    audioRef.current = audio;
   }, []);
 
   useEffect(() => {
@@ -139,6 +152,11 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   const playSound = async () => {
     if (soundEnabled && audioRef.current) {
       try {
+        // Only attempt to play if audio has data to play
+        if (audioRef.current.readyState < 2) { 
+          console.warn("Audio not ready to play, readyState:", audioRef.current.readyState);
+          return;
+        }
         audioRef.current.currentTime = 0;
         await audioRef.current.play();
       } catch (err) {
@@ -168,6 +186,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
         setTimeLeft(time => time - 1);
       }, 1000);
     } else if (isActive && timeLeft === 0) {
+      // Always play sound when time reaches zero
       playSound();
       setIsActive(false);
       
@@ -176,11 +195,11 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
         sendNotification("Sessão finalizada! 🎉", "Hora de uma pausa. Você mandou bem!");
         const workedMins = duration;
         setTotalWorkMinutes(prev => prev + workedMins);
-        handleSaveTime(workedMins);
         
         setMode('short_break');
+        handleSaveTime(workedMins);
       } else {
-        sendNotification("Pausa finalizada! 🎯", "Hora de voltar ao foco. Vamos lá!");
+        sendNotification("Pausa finalizada! 🎯", "Hora de voltar ao foco! Vamos lá!");
         setMode('work'); 
       }
     }

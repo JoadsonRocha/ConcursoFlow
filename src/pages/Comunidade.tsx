@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Contest } from '../types';
@@ -63,7 +63,8 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       return () => unsubscribe();
     } else if (activeTab === 'flashcards') {
       const q = query(
-        collection(db, 'shared_decks')
+        collection(db, 'shared_decks'),
+        orderBy('createdAt', 'desc')
       );
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const docs = snapshot.docs.map(doc => ({
