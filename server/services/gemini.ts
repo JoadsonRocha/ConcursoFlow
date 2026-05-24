@@ -136,10 +136,19 @@ export async function generateQuizQuestions(topic: string, subject: string) {
 export async function parseEdital(rawText: string) {
   const genAI = getAiClient();
 
-  const prompt = `Analise o edital: ${rawText}
-  Retorne JSON com name, role, examDate e subjects. Cada subject deve ter id, name, category, topics.
-  "category" MUST be exactly either "Gerais" (for conhecimentos gerais/básicos) or "Específicos" (for conhecimentos específicos).
-  Para "topics", gere um array de itens com id, name e completed (inicie com false).`;
+  const prompt = `VOCÊ É UM ANALISTA DE EDITAIS EXPERT COM FOCO NA REGRA DE PARETO (80/20).
+  Analise o edital abaixo e extraia a estrutura completa de estudos. 
+  
+  MISSÃO CRÍTICA:
+  1. Identifique todas as disciplinas e seus respectivos tópicos.
+  2. Para cada DISCIPLINA, determine a 'incidence' (incidência histórica/peso) baseada na importância para cargo similar e relevância histórica.
+  3. Para cada TÓPICO, determine a 'incidence' (Baixa, Média, Alta, Muito Alta) baseada na frequência que esse assunto costuma cair em provas de concursos similares.
+  
+  Edital: ${rawText}
+  
+  Retorne um JSON estruturado com name, role, examDate e subjects.
+  Cada subject deve ter id, name, category ("Gerais" ou "Específicos"), incidence e topics.
+  Cada tópico deve ter id, name, completed (false) e incidence.`;
 
   const response = await genAI.models.generateContent({
     model: "gemini-3.5-flash",
@@ -160,6 +169,7 @@ export async function parseEdital(rawText: string) {
                 id: { type: Type.STRING }, 
                 name: { type: Type.STRING },
                 category: { type: Type.STRING, enum: ["Gerais", "Específicos"] },
+                incidence: { type: Type.STRING, enum: ["Baixa", "Média", "Alta", "Muito Alta"] },
                 topics: { 
                   type: Type.ARRAY, 
                   items: { 
@@ -167,7 +177,8 @@ export async function parseEdital(rawText: string) {
                     properties: {
                       id: { type: Type.STRING },
                       name: { type: Type.STRING },
-                      completed: { type: Type.BOOLEAN }
+                      completed: { type: Type.BOOLEAN },
+                      incidence: { type: Type.STRING, enum: ["Baixa", "Média", "Alta", "Muito Alta"] }
                     }
                   } 
                 } 

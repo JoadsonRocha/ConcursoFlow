@@ -48,25 +48,37 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
     }, 2500); // Simulando o tempo de processamento da "IA"
   };
 
-  const paretoData = useMemo(() => {
+    const paretoData = useMemo(() => {
     if (!isAnalyzed) return null;
 
     const allTopics: { subjectId: string; subjectName: string; topicId: string; topicName: string; weight: number }[] = [];
     
-    // Lógica determinística para simular "foco da banca" baseado no nome do assunto e da banca
-    const getWeight = (str: string) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-         hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return Math.abs(hash % 100) + 1; 
+    const levelMap: Record<string, number> = {
+      'Muito Alta': 90,
+      'Alta': 70,
+      'Média': 40,
+      'Baixa': 15
     };
 
     const targetBanca = contest.banca || banca;
 
     contest.subjects.forEach(sub => {
       (sub.topics || []).forEach(tp => {
-         const weight = getWeight(sub.name + (tp.name || '') + targetBanca);
+         let weight = 0;
+         const hashStr = sub.name + (tp.name || '') + targetBanca;
+         let hash = 0;
+         for (let i = 0; i < hashStr.length; i++) {
+           hash = hashStr.charCodeAt(i) + ((hash << 5) - hash);
+         }
+
+         if (tp.incidence && levelMap[tp.incidence as string]) {
+           // Baseado na IA + pequena variação para sorteio
+           weight = levelMap[tp.incidence as string] + (Math.abs(hash % 10));
+         } else {
+           // Fallback determinístico
+           weight = Math.abs(hash % 100) + 1; 
+         }
+
          allTopics.push({
            subjectId: sub.id,
            subjectName: sub.name,

@@ -8,6 +8,7 @@ export interface Topic {
   revision: boolean;      // Se a revisão foi realizada
   questions: boolean;     // Se as questões foram praticadas
   errorNote?: string;     // Observações sobre erros cometidos
+  incidence?: 'Baixa' | 'Média' | 'Alta' | 'Muito Alta'; // Frequência histórica em provas
 }
 
 /**

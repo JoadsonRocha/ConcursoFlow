@@ -291,12 +291,24 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
                                   >
                                     <CheckCircle2 className="w-5 h-5" />
                                   </button>
-                                  <span className={cn(
-                                    "text-sm font-semibold transition-all whitespace-normal break-words", 
-                                    topic.completed ? "text-text-sub line-through" : "text-text-main"
-                                  )}>
-                                    {topic.name}
-                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className={cn(
+                                      "text-sm font-semibold transition-all whitespace-normal break-words", 
+                                      topic.completed ? "text-text-sub line-through" : "text-text-main"
+                                    )}>
+                                      {topic.name}
+                                    </span>
+                                    {topic.incidence && (
+                                      <span className={cn(
+                                        "text-[9px] font-black uppercase tracking-widest mt-0.5",
+                                        topic.incidence === 'Muito Alta' ? "text-red-500" :
+                                        topic.incidence === 'Alta' ? "text-orange-500" :
+                                        "text-text-sub"
+                                      )}>
+                                        Incidência: {topic.incidence}
+                                      </span>
+                                    )}
+                                  </div>
                                </div>
 
                                <div className="flex flex-wrap items-center justify-between md:justify-end gap-4 w-full md:w-auto pt-2 md:pt-0">
