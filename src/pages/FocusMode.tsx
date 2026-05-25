@@ -37,6 +37,16 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+
+  // Synchronize state changes for isActive to update or clear endTimeRef
+  useEffect(() => {
+    if (isActive) {
+      endTimeRef.current = Date.now() + timeLeft * 1000;
+    } else {
+      endTimeRef.current = null;
+    }
+  }, [isActive]);
 
   const getLocalDateStr = (d: Date) => {
     const year = d.getFullYear();
@@ -72,32 +82,32 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
         hours: hoursToAdd, 
         questions: 0 
       };
-
-      const existingEntryIndex = contest.dailyHistory?.findIndex(h => h.date === today) ?? -1;
+      
+      const existingEntryIndex = contest.dailyHistory?.findIndex(h => h && h.date === today) ?? -1;
       let newHistory = [...(contest.dailyHistory || [])];
 
       if (existingEntryIndex >= 0) {
         newHistory[existingEntryIndex] = {
           ...newHistory[existingEntryIndex],
-          hours: Number((newHistory[existingEntryIndex].hours + hoursToAdd).toFixed(2)),
+          hours: Number(((newHistory[existingEntryIndex].hours || 0) + hoursToAdd).toFixed(2)),
         };
       } else {
         newHistory.push(newHistoryEntry);
       }
 
       // Update subject progress
-      let newSubjects = [...contest.subjects];
+      let newSubjects = [...(contest.subjects || [])];
       if (selectedSubject && selectedSubject !== 'Estudo Livre') {
         newSubjects = newSubjects.map(sub => {
-          if (sub.name === selectedSubject) {
+          if (sub && sub.name === selectedSubject) {
             let extraCompleted = (sub.completedTopics || 0);
             if ((sub.topics?.length || 0) > 0) {
               // Could potentially find an uncompleted topic to mark as done
-              const firstUncompleted = sub.topics?.findIndex(t => !t.completed);
+              const firstUncompleted = sub.topics?.findIndex(t => t && !t.completed);
               if (firstUncompleted !== undefined && firstUncompleted !== -1 && sub.topics) {
                 const newTopics = [...sub.topics];
                 newTopics[firstUncompleted] = { ...newTopics[firstUncompleted], completed: true };
-                return { ...sub, topics: newTopics, completedTopics: newTopics.filter(t => t.completed).length };
+                return { ...sub, topics: newTopics, completedTopics: newTopics.filter(t => t && t.completed).length };
               }
             } else {
               extraCompleted = Math.min((sub.totalTopics || 1), extraCompleted + 1);
@@ -132,19 +142,27 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   }, []);
 
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    try {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch (e) {
+      console.warn("Could not request notification permissions:", e);
     }
   }, []);
 
   const sendNotification = (title: string, body: string) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      new Notification(title, {
-        body,
-        icon: "/logo.png",
-        requireInteraction: true // Keeps notification visible until user interacts on supported platforms
-      });
+    try {
+      if (!("Notification" in window)) return;
+      if (Notification.permission === "granted") {
+        new Notification(title, {
+          body,
+          icon: "/logo.png",
+          requireInteraction: true // Keeps notification visible until user interacts on supported platforms
+        });
+      }
+    } catch (e) {
+      console.error("Notification failed in environment:", e);
     }
   };
 
@@ -152,6 +170,10 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   const playSound = async () => {
     if (soundEnabled && audioRef.current) {
       try {
+        if (audioRef.current.error) {
+          console.warn("Audio element has error state. Custom play omitted.");
+          return;
+        }
         // Only attempt to play if audio has data to play
         if (audioRef.current.readyState < 2) { 
           console.warn("Audio not ready to play, readyState:", audioRef.current.readyState);
@@ -161,7 +183,6 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
         await audioRef.current.play();
       } catch (err) {
         console.error("Audio play failed:", err);
-        // Fallback: inform user they need to click to hear sound
       }
     }
   };
@@ -181,33 +202,100 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
+    const handleTimerEnd = () => {
+      try {
+        // Always play sound when time reaches zero
+        playSound();
+        setIsActive(false);
+        endTimeRef.current = null;
+        
+        // Auto-transition logic
+        if (mode === 'work') {
+          sendNotification("Sessão finalizada! 🎉", "Hora de uma pausa. Você mandou bem!");
+          const workedMins = duration;
+          setTotalWorkMinutes(prev => prev + workedMins);
+          
+          setMode('short_break');
+          handleSaveTime(workedMins);
+        } else {
+          sendNotification("Pausa finalizada! 🎯", "Hora de voltar ao foco! Vamos lá!");
+          setMode('work'); 
+        }
+      } catch (err) {
+        console.error("Error in timer transition/save logic:", err);
+      }
+    };
+
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft(time => time - 1);
-      }, 1000);
+        if (endTimeRef.current) {
+          const now = Date.now();
+          const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+          
+          if (remaining <= 0) {
+            setTimeLeft(0);
+            handleTimerEnd();
+          } else {
+            setTimeLeft(remaining);
+          }
+        } else {
+          setTimeLeft(time => {
+            if (time <= 1) {
+              handleTimerEnd();
+              return 0;
+            }
+            return time - 1;
+          });
+        }
+      }, 500); // Poll twice per second to stay perfectly aligned
     } else if (isActive && timeLeft === 0) {
-      // Always play sound when time reaches zero
-      playSound();
-      setIsActive(false);
-      
-      // Auto-transition logic
-      if (mode === 'work') {
-        sendNotification("Sessão finalizada! 🎉", "Hora de uma pausa. Você mandou bem!");
-        const workedMins = duration;
-        setTotalWorkMinutes(prev => prev + workedMins);
-        
-        setMode('short_break');
-        handleSaveTime(workedMins);
-      } else {
-        sendNotification("Pausa finalizada! 🎯", "Hora de voltar ao foco! Vamos lá!");
-        setMode('work'); 
-      }
+      handleTimerEnd();
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isActive, timeLeft, mode, duration, soundEnabled]);
+
+  // Adjust timing when page visibility changes to maintain absolute precision
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isActive && endTimeRef.current) {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.ceil((endTimeRef.current - now) / 1000));
+        
+        if (remaining <= 0) {
+          setTimeLeft(0);
+          try {
+            playSound();
+            setIsActive(false);
+            endTimeRef.current = null;
+            
+            if (mode === 'work') {
+              sendNotification("Sessão finalizada! 🎉", "Hora de uma pausa. Você mandou bem!");
+              const workedMins = duration;
+              setTotalWorkMinutes(prev => prev + workedMins);
+              
+              setMode('short_break');
+              handleSaveTime(workedMins);
+            } else {
+              sendNotification("Pausa finalizada! 🎯", "Hora de voltar ao foco! Vamos lá!");
+              setMode('work'); 
+            }
+          } catch (err) {
+            console.error("Error in visibility transition/save logic:", err);
+          }
+        } else {
+          setTimeLeft(remaining);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isActive, mode, duration, soundEnabled]);
 
   // Keep screen awake while active
   useEffect(() => {
