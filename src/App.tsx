@@ -47,7 +47,8 @@ import Explorar from './pages/Explorar';
 import Planos from './pages/Planos';
 import BrandLogo from './components/BrandLogo';
 import { useAuth } from './contexts/AuthContext';
-import { db, requestNotificationPermission, logPageView } from './lib/firebase';
+import { onMessage } from 'firebase/messaging';
+import { db, requestNotificationPermission, logPageView, messaging } from './lib/firebase';
 import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
@@ -112,31 +113,85 @@ export default function App() {
   const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
 
-  // Notificações Push: Solicitar permissão e salvar token
+  // Notificações Push: Solicitar permissão e salvar token em múltiplos dispositivos
   useEffect(() => {
-    if (user && profile && !profile.fcmToken) {
+    if (user && profile) {
       const setupNotifications = async () => {
         try {
+          const localSavedToken = localStorage.getItem('stratis_fcm_token_device');
           const token = await requestNotificationPermission();
           
-          if (token) {
+          if (token && token !== localSavedToken) {
+            // Novo token detectado para este dispositivo específico
+            const currentTokens = profile.fcmTokens || (profile.fcmToken ? [profile.fcmToken] : []);
+            const updatedTokens = Array.from(new Set([...currentTokens, token]));
+            
             await updateDoc(doc(db, 'users', user.uid), {
-              fcmToken: token,
+              fcmToken: token, // Mantido para compatibilidade retrospectiva
+              fcmTokens: updatedTokens,
               notificationsEnabled: true,
               updatedAt: new Date()
             });
-            console.log('Token FCM salvo com sucesso');
+            localStorage.setItem('stratis_fcm_token_device', token);
+            console.log('Token FCM salvo com sucesso para este dispositivo:', token);
           }
         } catch (error) {
-          console.error('Erro ao salvar token FCM:', error);
+          console.error('Erro ao salvar token FCM deste dispositivo:', error);
         }
       };
 
-      // Pequeno atraso para não atrapalhar o carregamento inicial
+      // Pequeno atraso para não atrapalhar o carregamento inicial da página
       const timer = setTimeout(setupNotifications, 5000);
       return () => clearTimeout(timer);
     }
   }, [user, profile]);
+
+  // Escutar mensagens FCM recebidas enquanto o app está aberto (foreground)
+  useEffect(() => {
+    if (!messaging) return;
+
+    try {
+      const unsubscribe = onMessage(messaging, (payload) => {
+        console.log('Mensagem FCM recebida em primeiro plano (foreground):', payload);
+        
+        if (payload.notification) {
+          // Mostrar um toast interativo e amigável
+          toast(payload.notification.title || 'Stratis Planner', {
+            description: payload.notification.body,
+            icon: '🔔',
+            duration: 8000,
+            action: payload.data?.click_action ? {
+              label: 'Ver',
+              onClick: () => {
+                try {
+                  const url = new URL(payload.data.click_action!);
+                  window.open(url.pathname + url.search + url.hash, '_self');
+                } catch {
+                  navigate(payload.data.click_action!);
+                }
+              }
+            } : undefined
+          });
+
+          // Se tiver permissão nativa, disparar a notificação para mostrar o banner do sistema
+          if (Notification.permission === 'granted') {
+            try {
+              new Notification(payload.notification.title || 'Stratis Planner', {
+                body: payload.notification.body,
+                icon: '/logo_pwa.png'
+              });
+            } catch (err) {
+              console.warn('Erro ao disparar Notification nativa em foreground:', err);
+            }
+          }
+        }
+      });
+
+      return () => unsubscribe();
+    } catch (err) {
+      console.warn('Erro ao inicializar escutador de foreground do FCM:', err);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (mainRef.current) {

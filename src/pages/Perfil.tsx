@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown, Copy, RefreshCw } from 'lucide-react';
+import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { getStorage } from 'firebase/storage';
-import { auth, db, updateProfile, sendPasswordResetEmail, requestNotificationPermission } from '../lib/firebase';
+import { auth, db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { createCheckoutSession } from '../services/stripe';
 import { toast } from 'sonner';
@@ -29,68 +29,6 @@ export default function Perfil() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isProModalOpen, setIsProModalOpen] = useState(false);
-
-  const [fcmToken, setFcmToken] = useState<string>(profile?.fcmToken || '');
-  const [generatingToken, setGeneratingToken] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  // Keep fcmToken state in sync with profile
-  React.useEffect(() => {
-    if (profile?.fcmToken && !fcmToken) {
-      setFcmToken(profile.fcmToken);
-    }
-  }, [profile?.fcmToken]);
-
-  const handleGenerateFcmToken = async () => {
-    setGeneratingToken(true);
-    try {
-      const token = await requestNotificationPermission();
-      if (token) {
-        setFcmToken(token);
-        if (user) {
-          await updateDoc(doc(db, 'users', user.uid), {
-            fcmToken: token,
-            notificationsEnabled: true
-          });
-        }
-        toast.success("Token FCM gerado e atualizado com sucesso!");
-      } else {
-        toast.error("Não foi possível obter a permissão ou o Token. Verifique as configurações do navegador.");
-      }
-    } catch (err) {
-      console.error("FCM generation error:", err);
-      toast.error("Erro ao gerar token FCM.");
-    } finally {
-      setGeneratingToken(false);
-    }
-  };
-
-  const handleCopyFcmToken = () => {
-    const tokenToCopy = fcmToken || profile?.fcmToken;
-    if (!tokenToCopy) {
-      toast.error("Nenhum token disponível. Gere um token primeiro.");
-      return;
-    }
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(tokenToCopy);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = tokenToCopy;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-      setCopied(true);
-      toast.success("Token FCM copiado!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error("Erro ao copiar automaticamente. Selecione e copie manualmente o texto do campo.");
-    }
-  };
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -440,90 +378,7 @@ export default function Perfil() {
           <div className="pt-6 border-b border-slate-100"></div>
         </section>
 
-        <section className="bg-white border border-border rounded-2xl p-8 md:p-10 space-y-6 shadow-sm">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-primary/10 border border-primary/20 rounded-xl text-primary shadow-sm shrink-0">
-                <Bell className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-text-main">Notificações Push (FCM / Testes)</h3>
-                <p className="text-xs text-text-sub mt-0.5">Gerencie ou copie o Token de Registro do Firebase para testar o envio de notificações push neste aparelho.</p>
-              </div>
-            </div>
 
-            <div className="p-5 bg-slate-50 border border-border rounded-2xl space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between animate-in fade-in">
-                  <span className="text-[10px] font-black text-[#5C7187] uppercase tracking-[0.1em]">Seu Token FCM para Teste</span>
-                  {(profile?.fcmToken || fcmToken) && (
-                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                      Ativo/Disponível
-                    </span>
-                  )}
-                </div>
-                
-                {profile?.fcmToken || fcmToken ? (
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      value={fcmToken || profile?.fcmToken || ''} 
-                      onClick={handleCopyFcmToken}
-                      className="w-full bg-white border border-border rounded-xl py-3 px-4 text-xs font-mono text-text-main outline-none focus:border-primary/50 cursor-pointer select-all truncate"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCopyFcmToken}
-                      className="shrink-0 p-3 bg-white border border-border hover:border-primary/40 text-text-sub hover:text-primary rounded-xl transition-all shadow-sm active:scale-95"
-                      title="Copiar Token"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center py-4 bg-white/50 border border-dashed border-border rounded-xl text-xs text-text-sub">
-                    Nenhum Token de Notificação gerado neste aparelho celular/tablet ainda.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={handleGenerateFcmToken}
-                  disabled={generatingToken}
-                  className="flex-1 py-3 px-4 bg-primary text-white hover:brightness-110 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 disabled:bg-slate-300"
-                >
-                  <RefreshCw className={cn("w-3.5 h-3.5", generatingToken ? "animate-spin" : "")} />
-                  {profile?.fcmToken || fcmToken ? "Atualizar Token FCM" : "Gerar Token neste Aparelho"}
-                </button>
-                
-                {(profile?.fcmToken || fcmToken) && (
-                  <button
-                    type="button"
-                    onClick={handleCopyFcmToken}
-                    className="py-3 px-4 bg-white text-text-main border border-border hover:bg-slate-50 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    {copied ? "Copiado!" : "Copiar Token FCM"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="text-xs text-text-sub font-medium leading-relaxed bg-slate-100/50 p-4 rounded-xl space-y-1.5 border border-border/60">
-              <p className="font-bold text-text-main uppercase text-[9px] tracking-wider mb-1">💡 Como Testar Manualmente no Firebase Console</p>
-              <ol className="list-decimal pl-4 space-y-1 text-slate-600">
-                <li>Gere o token acima usando o botão azul e clique em <strong className="text-text-main">Copiar Token FCM</strong>.</li>
-                <li>Abra o console do Firebase, selecione seu projeto e vá em <strong className="text-text-main">Messaging</strong> no menu lateral.</li>
-                <li>Clique em <strong className="text-text-main">Criar campanha</strong> (ou selecione uma campanha existente / clique em <strong className="text-text-main">Escrever notificação</strong>).</li>
-                <li>Escreva a sua mensagem, clique no botão azul <strong className="text-text-main">"Enviar mensagem de teste"</strong> (conforme a imagem que você enviou).</li>
-                <li>Cole o código FCM copiado no campo do modal e clique em <strong className="text-text-main">Testar</strong>! A mensagem chegará em instantes.</li>
-              </ol>
-            </div>
-          </div>
-        </section>
 
         <section className="bg-white border border-border rounded-2xl p-8 md:p-10 space-y-8 shadow-sm">
 

@@ -17,13 +17,20 @@ const messaging = firebase.messaging();
 // Escutar mensagens em background
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Mensagem recebida em background: ', payload);
-  
-  const notificationTitle = payload.notification.title;
+  if (!payload) return;
+
+  const title = payload.notification?.title || payload.data?.title || 'Stratis Planner';
+  const body = payload.notification?.body || payload.data?.body || '';
+  const icon = '/logo_pwa.png';
+  const image = payload.notification?.image || payload.data?.image;
+
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/logo_pwa.png' || payload.notification.image,
-    data: payload.data
+    body: body,
+    icon: icon,
+    image: image,
+    badge: '/logo_pwa.png',
+    data: payload.data || {}
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  self.registration.showNotification(title, notificationOptions);
 });
