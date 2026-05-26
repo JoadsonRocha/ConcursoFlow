@@ -30,6 +30,36 @@ export default function Perfil() {
 
   const [isProModalOpen, setIsProModalOpen] = useState(false);
 
+  const handleTestNotification = async () => {
+    if (!("Notification" in window)) {
+      toast.error("Notificações não são suportadas neste navegador.");
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      try {
+        new Notification("Stratis Planner", {
+          body: "Teste de notificação enviado com sucesso! 🚀",
+          icon: "/logo_pwa.png"
+        });
+        toast.success("Notificação local enviada para teste!");
+      } catch (err) {
+        toast.info("O navegador impediu a notificação local. Verifique se o seu dispositivo permite banners.");
+      }
+    } else if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        new Notification("Stratis Planner", {
+          body: "Notificações ativadas com sucesso! 🚀",
+          icon: "/logo_pwa.png"
+        });
+        toast.success("Permissão concedida!");
+      }
+    } else {
+      toast.error("Permissão de notificação negada. Ative nas configurações do navegador para este site.");
+    }
+  };
+
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
@@ -423,7 +453,24 @@ export default function Perfil() {
                     <div className="space-y-1 text-center sm:text-left">
                       <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
                         <Bell className="w-4 h-4 text-primary" />
-                        Notificações por Email
+                        Notificações Push
+                      </div>
+                      <div className="text-xs text-text-sub">Teste se o seu navegador está pronto para receber avisos.</div>
+                    </div>
+                    <button 
+                      onClick={handleTestNotification}
+                      className="whitespace-nowrap px-8 py-4 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-sm active:scale-[0.98]"
+                    >
+                      Testar Agora
+                    </button>
+                  </div>
+
+                  {/* Notification Email Setting */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
+                    <div className="space-y-1 text-center sm:text-left">
+                      <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
+                        <Mail className="w-4 h-4 text-primary" />
+                        Alertas por E-mail
                       </div>
                       <div className="text-xs text-text-sub">Receba atualizações importantes sobre seu progresso.</div>
                     </div>
@@ -431,7 +478,7 @@ export default function Perfil() {
                       onClick={() => setNotificationsEnabled(!notificationsEnabled)}
                       className={cn(
                         "px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-[0.98]",
-                        notificationsEnabled ? "bg-primary text-white" : "bg-white text-text-sub border border-border"
+                        notificationsEnabled ? "bg-slate-900 text-white" : "bg-white text-text-sub border border-border"
                       )}
                     >
                       {notificationsEnabled ? 'Ativado' : 'Desativado'}

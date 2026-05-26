@@ -97,12 +97,22 @@ export const logout = () => signOut(auth);
 // Push Notifications Helpers
 export const requestNotificationPermission = async () => {
   if (!messaging) return null;
+  if (!('serviceWorker' in navigator)) {
+    console.warn('Service Workers não são suportados neste navegador.');
+    return null;
+  }
   
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
+      // Registrar explicitamente o Service Worker do Firebase para garantir funcionamento em mobile
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+        scope: '/firebase-cloud-messaging-push-scope'
+      });
+      
       const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BDvuiqC7UGhpS13HspovFt_T7okTNxj0fexcUYz9KkSX4Cer1XQvWyEJsu2qNPQN_to4bozEcYKXQdLANOjWBTg' // Chave Pública do FCM
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BDvuiqC7UGhpS13HspovFt_T7okTNxj0fexcUYz9KkSX4Cer1XQvWyEJsu2qNPQN_to4bozEcYKXQdLANOjWBTg',
+        serviceWorkerRegistration: registration
       });
       return token;
     }

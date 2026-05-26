@@ -160,14 +160,21 @@ export default function App() {
             description: payload.notification.body,
             icon: '🔔',
             duration: 8000,
-            action: payload.data?.click_action ? {
+            action: (payload.data?.click_action || payload.data?.url) ? {
               label: 'Ver',
               onClick: () => {
+                const targetUrl = payload.data?.click_action || payload.data?.url;
+                if (!targetUrl) return;
+                
                 try {
-                  const url = new URL(payload.data.click_action!);
-                  window.open(url.pathname + url.search + url.hash, '_self');
+                  if (targetUrl.startsWith('http')) {
+                    const url = new URL(targetUrl);
+                    navigate(url.pathname + url.search + url.hash);
+                  } else {
+                    navigate(targetUrl);
+                  }
                 } catch {
-                  navigate(payload.data.click_action!);
+                  navigate(targetUrl);
                 }
               }
             } : undefined

@@ -408,11 +408,11 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       <header className="flex flex-row items-start md:items-center justify-between gap-2 md:gap-4">
         <div className="space-y-0.5 flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub truncate hidden sm:inline-block">Painel de Performance</span>
             <span className="text-[10px] font-bold uppercase tracking-widest text-text-sub truncate sm:hidden">Painel</span>
           </div>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-display text-text-main tracking-tight font-bold truncate">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-display text-text-main font-bold truncate">
             Olá, <span className="text-primary">{user?.displayName?.split(' ')[0] || 'Estudante'}</span>
           </h2>
           <p className="text-text-sub text-[10px] md:text-xs font-medium truncate">
@@ -528,8 +528,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       {/* Main Countdown Card */}
       <div className="rise-card bg-primary text-white p-6 md:p-8 relative overflow-hidden shadow-lg border-none rounded-2xl group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary/90 transition-transform duration-700 group-hover:scale-105"></div>
+        {/* Simplified backgrounds to avoid GPU artifacts on tablet */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full"></div>
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 rounded-full"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-12">
           <div className="text-center md:text-left space-y-3 md:flex-1 w-full">
@@ -537,7 +537,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
               <Calendar className="w-3 h-3" />
               Data da Prova
             </div>
-            <h2 className="text-xl md:text-2xl font-display tracking-tight font-bold text-white shadow-sm">{contest.role}</h2>
+            <h2 className="text-xl md:text-2xl font-display font-bold text-white shadow-sm">{contest.role}</h2>
             
             <div className="text-sm font-bold text-white/90">
               {new Date(contest.examDate).toLocaleDateString('pt-BR')}
@@ -546,7 +546,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </div>
           
           {new Date(contest.examDate).getTime() >= Date.now() && (
-            <div className="flex justify-center items-center gap-4 md:gap-6 bg-black/10 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-sm w-full md:w-auto">
+            <div className="flex justify-center items-center gap-4 md:gap-6 bg-black/10 p-4 md:p-5 rounded-2xl border border-white/10 backdrop-blur-[2px] w-full md:w-auto">
               {[
                 { label: 'DIAS', value: timeLeft.days },
                 { label: 'HORAS', value: timeLeft.hours },
@@ -701,9 +701,8 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
 
         {/* PASSO 1: SESSÃO DE ESTUDO (Destaque Foco) */}
         <div className="rise-card bg-white border-2 border-indigo-100 rounded-3xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-indigo-400 transition-all">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/60 rounded-full group-hover:bg-indigo-100/60 transition-all" />
           
-          <div className="space-y-4 relative z-10 w-full">
+          <div className="space-y-4 relative z-10 w-full overflow-hidden">
             <div className="flex items-center justify-between border-b border-indigo-50/60 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-sm">
@@ -718,10 +717,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                 AGENDADO
               </span>
             </div>
-
+ 
             {/* Session Core Info */}
             {todayTask && !todayTask.completed ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center overflow-hidden">
                 <div className="space-y-3">
                   <span className="text-[8px] font-bold uppercase text-text-sub tracking-widest flex items-center gap-1">
                     <Clock className="w-3 h-3 text-indigo-500" /> Meta do Dia no Ciclo (Dia {todayTask.dayNumber})
@@ -729,17 +728,17 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                   
                   <div className="space-y-2">
                     {todayTask.generalTopic && (
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl overflow-hidden">
                         <span className="text-[8px] font-black uppercase text-slate-455 tracking-wider block">Matéria Geral (Básicas)</span>
-                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5">
+                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5 break-words line-clamp-2">
                           {todayTask.generalTopic}
                         </p>
                       </div>
                     )}
                     {todayTask.specificTopic && (
-                      <div className="p-3 bg-indigo-50/40 border-2 border-indigo-100/30 rounded-xl">
+                      <div className="p-3 bg-indigo-50/40 border border-indigo-100/30 rounded-xl overflow-hidden">
                         <span className="text-[8px] font-black uppercase text-indigo-700 tracking-wider block">Matéria Específica (Foco)</span>
-                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5 italic">
+                        <p className="text-[12px] font-black text-slate-800 leading-snug mt-0.5 italic break-words line-clamp-2">
                           ➔ {todayTask.specificTopic}
                         </p>
                       </div>
@@ -748,7 +747,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                 </div>
                 
                 <div className="space-y-3 flex flex-col justify-center">
-                  <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider text-center lg:text-left bg-indigo-50/20 border border-indigo-100/40 rounded-xl p-3">
+                  <div className="text-[9px] font-bold text-text-sub uppercase text-center md:text-left bg-slate-50 border border-slate-100 rounded-xl p-3">
                     Estude a teoria destas disciplinas e finalize respondendo a <span className="text-indigo-600 font-extrabold">{todayTask.questionGoal || 15} questões</span> no simulador.
                   </div>
                   <div className="flex items-center gap-2">
