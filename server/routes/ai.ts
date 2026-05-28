@@ -142,4 +142,9 @@ router.post('/svg-map', authenticate, (req, res) => {
   handleAiRequest(req, res, 'mindmapUsage', 'mindmapLimit', () => GeminiService.generateSVGMap(title, prompt, quantity));
 });
 
+router.post('/pareto', authenticate, (req, res) => {
+  const { contestRole, banca, subjects, isHighPerformance } = req.body;
+  handleAiRequest(req, res, 'importUsage', 'importLimit', () => GeminiService.analyzePareto(contestRole, banca, subjects, isHighPerformance));
+});
+
 export default router;

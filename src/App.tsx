@@ -22,7 +22,8 @@ import {
   Award,
   Bell,
   Brain,
-  Instagram
+  Instagram,
+  LifeBuoy
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -40,6 +41,7 @@ import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import Perfil from './pages/Perfil';
+import Suporte from './pages/Suporte';
 import Auth from './pages/Auth';
 import ResetPassword from './pages/ResetPassword';
 import Pareto from './pages/Pareto';
@@ -443,44 +445,47 @@ export default function App() {
   const handleImportEdital = async (newContest: Contest) => {
     if (!user) return;
     
-    // Limits check
-    const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+    const isEdit = !!newContest.id && !newContest.id.startsWith('temp-');
     
-    if (contests.length >= limit) {
-      const planName = planType === 'pro' ? 'PRO' : (planType === 'beta' ? 'BETA' : 'GRATUITO');
-      toast.error(`Limite de ${limit} edital atingido no plano ${planName}. Faça o upgrade para expandir seus limites!`, {
-        action: {
-          label: "Ver Planos",
-          onClick: () => navigate("/planos")
-        },
-        duration: 5000
-      });
-      return;
+    // Limits check - Only for NEW imports
+    if (!isEdit) {
+      const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+      if (contests.length >= limit) {
+        const planName = planType === 'pro' ? 'PRO' : (planType === 'beta' ? 'BETA' : 'GRATUITO');
+        toast.error(`Limite de ${limit} edital atingido no plano ${planName}. Faça o upgrade para expandir seus limites!`, {
+          action: {
+            label: "Ver Planos",
+            onClick: () => navigate("/planos")
+          },
+          duration: 5000
+        });
+        return;
+      }
     }
 
     try {
-      const contestId = `dynamic-${Date.now()}`;
+      const contestId = isEdit ? newContest.id : `dynamic-${Date.now()}`;
       const docRef = doc(db, 'users', user.uid, 'contests', contestId);
       const contestToSave = { 
         ...newContest, 
         id: contestId, 
         ownerId: user.uid, 
-        createdAt: serverTimestamp(), 
+        createdAt: isEdit ? (newContest.createdAt || serverTimestamp()) : serverTimestamp(), 
         updatedAt: serverTimestamp() 
       };
-      await setDoc(docRef, contestToSave);
+      await setDoc(docRef, contestToSave, { merge: true });
       
       // Update local state immediately to ensure UI refresh
       setContests(prev => {
         const index = prev.findIndex(c => c.id === contestId);
         if (index > -1) {
           const updated = [...prev];
-          updated[index] = contestToSave;
+          updated[index] = contestToSave as Contest;
           return updated;
         }
-        return [...prev, contestToSave];
+        return [...prev, contestToSave as Contest];
       });
-      setCurrentContest(contestToSave);
+      setCurrentContest(contestToSave as Contest);
       
       // Update profile with last selected contest
       const userRef = doc(db, 'users', user.uid);
@@ -490,7 +495,7 @@ export default function App() {
       });
     } catch (err: any) {
       console.error("Erro ao salvar edital:", err);
-      toast.error("Falha de segurança ao salvar no Firestore: " + err.message);
+      toast.error("Falha ao salvar no Firestore: " + err.message);
     }
   };
 
@@ -525,6 +530,12 @@ export default function App() {
         ...contestData, 
         ownerId: user.uid,
         updatedAt: serverTimestamp(),
+        // Ensure critical fields are never undefined for Firestore
+        schedule: contestData.schedule || [],
+        subjects: contestData.subjects || [],
+        paretoData: contestData.paretoData || null,
+        meppReviews: contestData.meppReviews || [],
+        dailyHistory: contestData.dailyHistory || [],
       };
       
       await setDoc(docRef, payload, { merge: true });
@@ -704,6 +715,7 @@ export default function App() {
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
+              <SidebarItem to="/suporte" icon={LifeBuoy} label="Suporte" active={location.pathname === '/suporte'} collapsed={!isSidebarOpen} />
             </nav>
           </div>
 
@@ -903,21 +915,19 @@ export default function App() {
                             <span className="text-[10px] text-text-sub uppercase tracking-wider italic">Ver meu perfil</span>
                           </div>
                         </Link>
-                        <a 
-                          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20uma%20ajudinha%20com%20o%20Stratis%20Planner."
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <Link 
+                          to="/suporte"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-all group"
                         >
                           <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
-                            <MessageCircle className="w-4 h-4" />
+                            <LifeBuoy className="w-4 h-4" />
                           </div>
                           <div className="flex flex-col">
                             <span className="text-xs font-black text-text-main uppercase tracking-tight">Suporte</span>
-                            <span className="text-[10px] text-text-sub uppercase tracking-wider italic">WhatsApp</span>
+                            <span className="text-[10px] text-text-sub uppercase tracking-wider italic">Central de Ajuda</span>
                           </div>
-                        </a>
+                        </Link>
                         <hr className="border-border my-2 mx-6" />
                         <button 
                           onClick={() => { logout(); setIsUserMenuOpen(false); }}
@@ -941,17 +951,18 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />
-              <Route path="/foco" element={currentContest ? <FocusMode contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/foco" element={<FocusMode contest={currentContest} onUpdate={handleUpdateContest} />} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
-              <Route path="/microaprendizado" element={currentContest ? <Microlearning contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/microaprendizado" element={<Microlearning contest={currentContest} onUpdate={handleUpdateContest} />} />
               <Route path="/mepp" element={currentContest ? <MentorMepp contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />
               <Route path="/feedback" element={<Feedback />} />
+              <Route path="/suporte" element={<Suporte />} />
               <Route path="/explorar" element={<Explorar />} />
               <Route path="/planos" element={<Planos />} />
               <Route path="/termos" element={<TermsOfUse />} />

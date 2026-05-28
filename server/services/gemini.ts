@@ -20,6 +20,29 @@ export function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
+const GEMINI_MODEL = "gemini-3.5-flash";
+
+function parseJsonResponse(text: string, defaultValue: any = null) {
+  if (!text) return defaultValue;
+  try {
+    // Remove markdown code blocks if present
+    const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanText);
+  } catch (e) {
+    try {
+      // Try to find the first JSON object or array in the text
+      const objectMatch = text.match(/\{[\s\S]*\}/);
+      if (objectMatch) return JSON.parse(objectMatch[0]);
+      
+      const arrayMatch = text.match(/\[[\s\S]*\]/);
+      if (arrayMatch) return JSON.parse(arrayMatch[0]);
+    } catch (e2) {
+      console.error("Failed to parse JSON response. Raw text:", text.substring(0, 500));
+    }
+    return defaultValue;
+  }
+}
+
 export async function generateFlashcards(topic: string, count: number = 5) {
   const genAI = getAiClient();
 
@@ -29,7 +52,7 @@ export async function generateFlashcards(topic: string, count: number = 5) {
   DIRETRIZ DE FORMATO: Retorne um JSON com array de objetos contendo "front" e "back".`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -47,8 +70,7 @@ export async function generateFlashcards(topic: string, count: number = 5) {
     },
   });
 
-  const text = response.text || "[]";
-  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+  return parseJsonResponse(response.text || "[]", []);
 }
 
 export async function generateSummary(text: string) {
@@ -59,7 +81,7 @@ export async function generateSummary(text: string) {
   Retorne o resumo formatado em Markdown limpo.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
   return response.text;
@@ -72,7 +94,7 @@ export async function generateMindMap(subject: string) {
   JSON: nodes {id, data: {label}, position: {x,y}}, edges {id, source, target}`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -100,7 +122,7 @@ export async function generateMindMap(subject: string) {
   });
 
   const text = response.text || "{}";
-  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+  return parseJsonResponse(text, {});
 }
 
 export async function generateQuizQuestions(topic: string, subject: string) {
@@ -110,7 +132,7 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -130,7 +152,7 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   });
 
   const text = response.text || "[]";
-  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+  return parseJsonResponse(text, []);
 }
 
 export async function parseEdital(rawText: string) {
@@ -151,7 +173,7 @@ export async function parseEdital(rawText: string) {
   Cada tópico deve ter id, name, completed (false) e incidence.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -191,7 +213,7 @@ export async function parseEdital(rawText: string) {
   });
 
   const text = response.text || "{}";
-  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+  return parseJsonResponse(text, {});
 }
 
 export async function generateSchedule(subjectsSummary: string, days: number) {
@@ -207,7 +229,7 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
   4. Inclua 'specificTopic' (assunto principal), 'generalTopic' (revisão base), 'questionGoal' (número inteiro) e 'revisionTask' (ex: Flashcards).`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",
@@ -229,7 +251,7 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
   });
 
   const text = response.text || "[]";
-  return JSON.parse(text.replace(/```json/g, '').replace(/```/g, '').trim());
+  return parseJsonResponse(text, []);
 }
 
 export async function generateSVGMap(title: string, prompt: string, quantity: number = 3) {
@@ -247,17 +269,99 @@ export async function generateSVGMap(title: string, prompt: string, quantity: nu
   Retorne EXCLUSIVAMENTE um array de strings JSON, onde cada string é o código XML do SVG pronto para ser renderizado na web. Não adicione textos aleatórios.`;
 
   const response = await genAI.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: GEMINI_MODEL,
     contents: [{ role: "user", parts: [{ text: enhancedPrompt }] }]
   });
   
-  const text = response.text || "[]";
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    const matches = text.match(/\[[\s\S]*\]/);
-    if (matches) return JSON.parse(matches[0]);
-    throw e;
-  }
+  return parseJsonResponse(response.text || "[]", []);
+}
+
+export async function analyzePareto(contestRole: string, banca: string, subjects: any[], isHighPerformance: boolean = false) {
+  const genAI = getAiClient();
+
+  const subjectsSummary = subjects.map(s => `ID: ${s.id}, Nome: ${s.name}\nTópicos: ${s.topics?.map((t: any) => `[ID: ${t.id}] ${t.name}`).join(', ')}`).join('\n\n');
+
+  const performancePrompt = isHighPerformance 
+    ? `VOCÊ É O MAIOR ESTRATEGISTA DE CONCURSOS DO BRASIL, ESPECIALISTA EM ENGENHARIA REVERSA DE BANCAS. Sua análise será usada por candidatos de altíssima performance (Elite).
+       Realize uma análise CRÍTICA e PROFUNDA para o cargo de "${contestRole}" na banca "${banca.toUpperCase()}". 
+       Use heurísticas avançadas de probabilidade baseadas no histórico real de provas dos últimos 5 anos.`
+    : `VOCÊ É UM ESTRATEGISTA DE DADOS DE CONCURSOS PÚBLICOS E UM EXPERT EM ANÁLISE ESTATÍSTICA DE BANCAS ORGANIZADORAS.
+       Sua missão é realizar uma Análise de Pareto (80/20) detalhada para o cargo de "${contestRole}" focada na banca "${banca.toUpperCase()}".`;
+
+  const prompt = `${performancePrompt}
+  
+  CONTEXTO DO EDITAL (USE ESTES IDS EXATAMENTE):
+  ${subjectsSummary}
+  
+  O QUE VOCÊ DEVE ENTREGAR:
+  1. 'incidenceScore' (0-100): Probabilidade estatística do tópico aparecer na prova (frequência histórica).
+  2. 'strategicInsight': Um insight de mestre (curto e direto) para cada matéria, focando no "estilo" da banca ${banca}.
+  3. 'goldenPoint': O tópico "cereja do bolo" que é cobrado em quase todas as provas dessa banca para este nível de cargo.
+  4. 'priorityLabel': Classificação entre "Baixa", "Média", "Alta" ou "Crítico".
+  
+  ⚠️ REQUISITO OBRIGATÓRIO: No JSON de retorno, use EXATAMENTE os mesmos "id" das disciplinas e "id" dos tópicos fornecidos no contexto acima. Não invente novos IDs.
+  
+  RETORNO (JSON):
+  {
+    "subjects": [
+      {
+        "id": "ID_ORIGINAL_DA_DISCIPLINA",
+        "name": "NOME_DA_DISCIPLINA",
+        "strategicInsight": "...",
+        "goldenPoint": "...",
+        "topics": [
+          {
+            "id": "ID_ORIGINAL_DO_TOPICO",
+            "name": "NOME_DO_TOPICO",
+            "incidenceScore": 95,
+            "priorityLabel": "Crítico" 
+          }
+        ]
+      }
+    ]
+  }`;
+
+  const response = await genAI.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    config: {
+      responseMimeType: "application/json",
+      temperature: isHighPerformance ? 0.2 : 0.4,
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          subjects: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                id: { type: Type.STRING },
+                name: { type: Type.STRING },
+                strategicInsight: { type: Type.STRING },
+                goldenPoint: { type: Type.STRING },
+                topics: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      name: { type: Type.STRING },
+                      incidenceScore: { type: Type.NUMBER },
+                      priorityLabel: { type: Type.STRING }
+                    },
+                    required: ["id", "name", "incidenceScore", "priorityLabel"]
+                  }
+                }
+              },
+              required: ["id", "name", "strategicInsight", "goldenPoint", "topics"]
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const text = response.text || "{}";
+  return parseJsonResponse(text, {});
 }
 

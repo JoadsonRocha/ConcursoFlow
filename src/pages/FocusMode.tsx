@@ -12,8 +12,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useContestStats } from '../hooks/useContestStats';
 
 interface FocusModeProps {
-  contest: Contest;
-  onUpdate: (contest: Contest) => void;
+  contest?: Contest | null;
+  onUpdate?: (contest: Contest) => void;
 }
 
 type TimerMode = 'work' | 'short_break' | 'long_break';
@@ -23,7 +23,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const stats = useContestStats(contest);
+  const stats = useContestStats(contest || null);
   const { todayTask } = stats;
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -63,13 +63,15 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
       setSelectedSubject(subjectParam);
     } else if (todayTask && !selectedSubject) {
       setSelectedSubject(todayTask.generalTopic || todayTask.specificTopic || '');
+    } else if (!selectedSubject) {
+      setSelectedSubject('Estudo Livre');
     }
   }, [todayTask]);
 
   const handleSaveTime = async (minutes: number) => {
     console.log("Saving time:", minutes, "Contest:", !!contest, "User:", !!user);
-    if (!user || !contest) {
-      console.error("Missing user or contest:", !!user, !!contest);
+    if (!user || !contest || !onUpdate) {
+      console.log("Not saving to history: No contest or user active.");
       return;
     }
     try {
@@ -606,7 +608,7 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
                       className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-border shadow-2xl p-2 z-[100] max-h-64 overflow-y-auto"
                     >
                       <p className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-text-sub">Todas as Disciplinas</p>
-                      {contest.subjects?.length > 0 ? (
+                      {contest && contest.subjects?.length > 0 ? (
                         contest.subjects.map(sub => (
                            <button
                             key={sub.id}

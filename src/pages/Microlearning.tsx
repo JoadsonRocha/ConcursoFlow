@@ -36,8 +36,57 @@ import SVGMapViewer from '../components/SVGMapViewer';
 import { Node, Edge } from 'reactflow';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Microlearning({ contest }: { contest: Contest }) {
+export default function Microlearning({ contest, onUpdate }: { contest?: Contest | null, onUpdate?: (contest: Contest) => void }) {
   const { profile, isPro } = useAuth();
+
+  const saveStudySession = (totalSeconds: number, questionsCount: number = 0) => {
+    if (totalSeconds < 5 && questionsCount === 0) return; // Ignore very short/empty sessions
+    
+    const mins = Math.floor(totalSeconds / 60);
+
+    if (!contest || !onUpdate) {
+       if (mins > 0 || questionsCount > 0) {
+         toast.success(`Sessão finalizada! ${mins}min de foco absoluto. 🧠`);
+       }
+       return;
+    }
+
+    const hoursSpent = totalSeconds / 3600;
+
+    const getTodayISOString = () => {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().split('T')[0];
+    };
+    const today = getTodayISOString();
+    
+    let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
+    const existingIndex = newHistory.findIndex(h => h.date === today);
+
+    if (existingIndex >= 0) {
+      newHistory[existingIndex] = {
+        ...newHistory[existingIndex],
+        hours: newHistory[existingIndex].hours + hoursSpent,
+        questions: (newHistory[existingIndex].questions || 0) + questionsCount
+      };
+    } else {
+      newHistory.push({
+        date: today,
+        hours: hoursSpent,
+        questions: questionsCount
+      });
+    }
+
+    onUpdate({
+      ...contest,
+      dailyHistory: newHistory
+    });
+
+    if (mins > 0 || questionsCount > 0) {
+      toast.success(`Sessão finalizada! +${mins}min e ${questionsCount} cards adicionados. 🔥`);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>('selection');
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
@@ -524,7 +573,10 @@ export default function Microlearning({ contest }: { contest: Contest }) {
             <div className="w-10 md:w-32" />
           </header>
           <div className="max-w-xl mx-auto w-full">
-            <FlashcardDeck cards={studyModeCards} onFinish={() => setStudyModeCards(null)} />
+            <FlashcardDeck cards={studyModeCards} onFinish={(time, count) => {
+              saveStudySession(time, count);
+              setStudyModeCards(null);
+            }} />
           </div>
         </div>
       )}
@@ -560,7 +612,10 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         </header>
 
         {dueCards.length > 0 ? (
-          <FlashcardDeck cards={dueCards} onFinish={() => setActiveTab('selection')} />
+          <FlashcardDeck cards={dueCards} onFinish={(time, count) => {
+            saveStudySession(time, count);
+            setActiveTab('selection');
+          }} />
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
             <div className="w-20 h-20 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center shadow-sm">
@@ -926,7 +981,7 @@ export default function Microlearning({ contest }: { contest: Contest }) {
         {showCreator && (
           <FlashcardCreator 
             onClose={() => setShowCreator(false)} 
-            subjects={contest.subjects || []} 
+            subjects={contest?.subjects || []} 
             currentCount={flashcards.length}
           />
         )}

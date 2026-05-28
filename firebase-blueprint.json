@@ -95,6 +95,21 @@
         "edges": { "type": "array", "items": { "type": "object" } }
       },
       "required": ["title", "ownerId", "createdAt"]
+    },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "description": "A message sent by a user to support.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "userId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "createdAt"]
     }
   },
   "firestore": {
@@ -125,6 +140,10 @@
     "/shared_decks/{deckId}": {
       "schema": "FlashcardDeck",
       "description": "Stores public flashcard decks shared by users as a unit."
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": "SupportTicket",
+      "description": "Stores messages sent to support."
     }
   }
 }

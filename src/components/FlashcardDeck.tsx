@@ -18,13 +18,32 @@ interface Flashcard {
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
-  onFinish: () => void;
+  onFinish: (timeSpent: number, cardsCount: number) => void;
 }
 
 export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [finishMode, setFinishMode] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  // Track cards reviewed
+  const [reviewedCount, setReviewedCount] = useState(0);
+
+  // Timer Effect
+  React.useEffect(() => {
+    if (finishMode) return;
+    const interval = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [finishMode]);
+
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const currentCard = cards && cards[currentIndex];
 
@@ -32,6 +51,8 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
     // Simple SRS logic
     // quality: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy)
     if (!auth.currentUser || !currentCard) return;
+
+    setReviewedCount(prev => prev + 1);
 
     let newInterval = currentCard.interval || 0;
     let newEase = currentCard.ease || 2.5;
@@ -83,7 +104,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
             <p className="text-sm text-text-sub font-medium">Sua memória de longo prazo agradece. Continue com a constância.</p>
           </div>
           <button 
-            onClick={onFinish}
+            onClick={() => onFinish(seconds, reviewedCount)}
             className="w-full bg-accent text-white py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20"
           >
             Concluir Protocolo
@@ -105,6 +126,13 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
             <div className="text-[10px] font-bold text-accent uppercase tracking-widest leading-none">Restam {Math.max(0, cards.length - currentIndex - 1)}</div>
           </div>
         </div>
+        
+        {/* Timer UI */}
+        <div className="flex items-center gap-2 bg-slate-50 border border-border px-3 py-1.5 rounded-full">
+           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+           <span className="text-[10px] font-mono font-bold text-text-main tabular-nums">{formatTime(seconds)}</span>
+        </div>
+
         {(currentCard?.subjectName || currentCard?.description) && (
           <div className="text-[10px] font-bold text-text-sub bg-slate-50 border border-border px-3 py-1.5 rounded-full uppercase tracking-widest truncate max-w-[200px]">
               {currentCard?.subjectName || currentCard?.description}

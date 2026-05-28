@@ -92,7 +92,7 @@ export function useContestStats(contest: Contest | null) {
     // 2. History & Daily Stats
     const historyData = [...(contest.dailyHistory || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
-    const totalHours = historyData.reduce((acc, h) => acc + (h.hours || 0), 0);
+    const totalHours = Number(historyData.reduce((acc, h) => acc + (h.hours || 0), 0).toFixed(2));
     const totalQuestions = historyData.reduce((acc, h) => acc + (h.questions || 0), 0);
 
     // Calculate Last 7 Days
@@ -109,7 +109,7 @@ export function useContestStats(contest: Contest | null) {
       last7Days.push({
         name: `${d.getDate()}/${d.getMonth() + 1}`,
         date: dateStr,
-        horas: entry ? entry.hours : 0,
+        horas: entry ? Number(entry.hours.toFixed(2)) : 0,
         questoes: entry ? entry.questions : 0
       });
     }

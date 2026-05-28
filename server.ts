@@ -243,6 +243,11 @@ app.get('/api/health', (req, res) => res.json({
 if (process.env.NODE_ENV !== 'production') {
   import('vite').then(({ createServer: createViteServer }) => {
     createViteServer({ server: { middlewareMode: true }, appType: 'spa' }).then((vite) => {
+      // Handle API 404s before Vite
+      app.get('/api/*', (req, res) => {
+        res.status(404).json({ error: 'Endpoint da API não encontrado (Dev)' });
+      });
+
       app.use(vite.middlewares);
       app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
@@ -254,6 +259,12 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   const distPath = path.join(process.cwd(), 'dist');
   app.use(express.static(distPath));
+  
+  // Prevent catch-all from serving index.html for API routes
+  app.get('/api/*', (req, res) => {
+    res.status(404).json({ error: 'Endpoint da API não encontrado' });
+  });
+
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 
   if (process.env.VERCEL !== '1' && (process.env.NODE_ENV as string) !== 'test') {

@@ -50,6 +50,14 @@ service cloud.firestore {
         && data.keys().hasAll(['name', 'role', 'ownerId']);
     }
 
+    function isValidSupportTicket(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.email is string && data.email.size() <= 100
+        && data.message is string && data.message.size() <= 5000
+        && (!data.hasAll(['subject']) || (data.subject is string && data.subject.size() <= 200))
+        && data.keys().hasAll(['name', 'email', 'message', 'createdAt']);
+    }
+
     // ======================================================
     // 3. COLLECTION RULES
     // ======================================================
@@ -120,6 +128,13 @@ service cloud.firestore {
     match /mail/{mailId} {
       allow create: if isSignedIn();
       allow read, update, delete: if false;
+    }
+
+    // Support Tickets
+    match /support_tickets/{ticketId} {
+      allow create: if isValidSupportTicket(incoming()) 
+        && incoming().createdAt == request.time;
+      allow read, update, delete: if false; // Secure access for admins only via console for now
     }
   }
 }

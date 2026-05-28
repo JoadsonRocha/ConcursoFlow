@@ -1,3 +1,5 @@
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Contest, ScheduleDay } from '../types';
@@ -20,7 +22,8 @@ import {
   Lock,
   Play,
   Timer,
-  Award
+  Award,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { generateSchedule } from '../services/gemini';
@@ -44,6 +47,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const [weeksCount, setWeeksCount] = useState(4);
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const schedule = contest.schedule || [];
   const maxDay = schedule.length > 0 ? Math.max(...schedule.map(d => d.dayNumber)) : 0;
@@ -95,6 +99,115 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     }
   };
 
+  const handleExport = () => {
+    if (!contest.schedule || contest.schedule.length === 0) return;
+    
+    if (!isPro) {
+      setProFeatureName('Exportação de Cronograma em PDF');
+      setShowProModal(true);
+      return;
+    }
+
+    setExporting(true);
+    
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header
+      doc.setFillColor(79, 70, 229); // Primary color
+      doc.rect(0, 0, pageWidth, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('StratisPlanner', pageWidth / 2, 18, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('CRONOGRAMA DE ESTUDOS PERSONALIZADO', pageWidth / 2, 28, { align: 'center' });
+      
+      // Secondary Info Section
+      doc.setTextColor(50, 50, 50);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('INFORMAÇÕES DO PLANO', 14, 50);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Focando em: ${contest.role.toUpperCase()}`, 14, 58);
+      doc.text(`Banca: ${contest.banca || 'Manual'}`, 14, 64);
+      doc.text(`Data da Prova: ${contest.examDate || 'Não definida'}`, 14, 70);
+      
+      doc.text(`Meta Horas: ${contest.dailyGoalHours}h`, 100, 58);
+      doc.text(`Meta Questões: ${contest.dailyGoalQuestions} questões`, 100, 64);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 100, 70);
+      
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, 75, pageWidth - 14, 75);
+
+      // Table Data
+      const tableData = contest.schedule.map(day => {
+        const week = Math.ceil(day.dayNumber / 7);
+        return [
+          `Dia ${day.dayNumber}\n(Sem. ${week})`,
+          `${day.specificTopic || '-'}\n${day.generalTopic || '-'}`,
+          day.questionGoal.toString(),
+          day.revisionTask,
+          day.completed ? 'Concluído' : 'Pendente'
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 85,
+        head: [['Dia', 'Tópicos de Estudo', 'Questões', 'Revisão', 'Status']],
+        body: tableData,
+        headStyles: { 
+          fillColor: [79, 70, 229],
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: { fillColor: [249, 250, 251] },
+        styles: { 
+          fontSize: 8,
+          cellPadding: 4,
+          overflow: 'linebreak',
+          halign: 'left'
+        },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 85 },
+          2: { cellWidth: 20, halign: 'center' },
+          3: { cellWidth: 40 },
+          4: { cellWidth: 23, halign: 'center' }
+        },
+        theme: 'striped'
+      });
+
+      // Footer
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          'StratisPlanner - Mantenha a constância! Estudar é um processo.',
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+      }
+      
+      doc.save(`cronograma_${contest.role.toLowerCase().replace(/\s+/g, '_')}.pdf`);
+      toast.success("Plano de estudos exportado para PDF com sucesso! 📄");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao exportar plano para PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!isPro && weeksCount > 4) {
       setProFeatureName('Cronogramas de Longo Prazo (> 4 Semanas)');
@@ -120,15 +233,37 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
   const toggleDay = (dayIndex: number) => {
     if (!contest.schedule) return;
+    
+    const getTodayISOString = () => {
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      return d.toISOString().split('T')[0];
+    };
+    const todayStrStr = getTodayISOString();
+
     const newSchedule = [...contest.schedule];
     const isNowCompleted = !newSchedule[dayIndex].completed;
     newSchedule[dayIndex] = { ...newSchedule[dayIndex], completed: isNowCompleted };
     
-    // Logic to sync with vertical edital (subjects)
+    // Logic to sync with vertical edital (subjects) and productivity history
     let newSubjects = [...contest.subjects];
     let newMeppReviews = contest.meppReviews ? [...contest.meppReviews] : [];
+    let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
     
     if (isNowCompleted) {
+      // Update History for Streak
+      const existingHistoryIdx = newHistory.findIndex(h => h.date === todayStrStr);
+      if (existingHistoryIdx >= 0) {
+        if (newHistory[existingHistoryIdx].hours === 0) newHistory[existingHistoryIdx].hours = contest.dailyGoalHours || 1;
+        if (newHistory[existingHistoryIdx].questions === 0) newHistory[existingHistoryIdx].questions = newSchedule[dayIndex].questionGoal || contest.dailyGoalQuestions || 5;
+      } else {
+        newHistory.push({
+          date: todayStrStr,
+          hours: contest.dailyGoalHours || 1,
+          questions: newSchedule[dayIndex].questionGoal || contest.dailyGoalQuestions || 5
+        });
+      }
+
       const day = newSchedule[dayIndex];
       const normalize = (s: string) => s.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -179,13 +314,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       });
 
       // Auto-mark MEPP "Estudo Teórico Ativo" ('theory' stage) as completed
-      const getTodayISOString = () => {
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().split('T')[0];
-      };
-      const todayStrStr = getTodayISOString();
-
       const topicName = day.specificTopic || day.generalTopic || "Estudo do Dia";
       const subjectName = contest.subjects.find(sub => 
         sub.topics?.some(t => t.name === day.specificTopic)
@@ -219,7 +347,10 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       // We'll stick to marking as completed for now as requested.
     }
     
-    onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects, meppReviews: newMeppReviews });
+    onUpdate({ ...contest, schedule: newSchedule, subjects: newSubjects, meppReviews: newMeppReviews, dailyHistory: newHistory });
+    if (isNowCompleted) {
+      toast.success("Meta concluída! 🔥 Ofensiva atualizada.");
+    }
   };
 
   if (schedule.length === 0) {
@@ -332,6 +463,15 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
            >
              {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
              {contest.isPublic ? 'Publicado' : 'Compartilhar na Comunidade'}
+           </button>
+
+           <button 
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex-1 md:flex-none px-8 py-3.5 bg-white border border-border text-text-sub rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm"
+           >
+             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : (isPro ? <Download className="w-4 h-4" /> : <Lock className="w-3.5 h-3.5 text-accent" />)}
+             Exportar Plano
            </button>
 
            <div className="flex gap-2">

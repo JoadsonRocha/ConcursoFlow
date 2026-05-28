@@ -90,6 +90,20 @@ export interface Contest {
   importUsage?: number;
   
   paretoAnalyzed?: boolean; // Se a análise de incidência (Regra 80/20) foi feita
+  paretoData?: {
+    subjects: {
+      id: string;
+      name?: string;
+      strategicInsight: string;
+      goldenPoint: string;
+      topics: {
+        id: string;
+        name?: string;
+        incidenceScore: number;
+        priorityLabel: string;
+      }[];
+    }[];
+  };
   createdAt?: any;
   updatedAt?: any;
   ownerIsCreator?: boolean;
@@ -133,6 +147,7 @@ export interface Profile {
   isCreator?: boolean;
   
   fcmToken?: string;
+  fcmTokens?: string[];
   notificationsEnabled?: boolean;
   
   lastUsageReset?: any;

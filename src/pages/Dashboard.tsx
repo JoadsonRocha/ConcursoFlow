@@ -366,7 +366,14 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     const today = getLocalDateStr(new Date());
     let newHistory = contest.dailyHistory ? [...contest.dailyHistory] : [];
     
-    if (inputHours > 0 || inputQuestions > 0) {
+    // Ensure the day counts for the streak even if hours/questions aren't manually entered
+    const defaultHours = contest.dailyGoalHours || 1;
+    const defaultQuestions = (todayTask?.questionGoal) || contest.dailyGoalQuestions || 5;
+    
+    const finalHours = inputHours > 0 ? inputHours : (todayTask && !todayTask.completed ? defaultHours : 0); 
+    const finalQuestions = inputQuestions > 0 ? inputQuestions : (todayTask && !todayTask.completed ? defaultQuestions : 0);
+
+    if (finalHours > 0 || finalQuestions > 0) {
       const existingIndex = newHistory.findIndex(h => h.date === today);
       if (existingIndex >= 0) {
         newHistory[existingIndex] = {
@@ -374,11 +381,16 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
            hours: newHistory[existingIndex].hours + inputHours,
            questions: newHistory[existingIndex].questions + inputQuestions,
         };
+        // If we were just marking completion and inputs were 0, ensure the day is "active"
+        if (inputHours === 0 && inputQuestions === 0 && todayTask && !todayTask.completed) {
+           if (newHistory[existingIndex].hours === 0) newHistory[existingIndex].hours = defaultHours;
+           if (newHistory[existingIndex].questions === 0) newHistory[existingIndex].questions = defaultQuestions;
+        }
       } else {
         newHistory.push({
           date: today,
-          hours: inputHours,
-          questions: inputQuestions
+          hours: finalHours,
+          questions: finalQuestions
         });
       }
     }
@@ -391,6 +403,10 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       meppReviews: newMeppReviews
     });
     
+    if (todayTask && !todayTask.completed) {
+      toast.success("Meta do dia concluída! 🔥 Sua ofensiva foi atualizada.");
+    }
+
     setShowLogModal(false);
     setLogForm({ hours: '', questions: '' });
   };
@@ -424,7 +440,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                 {todayHistory.hours > 0 && (
                   <span className="flex items-center gap-1 px-2 py-0.5 bg-primary/5 rounded-full border border-primary/10">
                     <Clock className="w-2.5 h-2.5 text-primary"/>
-                    {todayHistory.hours}h
+                    {todayHistory.hours.toFixed(2)}h
                   </span>
                 )}
                 {todayHistory.questions > 0 && (
@@ -567,7 +583,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
         {[
           { label: 'Evolução', value: `${overallProgress}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
-          { label: 'Sequência', value: `${streakDays} dias`, icon: Target, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/20' },
+          { label: 'Ofensiva', value: `${streakDays} dias`, icon: Zap, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
           { label: 'Horas', value: `${totalHours}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
           { label: 'Questões', value: totalQuestions, icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
         ].map((metric, i) => {

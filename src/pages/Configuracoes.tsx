@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrainCircuit, Upload, AlertCircle, CheckCircle2, Calendar, FileText, Loader2, Plus, Trash2, Save, Wand2, Target, Settings as SettingsIcon, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { parseEdital, generateSchedule } from '../services/gemini';
+import { parseEdital, generateSchedule, generateParetoAnalysis } from '../services/gemini';
 import { Contest, Subject } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -29,13 +29,17 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   
   const [stage, setStage] = useState<'import' | 'metas'>('import');
   const [contestData, setContestData] = useState<(Partial<Contest> & { rawTextForAnalysis?: string }) | null>(null);
+  const [editingContestId, setEditingContestId] = useState<string | null>(null);
 
   const [wizardStep, setWizardStep] = useState(0);
 
   const [activeTab, setActiveTab] = useState<'ai' | 'manual'>('ai');
+  const [reAnalyzePareto, setReAnalyzePareto] = useState(false);
+  const [reImportSubjects, setReImportSubjects] = useState(false);
   const [rawText, setRawText] = useState('');
   const [manualContestName, setManualContestName] = useState('');
   const [manualRole, setManualRole] = useState('');
+  const [selectedBanca, setSelectedBanca] = useState('');
   const [dailyHours, setDailyHours] = useState<number | ''>(2);
   const [dailyQuestions, setDailyQuestions] = useState<number | ''>(20);
   const [dailyContentVolume, setDailyContentVolume] = useState<number | ''>(1);
@@ -92,44 +96,48 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   };
 
   const handleEditalImport = async () => {
-    if (!manualContestName || !manualRole) {
-      setError("Instituição do concurso e cargo são obrigatórios.");
+    if (!manualContestName || !manualRole || !selectedBanca) {
+      setError("Instituição, cargo e banca são obrigatórios.");
       return;
     }
-    
-    /* Bypass manual check for import as requested */
     
     setLoading(true);
     setError(null);
 
     try {
-      let contestData: Partial<Contest> & { rawTextForAnalysis?: string } = {
+      let finalContestData: Partial<Contest> & { rawTextForAnalysis?: string } = {
+        ...contestData,
         name: manualContestName,
-        role: manualRole
+        role: manualRole,
+        banca: selectedBanca
       };
       
-      const contestsRef = collection(db, 'shared_contests');
-      const snapshot = await getDocs(contestsRef);
-      const sharedContests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contest));
-      
-      const foundMatch = sharedContests.find(c => 
-        c.role.toLowerCase() === manualRole.toLowerCase()
-      );
-
-      if (foundMatch) {
-         toast.success("Edital encontrado na comunidade!");
-         contestData.subjects = foundMatch.subjects;
+      // If we ARE editing and already have subjects, skip community search
+      if (editingContestId && finalContestData.subjects && finalContestData.subjects.length > 0 && !reImportSubjects) {
+         // Keep current subjects
       } else {
-         if (!rawText.trim()) {
-            throw new Error("Edital não encontrado na comunidade. Por favor, importe ou cole o conteúdo do edital.");
-         }
-         // Store partial data for later AI analysis
-         contestData.rawTextForAnalysis = rawText;
+        const contestsRef = collection(db, 'shared_contests');
+        const snapshot = await getDocs(contestsRef);
+        const sharedContests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contest));
+        
+        const foundMatch = sharedContests.find(c => 
+          c.role.toLowerCase() === manualRole.toLowerCase()
+        );
+
+        if (foundMatch && (!finalContestData.subjects || finalContestData.subjects.length === 0 || reImportSubjects)) {
+           toast.success("Edital encontrado na comunidade!");
+           finalContestData.subjects = foundMatch.subjects;
+        } else if (!editingContestId || reImportSubjects) {
+           if (!rawText.trim()) {
+              throw new Error("Edital não encontrado na comunidade. Por favor, importe ou cole o conteúdo do edital para que a IA possa extrair as matérias.");
+           }
+           finalContestData.rawTextForAnalysis = rawText;
+        }
       }
       
-      setContestData(contestData);
+      setContestData(finalContestData);
       setStage('metas');
-      toast.success("Informações básicas salvas! Agora configure suas metas.");
+      toast.success("Dados validados! Agora configure suas metas diárias.");
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Erro ao validar edital.");
@@ -144,20 +152,45 @@ export default function Settings({ onImport, contests }: SettingsProps) {
      setLoading(true);
      try {
        let finalContestData = { ...contestData };
+       let paretoData = (contestData && !reAnalyzePareto) ? (contestData.paretoData || null) : null;
+       const canUseAnalysis = isPro || isBeta;
 
-       // Perform AI analysis only if subjects aren't already populated
-       if (!finalContestData.subjects && finalContestData.rawTextForAnalysis) {
+       // Perform AI analysis only if subjects aren't already populated or if re-importing
+       if ((!finalContestData.subjects || reImportSubjects) && finalContestData.rawTextForAnalysis) {
           toast.info("Analisando o edital com IA...");
           const parsed = await parseEdital(finalContestData.rawTextForAnalysis);
           finalContestData = { ...finalContestData, ...parsed };
        }
 
-       let schedule = undefined;
+       // Automatic Pareto Analysis - RESTRICTED TO PRO
+       // Only run if not already analyzed or if specifically requested
+       if (canUseAnalysis && selectedBanca && finalContestData.subjects && (!paretoData || reAnalyzePareto)) {
+         toast.info("Gerando Análise Estratégica de Pareto...");
+         try {
+           paretoData = await generateParetoAnalysis(
+             manualRole || finalContestData.role || '',
+             selectedBanca,
+             finalContestData.subjects
+           );
+         } catch (e) {
+           console.warn("Erro silencioso no Pareto automático:", e);
+         }
+       }
+
+       let schedule: any[] | null = contestData.schedule || null;
+       // Non-pro users are restricted to 4 weeks
+       const finalWeeks = canUseAnalysis ? scheduleWeeks : 4;
+       
        if (autoSchedule && finalContestData.subjects) {
          const subjectsSummary = finalContestData.subjects.map(s => 
            `${s.name} (${s.category}): ${s.topics?.map(t => t.name).join(', ')}`
          ).join('\n');
-         schedule = await generateSchedule(subjectsSummary, scheduleWeeks * 7);
+         
+         if (!canUseAnalysis) {
+           toast.info("Gerando cronograma padrão de 4 semanas...");
+         }
+         
+         schedule = await generateSchedule(subjectsSummary, finalWeeks * 7);
        }
 
        const dynamicContest: Contest = {
@@ -165,25 +198,32 @@ export default function Settings({ onImport, contests }: SettingsProps) {
          name: manualContestName || finalContestData.name || 'Novo Concurso',
          role: manualRole || finalContestData.role || 'Cargo não especificado',
          subjects: finalContestData.subjects || [],
-         id: `dynamic-${Date.now()}`,
+         id: editingContestId || `dynamic-${Date.now()}`,
          examDate: examDate,
+         banca: selectedBanca,
+         paretoAnalyzed: !!paretoData,
+         paretoData: paretoData || null,
          dailyGoalHours: Number(dailyHours) || 0,
          dailyGoalQuestions: Number(dailyQuestions) || 0,
          dailyContentVolume: Number(dailyContentVolume) || 1,
          scheduleStartDate: scheduleStartDate || null,
-         schedule: schedule,
+         schedule: schedule || [],
        };
        
        await onImport(dynamicContest);
        
-       // Update usage if not PRO - MOVED TO SERVER
-
+       // Reset state
        setRawText('');
        setManualContestName('');
        setManualRole('');
+       setSelectedBanca('');
+       setEditingContestId(null);
+       setContestData(null);
+       setReAnalyzePareto(false);
+       setReImportSubjects(false);
        setStage('import');
        setWizardStep(0);
-       toast.success("Edital importado com sucesso! Redirecionando para seu cronograma...");
+       toast.success(editingContestId ? "Configurações atualizadas!" : "Edital importado com sucesso! Redirecionando para seu cronograma...");
        // Trigger navigation to subjects
        navigate('/cronograma');
      } catch (err) {
@@ -230,38 +270,112 @@ export default function Settings({ onImport, contests }: SettingsProps) {
       </header>
 
       {/* Mode Switcher */}
-          <div className="flex bg-slate-900/5 !mb-0 border border-border p-1.5 rounded-[1.5rem] shadow-sm max-w-md">
-        <button
-          onClick={() => { setActiveTab('ai'); setRawText(''); }}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all relative group",
-            activeTab === 'ai' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
-          )}
-        >
-          {!isPro && !isBeta && (
-             <div className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
-               PRO
-             </div>
-          )}
-          <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
-          Importar PDF (IA)
-        </button>
-        <button
-          onClick={() => { setActiveTab('manual'); setRawText(''); }}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
-            activeTab === 'manual' ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
-          )}
-        >
-          <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
-          Colar Texto
-        </button>
+      <div className="flex flex-col sm:flex-row gap-3 !mb-0 max-w-2xl w-full">
+        <div className="flex bg-slate-900/5 border border-border p-1.5 rounded-[1.5rem] shadow-sm flex-1">
+          <button
+            onClick={() => { setActiveTab('ai'); setRawText(''); setEditingContestId(null); setContestData(null); }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all relative group",
+              activeTab === 'ai' && !editingContestId ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            {!isPro && !isBeta && (
+               <div className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
+                 PRO
+               </div>
+            )}
+            <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
+            Novo Edital (IA)
+          </button>
+          <button
+            onClick={() => { setActiveTab('manual'); setRawText(''); setEditingContestId(null); setContestData(null); setManualContestName(''); setManualRole(''); }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all",
+              activeTab === 'manual' && !editingContestId ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
+            )}
+          >
+            <Wand2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 cursor-default" />
+            Novo Edital (Manual)
+          </button>
+        </div>
+
+        {contests.length > 0 && (
+          <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-border p-1.5 rounded-[1.5rem] shadow-sm">
+            <select
+              className="w-full bg-transparent border-none text-[10px] sm:text-xs font-bold uppercase tracking-widest text-text-main focus:ring-0 cursor-pointer px-4"
+              value={editingContestId || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) {
+                  setEditingContestId(null);
+                  setContestData(null);
+                  return;
+                }
+                const selected = contests.find(c => c.id === val);
+                if (selected) {
+                  setEditingContestId(selected.id);
+                  setManualContestName(selected.name || '');
+                  setManualRole(selected.role || '');
+                  setSelectedBanca(selected.banca || '');
+                  setDailyHours(selected.dailyGoalHours || 2);
+                  setDailyQuestions(selected.dailyGoalQuestions || 20);
+                  setDailyContentVolume(selected.dailyContentVolume || 1);
+                  setExamDate(selected.examDate || '2026-12-31');
+                  setScheduleWeeks(4); 
+                  setContestData(selected);
+                  setActiveTab('manual');
+                  toast.info(`Editando: ${selected.role}`);
+                }
+              }}
+            >
+              <option value="">-- Editar Edital Ativo --</option>
+              {contests.map(c => (
+                <option key={c.id} value={c.id}>{c.role}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       
       <div className="space-y-3 mt-3">
           {stage === 'import' && (
             <>
-              <section className="bg-white border border-border p-3 rounded-xl space-y-2 animate-in slide-in-from-bottom-5 duration-500 shadow-sm">
+              {editingContestId && (
+                <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl mb-3 flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <SettingsIcon className="w-4 h-4 text-primary" />
+                    <h3 className="text-xs font-bold text-text-main uppercase tracking-widest">Opções de Edição</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={cn(
+                        "w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0",
+                        reAnalyzePareto ? "bg-primary border-primary text-white" : "border-border bg-white"
+                      )}>
+                        {reAnalyzePareto && <CheckCircle2 className="w-3 h-3" />}
+                      </div>
+                      <input type="checkbox" className="hidden" checked={reAnalyzePareto} onChange={(e) => setReAnalyzePareto(e.target.checked)} />
+                      <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest group-hover:text-primary">Refazer Pareto (IA)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <div className={cn(
+                        "w-4 h-4 rounded border transition-all flex items-center justify-center shrink-0",
+                        reImportSubjects ? "bg-primary border-primary text-white" : "border-border bg-white"
+                      )}>
+                        {reImportSubjects && <CheckCircle2 className="w-3 h-3" />}
+                      </div>
+                      <input type="checkbox" className="hidden" checked={reImportSubjects} onChange={(e) => setReImportSubjects(e.target.checked)} />
+                      <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest group-hover:text-primary">Atualizar Disciplinas (Texto/PDF)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <section className={cn(
+                "bg-white border border-border p-3 rounded-xl space-y-2 animate-in slide-in-from-bottom-5 duration-500 shadow-sm",
+                editingContestId && !reImportSubjects && "hover:border-primary/30 transition-all"
+              )}>
                 {activeTab === 'manual' && (
                   <>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-border">
@@ -276,7 +390,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
                         <input 
@@ -298,6 +412,35 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           placeholder="Ex: Técnico Judiciário"
                           required
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-text-sub uppercase tracking-wider ml-1">Banca Organizadora <span className="text-red-500">*</span></label>
+                        <select 
+                          className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main focus:border-primary/50 outline-none transition-all"
+                          value={selectedBanca}
+                          onChange={(e) => setSelectedBanca(e.target.value)}
+                          required
+                        >
+                          <option value="">Escolha a banca...</option>
+                          <option value="cebraspe">CEBRASPE (CESPE)</option>
+                          <option value="fgv">FGV</option>
+                          <option value="fcc">FCC</option>
+                          <option value="vunesp">VUNESP</option>
+                          <option value="cesgranrio">Cesgranrio</option>
+                          <option value="idecan">IDECAN</option>
+                          <option value="iades">IADES</option>
+                          <option value="aocp">AOCP / Instituto AOCP</option>
+                          <option value="quadrix">Quadrix</option>
+                          <option value="ibfc">IBFC</option>
+                          <option value="fundatec">Fundatec</option>
+                          <option value="ibest">Ibest</option>
+                          <option value="selecon">Selecon</option>
+                          <option value="consulplan">Consulplan</option>
+                          <option value="fepese">FEPESE</option>
+                          <option value="ibgp">IBGP</option>
+                          <option value="legalle">Legalle</option>
+                          <option value="outra">Outras</option>
+                        </select>
                       </div>
                     </div>
 
@@ -402,7 +545,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3">
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold text-text-sub uppercase tracking-wider ml-1">Instituição <span className="text-red-500">*</span></label>
                         <input 
@@ -425,6 +568,35 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           required
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-text-sub uppercase tracking-wider ml-1">Banca Organizadora <span className="text-red-500">*</span></label>
+                        <select 
+                          className="w-full bg-slate-50 border border-border rounded-lg p-2.5 text-xs text-text-main focus:border-primary/50 outline-none transition-all"
+                          value={selectedBanca}
+                          onChange={(e) => setSelectedBanca(e.target.value)}
+                          required
+                        >
+                          <option value="">Escolha a banca...</option>
+                          <option value="cebraspe">CEBRASPE (CESPE)</option>
+                          <option value="fgv">FGV</option>
+                          <option value="fcc">FCC</option>
+                          <option value="vunesp">VUNESP</option>
+                          <option value="cesgranrio">Cesgranrio</option>
+                          <option value="idecan">IDECAN</option>
+                          <option value="iades">IADES</option>
+                          <option value="aocp">AOCP / Instituto AOCP</option>
+                          <option value="quadrix">Quadrix</option>
+                          <option value="ibfc">IBFC</option>
+                          <option value="fundatec">Fundatec</option>
+                          <option value="ibest">Ibest</option>
+                          <option value="selecon">Selecon</option>
+                          <option value="consulplan">Consulplan</option>
+                          <option value="fepese">FEPESE</option>
+                          <option value="ibgp">IBGP</option>
+                          <option value="legalle">Legalle</option>
+                          <option value="outra">Outras</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="pt-3 border-t border-border">
@@ -441,21 +613,42 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                         </label>
 
                         {autoSchedule && (
-                          <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
-                            {[2, 4, 8, 12].map((w) => (
-                              <button
-                                key={w}
-                                onClick={() => setScheduleWeeks(w)}
-                                className={cn(
-                                  "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center",
-                                  scheduleWeeks === w 
-                                    ? "bg-white text-text-main shadow-sm" 
-                                    : "text-text-sub hover:text-text-main"
-                                )}
-                              >
-                                {w} Sem.
-                              </button>
-                            ))}
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
+                              {[2, 4, 8, 12].map((w) => {
+                                const isWeekPro = w !== 4 && !isPro && !isBeta;
+                                return (
+                                  <button
+                                    key={w}
+                                    onClick={() => {
+                                      if (isWeekPro) {
+                                        setProFeatureName(`Cronograma de ${w} semanas`);
+                                        setShowProModal(true);
+                                        return;
+                                      }
+                                      setScheduleWeeks(w);
+                                    }}
+                                    className={cn(
+                                      "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center relative",
+                                      scheduleWeeks === w 
+                                        ? "bg-white text-text-main shadow-sm" 
+                                        : "text-text-sub hover:text-text-main",
+                                      isWeekPro && "opacity-60"
+                                    )}
+                                  >
+                                    {isWeekPro && (
+                                       <div className="absolute -top-1 -right-1 bg-accent text-white text-[6px] px-1 rounded shadow-sm scale-75 border border-white">PRO</div>
+                                    )}
+                                    {w} Sem.
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {!isPro && !isBeta && (
+                              <p className="text-[8px] text-text-sub text-center font-bold tracking-tight uppercase">
+                                Plano Free inclui cronograma fixo de 4 semanas
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -473,10 +666,10 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                 )}
                 <button
                   onClick={handleEditalImport}
-                  disabled={loading || (activeTab === 'manual' && (!manualContestName || !manualRole)) || (activeTab === 'ai' && !rawText)}
+                  disabled={loading || (activeTab === 'manual' && (!manualContestName || !manualRole || !selectedBanca)) || (activeTab === 'ai' && (!rawText || !selectedBanca))}
                   className={cn(
                     "w-full py-4 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all shadow-sm relative overflow-hidden group",
-                    loading || (activeTab === 'manual' && (!manualContestName || !manualRole)) || (activeTab === 'ai' && !rawText)
+                    loading || (activeTab === 'manual' && (!manualContestName || !manualRole || !selectedBanca)) || (activeTab === 'ai' && (!rawText || !selectedBanca))
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
                       : "bg-text-main text-white hover:scale-[1.01] active:scale-[0.99] hover:shadow-md"
                   )}

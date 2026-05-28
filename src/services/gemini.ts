@@ -106,3 +106,16 @@ export const generateSchedule = async (subjectsSummary: string, days: number) =>
     throw error;
   }
 };
+
+export const generateParetoAnalysis = async (contestRole: string, banca: string, subjects: any[], isHighPerformance: boolean = false) => {
+  try {
+    const highPerf = isHighPerformance === true; // Ensure it's a strict boolean
+    return await fetchWithAuth("/api/ai/pareto", {
+      method: "POST",
+      body: JSON.stringify({ contestRole, banca, subjects, isHighPerformance: highPerf }),
+    });
+  } catch (error: any) {
+    console.error("Erro ao gerar análise de Pareto:", error);
+    throw error;
+  }
+};
