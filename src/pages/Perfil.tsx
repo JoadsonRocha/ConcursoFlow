@@ -261,10 +261,17 @@ export default function Perfil() {
                 <div className="text-sm font-medium italic text-text-sub mt-1 max-w-sm">"{fraseStatus}"</div>
               )}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
-                <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary/5 border-primary/20 text-primary">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Plano PRO Ativo
-                </div>
+                {isPro ? (
+                  <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-amber-500/5 border-amber-500/20 text-amber-600">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                    Plano PRO Ativo
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary/5 border-primary/20 text-primary">
+                    <Zap className="w-3.5 h-3.5 text-primary" />
+                    Versão BETA Ativa
+                  </div>
+                )}
                 <div className="inline-flex items-center gap-2 bg-accent/5 border border-accent/20 text-accent text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
                   <TrendingUp className="w-3.5 h-3.5" />
                   {nivelAtual}
@@ -398,12 +405,21 @@ export default function Perfil() {
             <div className="flex items-center justify-between">
               <h3 className="text-[11px] font-black text-[#5C7187] uppercase tracking-[0.2em]">SITUAÇÃO DA CONTA</h3>
             </div>
-            <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-primary/10 text-primary border border-primary/20">
-              Assinatura PRO Ativa
-            </div>
+            {isPro ? (
+              <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                Assinatura PRO Ativa
+              </div>
+            ) : (
+              <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-primary/10 text-primary border border-primary/20">
+                Fase Beta Ativa
+              </div>
+            )}
           </div>
           <p className="text-[10px] text-text-sub font-medium leading-relaxed opacity-60">
-            Você possui acesso total a todos os recursos de inteligência artificial, flashcards e mapas mentais durante o período Beta.
+            {isPro 
+              ? "Você possui acesso total e ilimitado aos recursos de inteligência artificial, suporte prioritário e novos recursos premium no StratisPlanner."
+              : "Você possui acesso completo a todos os recursos avançados de inteligência artificial, flashcards e mapas mentais durante o período de desenvolvimento Beta."
+            }
           </p>
           <div className="pt-6 border-b border-slate-100"></div>
         </section>

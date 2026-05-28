@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Bot, Send, User, AlertCircle, Loader2, Mic, Volume2, VolumeX, X } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Send, User, AlertCircle, Loader2, Sparkles, Trash2, ArrowRight } from 'lucide-react';
 import { SIcon } from '../components/SIcon';
 import { Contest } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { chatWithTutor } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
-import EmptyState from '../components/EmptyState';
 
 interface TutorProps {
   contest?: Contest | null;
@@ -18,8 +17,10 @@ interface Message {
 }
 
 export default function Tutor({ contest }: TutorProps) {
-  const { isPro, user, profile } = useAuth();
+  const { isPro, user } = useAuth();
   const storageKey = `stratis_tutor_messages_${contest?.id || 'global'}`;
+
+  const defaultGreeting = `Olá! Sou seu expert em estratégia para o cargo de ${contest?.role || 'seu concurso'}. Meu foco é transformar seu planejamento em aprovação de forma cirúrgica e objetiva. O que vamos ajustar em sua jornada hoje?`;
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(storageKey);
@@ -33,7 +34,7 @@ export default function Tutor({ contest }: TutorProps) {
     return [
       {
         role: 'model',
-        content: `Olá! Sou seu expert em estratégia para o cargo de ${contest?.role || 'seu concurso'}. Meu foco é transformar seu planejamento em aprovação. O que vamos ajustar hoje?`
+        content: defaultGreeting
       }
     ];
   });
@@ -41,170 +42,10 @@ export default function Tutor({ contest }: TutorProps) {
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(messages));
   }, [messages, storageKey]);
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(true);
-  const [isImmersiveMode, setIsImmersiveMode] = useState(false);
-  const [immersiveTimeLeft, setImmersiveTimeLeft] = useState(180); // 3 minutes in seconds
   const scrollRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isImmersiveMode && immersiveTimeLeft > 0) {
-      timer = setInterval(() => {
-        setImmersiveTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsImmersiveMode(false);
-            window.speechSynthesis?.cancel();
-            if (recognitionRef.current) {
-              recognitionRef.current.stop();
-            }
-            return 180;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (!isImmersiveMode) {
-       if (recognitionRef.current) {
-         recognitionRef.current.stop();
-       }
-    }
-    return () => clearInterval(timer);
-  }, [isImmersiveMode, immersiveTimeLeft]);
-
-  const speakText = (text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    
-    const cleanText = text.replace(/[*_#`\[\]]/g, '').replace(/\n/g, ' ').trim();
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1.05;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoices = voices.filter(v => v.lang.startsWith('pt'));
-    if (ptVoices.length > 0) {
-      utterance.voice = ptVoices.find(v => v.name.includes('Google') || v.name.includes('Online')) || ptVoices[0];
-    }
-    
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const startImmersiveListening = () => {
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Aviso: Seu navegador não suporta reconhecimento de voz.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = 'pt-BR';
-    recognition.continuous = false;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => setIsListening(true);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result: any) => result.transcript)
-        .join('');
-      setInput(transcript);
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error === 'not-allowed') {
-        console.warn('Permissão de microfone negada ou não suportada no ambiente atual (considere abrir em nova aba).');
-      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        console.error('Erro de reconhecimento de voz:', event.error);
-      }
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  useEffect(() => {
-    if (!isListening && input.trim() && isImmersiveMode) {
-      handleSend();
-    }
-  }, [isListening]);
-
-  const toggleVoiceMode = () => {
-    setIsVoiceMode(!isVoiceMode);
-    if (isVoiceMode) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-    }
-  };
-
-  const toggleImmersiveMode = () => {
-    const nextMode = !isImmersiveMode;
-    setIsImmersiveMode(nextMode);
-    if (nextMode) {
-      setImmersiveTimeLeft(180);
-      setIsVoiceMode(true);
-      window.speechSynthesis.cancel();
-    } else {
-      window.speechSynthesis.cancel();
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const startListening = () => {
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Aviso: Seu navegador não suporta reconhecimento de voz.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = 'pt-BR';
-    recognition.continuous = false;
-    recognition.interimResults = true;
-
-    recognition.onstart = () => setIsListening(true);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = Array.from(event.results)
-        .map((result: any) => result[0])
-        .map((result: any) => result.transcript)
-        .join('');
-      setInput(transcript);
-    };
-
-    recognition.onerror = (event: any) => {
-      if (event.error === 'not-allowed') {
-        console.warn('Permissão de microfone negada ou não suportada no ambiente atual (considere abrir em nova aba).');
-      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        console.error('Erro de reconhecimento de voz:', event.error);
-      }
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -223,19 +64,22 @@ export default function Tutor({ contest }: TutorProps) {
             Mentor Stratis Exclusivo
           </h2>
           <p className="text-text-sub max-w-lg mb-8 text-sm">
-            O Mentor Stratis analisa seu histórico, cronograma e edital para oferecer mentorias personalizadas e dicas de estudo de alta performance. Faça upgrade para desbloquear.
+            O Mentor Stratis analisa seu histórico, cronograma e edital para oferecer mentorias estratégicas personalizadas e dicas de estudo de alta performance. Faça upgrade para desbloquear.
           </p>
         </div>
       </div>
     );
   }
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (messageText?: string) => {
+    const textToSend = (messageText || input).trim();
+    if (!textToSend || isLoading) return;
 
-    const userMessage = input.trim();
-    setInput('');
-    const newMessages = [...messages, { role: 'user' as const, content: userMessage }];
+    if (!messageText) {
+      setInput('');
+    }
+    
+    const newMessages = [...messages, { role: 'user' as const, content: textToSend }];
     setMessages(newMessages);
     setIsLoading(true);
 
@@ -255,12 +99,7 @@ export default function Tutor({ contest }: TutorProps) {
       };
 
       const aiResponse = await chatWithTutor(newMessages, contextData);
-      
       setMessages(prev => [...prev, { role: 'model', content: aiResponse }]);
-
-      if (isVoiceMode) {
-        speakText(aiResponse);
-      }
     } catch (error) {
       console.error(error);
       setMessages(prev => [...prev, { role: 'model', content: "Desculpe, ocorreu um erro ao se conectar com o servidor. Tente novamente mais tarde." }]);
@@ -269,111 +108,59 @@ export default function Tutor({ contest }: TutorProps) {
     }
   };
 
+  const handleClearHistory = () => {
+    if (confirm("Deseja limpar todo o histórico de conversa com o Mentor?")) {
+      setMessages([
+        {
+          role: 'model',
+          content: defaultGreeting
+        }
+      ]);
+    }
+  };
+
   return (
-    <>
-      <AnimatePresence>
-        {isImmersiveMode && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            className="fixed inset-0 z-[200] bg-gradient-to-b from-white via-white to-blue-50 flex flex-col items-center justify-between py-12 px-6"
+    <div className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 h-[calc(100dvh-73px)] bg-[#F8FAFC] md:rounded-tl-[32px] md:border-l md:border-slate-200/60 flex flex-col relative overflow-hidden">
+      
+      {/* Dynamic Subheader top information */}
+      <div className="w-full bg-white border-b border-slate-200/60 py-3 px-4 md:px-8 flex items-center justify-between shrink-0 shadow-xs z-20">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary shadow-sm">
+              <SIcon className="w-5 h-5 text-primary" />
+            </div>
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Mentor Stratis</h4>
+              <span className="text-[8px] font-extrabold text-[#5C7187] uppercase tracking-wider flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Online
+              </span>
+            </div>
+            <p className="text-[10px] text-text-sub font-semibold">
+              {contest ? `Inteligência Estratégica • ${contest.role} (${contest.banca})` : 'Estrategista para Concursos'}
+            </p>
+          </div>
+        </div>
+
+        {messages.length > 1 && (
+          <button
+            onClick={handleClearHistory}
+            className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 hover:text-red-600 uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100/50 transition-all active:scale-95 cursor-pointer"
+            title="Limpar histórico"
           >
-            <div className="w-full max-w-4xl flex justify-between items-center">
-              <button 
-                onClick={toggleImmersiveMode}
-                className="w-12 h-12 flex items-center justify-center rounded-full text-text-main hover:bg-slate-100 transition-colors"
-                title="Sair do modo voz"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div className="flex flex-col items-center">
-                 <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest mb-0.5">Tempo Restante</span>
-                 <span className={`font-mono font-bold text-lg ${immersiveTimeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-text-main'}`}>
-                   {formatTime(immersiveTimeLeft)}
-                 </span>
-              </div>
-
-              <button 
-                onClick={toggleVoiceMode}
-                className={`w-12 h-12 flex items-center justify-center rounded-full transition-colors ${!isVoiceMode ? 'text-red-500' : 'text-text-main hover:bg-slate-100'}`}
-                title="Alternar voz do Mentor"
-              >
-                {!isVoiceMode ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-              </button>
-            </div>
-
-            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl space-y-12">
-              <motion.div 
-                animate={{
-                  scale: isLoading ? [1, 1.2, 1] : (isListening ? [1, 1.1, 1] : 1),
-                  rotate: isLoading ? 360 : 0
-                }}
-                transition={{ 
-                  duration: isLoading ? 2 : 1.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-blue-400 blur-2xl opacity-20 rounded-full animate-pulse" />
-                <SIcon className={`w-20 h-20 ${isListening ? 'text-blue-500' : 'text-accent'} relative z-10`} />
-              </motion.div>
-              
-              <div className="text-center px-4 w-full">
-                <AnimatePresence mode="wait">
-                  <motion.h2 
-                    key={isLoading ? 'loading' : (isListening ? 'listening' : 'idle')}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="text-3xl md:text-5xl font-medium text-text-main leading-tight max-w-2xl mx-auto"
-                  >
-                    {isLoading ? "Pensando..." : (
-                       isListening ? (input || "Ouvindo...") : (
-                         messages[messages.length - 1]?.role === 'model' 
-                           ? messages[messages.length - 1].content 
-                           : "Toque no microfone para falar"
-                       )
-                    )}
-                  </motion.h2>
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <div className="w-full max-w-2xl flex justify-center items-center gap-8 pb-8">
-              <button 
-                onClick={startImmersiveListening}
-                disabled={isLoading || !contest}
-                className={`min-w-[120px] h-20 px-8 rounded-full flex items-center justify-center shadow-lg transition-all ${
-                  isListening 
-                    ? 'bg-blue-100 blob text-blue-500 hover:bg-blue-200' 
-                    : 'bg-white border border-border/50 text-text-main hover:bg-slate-50'
-                }`}
-              >
-                {isLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Mic className={`w-8 h-8 ${isListening ? 'animate-pulse' : ''}`} />}
-              </button>
-            </div>
-            
-            <style>{`
-              .blob {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-                animation: pulse-blob 2s infinite cubic-bezier(0.66, 0, 0, 1);
-              }
-              @keyframes pulse-blob {
-                to { box-shadow: 0 0 0 45px rgba(59, 130, 246, 0); }
-              }
-            `}</style>
-          </motion.div>
+            <Trash2 className="w-3 h-3" />
+            <span className="hidden sm:inline">Limpar</span>
+          </button>
         )}
-      </AnimatePresence>
+      </div>
 
-      <div className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 h-[calc(100dvh-73px)] bg-white md:rounded-tl-[32px] md:border-l md:border-border flex flex-col pt-4 md:pt-6 relative overflow-hidden">
-        <div className="flex-1 overflow-hidden flex flex-col relative w-full items-center">
+      <div className="flex-1 overflow-hidden flex flex-col relative w-full items-center">
         {!contest && (
-          <div className="absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-accent/50 mb-4" />
+          <div className="absolute inset-x-0 top-0 bottom-0 z-10 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+            <AlertCircle className="w-12 h-12 text-accent/50 mb-4 animate-pulse" />
             <h3 className="text-lg font-bold text-text-main mb-2">Importe um Edital</h3>
             <p className="text-sm text-text-sub max-w-md">
               Para focar em suas dúvidas específicas, o Mentor Stratis precisa saber qual edital você está estudando. Vá na aba "Importar Edital" primeiro.
@@ -384,68 +171,139 @@ export default function Tutor({ contest }: TutorProps) {
         {/* Chat Area */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full px-4 md:px-8 space-y-8 pb-10 flex flex-col items-center"
+          className="flex-1 overflow-y-auto w-full px-4 md:px-8 space-y-8 pb-10 flex flex-col items-center pt-6 scroll-smooth"
         >
-          <div className="w-full max-w-3xl space-y-8">
-          {messages.map((msg, index) => (
-            <motion.div 
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-4 flex-row w-full"
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                msg.role === 'user' ? 'bg-primary/10 text-primary' : 'bg-accent text-white'
-              }`}>
-                {msg.role === 'user' ? <User className="w-4 h-4" /> : <SIcon className="w-4 h-4" />}
-              </div>
-              
-              <div className="flex flex-col items-start w-full">
-                <div className="text-[11px] font-bold text-text-main/60 mb-1">
-                  {msg.role === 'user' ? user?.displayName?.split(' ')[0] || 'Você' : 'Mentor Stratis'}
-                </div>
+          <div className="w-full max-w-3xl space-y-6">
+            {messages.map((msg, index) => (
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`flex items-start gap-3.5 flex-row w-full ${
+                  msg.role === 'user' ? 'justify-end' : 'justify-start'
+                }`}
+              >
+                {msg.role !== 'user' && (
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/10 shadow-sm mt-1">
+                    <SIcon className="w-4 h-4" />
+                  </div>
+                )}
                 
-                <div className={`text-[15px] leading-relaxed w-full ${
-                  msg.role === 'user' 
-                    ? 'text-text-main font-medium' 
-                    : 'text-text-main'
-                }`}>
-                  {msg.role === 'user' ? (
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                  ) : (
-                    <div className="markdown-body prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-slate-100 prose-pre:text-text-main">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  )}
+                <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className="text-[9px] uppercase tracking-wider font-extrabold text-[#5C7187] mb-1 px-1">
+                    {msg.role === 'user' ? user?.displayName?.split(' ')[0] || 'Você' : 'Mentor Stratis'}
+                  </div>
+                  
+                  <div className={`text-[14px] leading-relaxed p-4 rounded-[22px] shadow-xs border ${
+                    msg.role === 'user' 
+                      ? 'bg-slate-800 border-slate-700/80 text-white font-medium rounded-tr-none shadow-md shadow-slate-900/5' 
+                      : 'bg-white border-slate-200/50 text-text-main rounded-tl-none'
+                  }`}>
+                    {msg.role === 'user' ? (
+                      <p className="whitespace-pre-wrap !text-white leading-relaxed">{msg.content}</p>
+                    ) : (
+                      <div className="markdown-body prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-p:mb-3 prose-p:last-of-type:mb-0 prose-ul:list-disc prose-li:my-1 prose-strong:text-amber-500 prose-strong:font-bold">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-          
-          {isLoading && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-4 flex-row w-full"
-            >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-accent text-white">
-                <SIcon className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col mt-2">
-                <div className="flex gap-1.5 items-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent/60 animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent/60 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+
+                {msg.role === 'user' && (
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#E2E8F0] text-slate-700 border border-slate-300/40 mt-1">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+            
+            {isLoading && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3.5 flex-row w-full justify-start"
+              >
+                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary mt-1">
+                  <SIcon className="w-4 h-4" />
                 </div>
-              </div>
-            </motion.div>
-          )}
+                <div className="flex flex-col items-start">
+                  <div className="text-[9px] uppercase tracking-wider font-extrabold text-[#5C7187] mb-1 px-1">
+                    Mentor Stratis
+                  </div>
+                  <div className="bg-white border border-slate-200/55 p-4 rounded-[22px] rounded-tl-none flex gap-1.5 items-center justify-center shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Início Rápido / Sugestões Estratégicas se estiver no início */}
+            {messages.length <= 1 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="w-full pt-4"
+              >
+                <div className="flex items-center gap-2 mb-3 px-1">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <h4 className="text-[10px] font-black text-[#5C7187] uppercase tracking-wider">Clique para iniciar um ajuste tático:</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      label: "Regra de Pareto",
+                      desc: "Quais tópicos mais caem e como devo focar na reta final do edital?",
+                      text: "Quais tópicos desse edital merecem maior prioridade usando a Regra de Pareto para reta final?"
+                    },
+                    {
+                      label: "Método de Revisão Eficiente",
+                      desc: "Como revisar matérias sem gastar horas lendo resumos longos?",
+                      text: "Qual é a melhor estratégia de revisão para a minha banca, sem perder tempo gerando resumos longos?"
+                    },
+                    {
+                      label: "Tópicos de Baixo Rendimento",
+                      desc: "Como recuperar o atraso em matérias que estou errando questões?",
+                      text: "Como reajustar meus estudos imediatos se sinto que estou rendendo abaixo da média nas questões?"
+                    },
+                    {
+                      label: "Ajuste de Cronograma",
+                      desc: "Como conciliar o edital extenso com o tempo livre que tenho?",
+                      text: "Como adaptar meu cronograma para garantir mais produtividade no tempo livre?"
+                    }
+                  ].map((card, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInput(card.text);
+                      }}
+                      className="bg-white hover:bg-slate-50 border border-slate-200/60 hover:border-[#1E293B] p-4 rounded-2xl text-left transition-all shadow-xs flex flex-col justify-between group cursor-pointer active:scale-98"
+                    >
+                      <div className="space-y-1">
+                        <span className="font-extrabold text-[12px] text-slate-800 group-hover:text-primary transition-colors block">
+                          {card.label}
+                        </span>
+                        <span className="text-[10px] text-text-sub font-semibold leading-relaxed block">
+                          {card.desc}
+                        </span>
+                      </div>
+                      <div className="mt-3.5 flex items-center gap-1.5 text-[9px] font-black text-amber-600 uppercase tracking-widest transition-opacity">
+                        <span>Preencher Pergunta</span>
+                        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
 
         {/* Input Area */}
-        <div className="w-full px-4 md:px-8 pb-4 md:pb-6 flex flex-col items-center bg-white border-t border-border/40 pt-4 z-10 shrink-0">
-          <div className="relative w-full max-w-3xl flex items-end gap-2 bg-slate-50 border border-border/60 rounded-[28px] p-2 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 transition-all">
+        <div className="w-full px-4 md:px-8 pb-4 md:pb-6 flex flex-col items-center bg-white border-t border-slate-100 pt-4 z-10 shrink-0 shadow-sm">
+          <div className="relative w-full max-w-3xl flex items-end gap-2 bg-[#F1F5F9] border border-slate-200 rounded-[24px] p-2 focus-within:ring-2 focus-within:ring-primary/10 focus-within:border-primary/20 focus-within:bg-white transition-all">
             <textarea 
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -456,36 +314,28 @@ export default function Tutor({ contest }: TutorProps) {
                 }
               }}
               disabled={isLoading || !contest}
-              placeholder={contest ? "Escreva sua dúvida aqui..." : "Importe um edital..."}
-              className="flex-1 resize-none overflow-y-auto min-h-[40px] max-h-40 bg-transparent text-text-main text-[15px] p-2 outline-none disabled:opacity-50 ml-2"
+              placeholder={contest ? "Escreva sua dúvida aqui sobre sua estratégia de estudos..." : "Importe um edital para liberar o mentor..."}
+              className="flex-1 resize-none overflow-y-auto min-h-[40px] max-h-40 bg-transparent text-slate-800 text-[14px] p-2 outline-none disabled:opacity-50 ml-2"
               rows={1}
               style={{
                 height: input ? `${Math.min(160, Math.max(40, input.split('\n').length * 24 + 16))}px` : '40px'
               }}
             />
-            <button
-               onClick={toggleImmersiveMode}
-               className="h-10 w-10 shrink-0 bg-transparent text-text-sub hover:text-accent rounded-full flex items-center justify-center hover:bg-accent/10 active:scale-95 transition-all outline-none"
-               title="Modo Voz Imersivo"
-            >
-               <Mic className="w-5 h-5" />
-            </button>
             <button 
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || isLoading || !contest}
-              className="h-10 w-10 shrink-0 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/90 active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all outline-none"
+              className="h-10 w-10 shrink-0 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/95 active:scale-95 disabled:opacity-30 disabled:active:scale-100 transition-all outline-none cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4 ml-0.5" />}
             </button>
           </div>
-          <div className="w-full max-w-3xl text-center mt-2.5">
-            <span className="text-[10px] text-text-sub/80 font-medium">
-              O Mentor Stratis pode cometer erros. Considere verificar informações importantes no edital.
+          <div className="w-full max-w-3xl flex flex-col sm:flex-row items-center justify-between mt-2.5 px-2 gap-2">
+            <span className="text-[10px] text-[#5C7187] font-medium text-center sm:text-left">
+              O Mentor Stratis é focado em estratégias de planejamento e cronograma. Ele comete erros, confirme dados no edital oficial.
             </span>
           </div>
         </div>
       </div>
-      </div>
-    </>
+    </div>
   );
 }
