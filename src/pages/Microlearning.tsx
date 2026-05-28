@@ -558,7 +558,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
     <AnimatePresence>
       {studyModeCards && (
         <div className="fixed inset-0 z-[200] bg-white flex flex-col p-4 md:p-8 overflow-y-auto">
-          <header className="flex items-center justify-between gap-4 mb-8">
+          <header className="flex items-center justify-between gap-4 mb-4 md:mb-6">
             <button 
               onClick={() => setStudyModeCards(null)}
               className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub flex items-center gap-2"
@@ -595,9 +595,9 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
   if (activeTab === 'flashcards') {
     return (
-      <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20">
         {allModals}
-        <header className="flex items-center justify-between gap-4">
+        <header className="flex items-center justify-between gap-4 mb-2">
           <button 
             onClick={() => setActiveTab('selection')}
             className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-text-sub"

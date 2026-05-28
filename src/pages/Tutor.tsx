@@ -55,7 +55,7 @@ export default function Tutor({ contest }: TutorProps) {
 
   if (!isPro) {
     return (
-      <div className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 h-[calc(100dvh-73px)] bg-white md:rounded-tl-[32px] md:border-l md:border-border flex flex-col pt-4 md:pt-8 relative overflow-hidden">
+      <div className="absolute inset-0 bg-white md:rounded-tl-[32px] md:border-l md:border-border flex flex-col pt-4 md:pt-8 overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
           <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
             <SIcon className="w-8 h-8 text-accent" />
@@ -120,10 +120,10 @@ export default function Tutor({ contest }: TutorProps) {
   };
 
   return (
-    <div className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 h-[calc(100dvh-73px)] bg-[#F8FAFC] md:rounded-tl-[32px] md:border-l md:border-slate-200/60 flex flex-col relative overflow-hidden">
+    <div className="absolute inset-0 bg-[#F8FAFC] md:rounded-tl-[32px] md:border-l md:border-slate-200/60 flex flex-col overflow-hidden">
       
       {/* Dynamic Subheader top information */}
-      <div className="w-full bg-white border-b border-slate-200/60 py-3 px-4 md:px-8 flex items-center justify-between shrink-0 shadow-xs z-20">
+      <div className="w-full bg-white border-b border-slate-200/60 py-3 px-4 md:px-8 flex items-center justify-between shrink-0 shadow-sm z-20">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary shadow-sm">
@@ -133,14 +133,14 @@ export default function Tutor({ contest }: TutorProps) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Mentor Stratis</h4>
+              <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Mentor Stratis</h4>
               <span className="text-[8px] font-extrabold text-[#5C7187] uppercase tracking-wider flex items-center gap-1">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Online
+                Disponível
               </span>
             </div>
             <p className="text-[10px] text-text-sub font-semibold">
-              {contest ? `Inteligência Estratégica • ${contest.role} (${contest.banca})` : 'Estrategista para Concursos'}
+              {contest ? `Inteligência Estratégica • ${contest.role}` : 'Estrategista para Concursos'}
             </p>
           </div>
         </div>
@@ -148,22 +148,24 @@ export default function Tutor({ contest }: TutorProps) {
         {messages.length > 1 && (
           <button
             onClick={handleClearHistory}
-            className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 hover:text-red-600 uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100/50 transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 hover:text-red-700 uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all active:scale-95 cursor-pointer"
             title="Limpar histórico"
           >
             <Trash2 className="w-3 h-3" />
-            <span className="hidden sm:inline">Limpar</span>
+            <span className="hidden sm:inline">Limpar Chat</span>
           </button>
         )}
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col relative w-full items-center">
         {!contest && (
-          <div className="absolute inset-x-0 top-0 bottom-0 z-10 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
-            <AlertCircle className="w-12 h-12 text-accent/50 mb-4 animate-pulse" />
-            <h3 className="text-lg font-bold text-text-main mb-2">Importe um Edital</h3>
-            <p className="text-sm text-text-sub max-w-md">
-              Para focar em suas dúvidas específicas, o Mentor Stratis precisa saber qual edital você está estudando. Vá na aba "Importar Edital" primeiro.
+          <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8 text-amber-500 animate-pulse" />
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight">Estratégia sem Alvo?</h3>
+            <p className="text-sm text-slate-500 max-w-md font-medium leading-relaxed">
+              Para o Mentor Stratis agir com precisão cirúrgica, ele precisa conhecer seu campo de batalha. Importe seu edital na aba principal para liberar as mentorias táticas.
             </p>
           </div>
         )}
@@ -171,38 +173,38 @@ export default function Tutor({ contest }: TutorProps) {
         {/* Chat Area */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto w-full px-4 md:px-8 space-y-8 pb-10 flex flex-col items-center pt-6 scroll-smooth"
+          className="flex-1 overflow-y-auto w-full px-4 md:px-8 space-y-6 pb-12 flex flex-col items-center pt-6 scroll-smooth scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200"
         >
-          <div className="w-full max-w-3xl space-y-6">
+          <div className="w-full max-w-4xl space-y-7">
             {messages.map((msg, index) => (
               <motion.div 
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex items-start gap-3.5 flex-row w-full ${
+                className={`flex items-start gap-4 flex-row w-full ${
                   msg.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {msg.role !== 'user' && (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/10 shadow-sm mt-1">
-                    <SIcon className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary border border-primary/20 shadow-sm mt-1">
+                    <SIcon className="w-5 h-5" />
                   </div>
                 )}
                 
-                <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className="text-[9px] uppercase tracking-wider font-extrabold text-[#5C7187] mb-1 px-1">
+                <div className={`flex flex-col max-w-[92%] sm:max-w-[88%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className="text-[9px] uppercase tracking-widest font-black text-[#5C7187] mb-1.5 px-1 opacity-80">
                     {msg.role === 'user' ? user?.displayName?.split(' ')[0] || 'Você' : 'Mentor Stratis'}
                   </div>
                   
-                  <div className={`text-[14px] leading-relaxed p-4 rounded-[22px] shadow-xs border ${
+                  <div className={`text-[14.5px] leading-relaxed p-4.5 rounded-[24px] shadow-sm border ${
                     msg.role === 'user' 
-                      ? 'bg-slate-800 border-slate-700/80 text-white font-medium rounded-tr-none shadow-md shadow-slate-900/5' 
-                      : 'bg-white border-slate-200/50 text-text-main rounded-tl-none'
+                      ? 'bg-slate-800 border-slate-700 text-white font-medium rounded-tr-none' 
+                      : 'bg-white border-slate-200 text-slate-800 rounded-tl-none'
                   }`}>
                     {msg.role === 'user' ? (
                       <p className="whitespace-pre-wrap !text-white leading-relaxed">{msg.content}</p>
                     ) : (
-                      <div className="markdown-body prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-p:mb-3 prose-p:last-of-type:mb-0 prose-ul:list-disc prose-li:my-1 prose-strong:text-amber-500 prose-strong:font-bold">
+                      <div className="markdown-body prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-p:mb-3 prose-p:last-of-type:mb-0 prose-ul:list-disc prose-li:my-1 prose-strong:text-amber-600 prose-strong:font-bold">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                     )}
@@ -210,8 +212,8 @@ export default function Tutor({ contest }: TutorProps) {
                 </div>
 
                 {msg.role === 'user' && (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[#E2E8F0] text-slate-700 border border-slate-300/40 mt-1">
-                    <User className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-slate-200 text-slate-700 border border-slate-300 mt-1">
+                    <User className="w-5 h-5" />
                   </div>
                 )}
               </motion.div>
@@ -221,19 +223,19 @@ export default function Tutor({ contest }: TutorProps) {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-3.5 flex-row w-full justify-start"
+                className="flex items-start gap-4 flex-row w-full justify-start"
               >
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary mt-1">
-                  <SIcon className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary mt-1">
+                  <SIcon className="w-5 h-5" />
                 </div>
                 <div className="flex flex-col items-start">
-                  <div className="text-[9px] uppercase tracking-wider font-extrabold text-[#5C7187] mb-1 px-1">
+                  <div className="text-[9px] uppercase tracking-widest font-black text-[#5C7187] mb-1.5 px-1">
                     Mentor Stratis
                   </div>
-                  <div className="bg-white border border-slate-200/55 p-4 rounded-[22px] rounded-tl-none flex gap-1.5 items-center justify-center shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="bg-white border border-slate-200 p-4.5 rounded-[24px] rounded-tl-none flex gap-1.5 items-center justify-center shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </motion.div>

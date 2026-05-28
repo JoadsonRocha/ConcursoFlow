@@ -759,7 +759,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto bg-bg relative scroll-smooth flex flex-col">
+      <main ref={mainRef} className={cn("flex-1 bg-bg relative scroll-smooth flex flex-col", location.pathname === '/tutor' ? "overflow-hidden" : "overflow-y-auto")}>
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex shrink-0 items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
@@ -969,7 +969,7 @@ export default function App() {
           </div>
         )}
 
-        <div className="p-4 md:p-8 w-full max-w-[1536px] mx-auto space-y-10">
+        <div className={cn("w-full max-w-[1536px] mx-auto space-y-10", (location.pathname === '/tutor' || location.pathname === '/foco') ? "p-0 h-full" : "p-4 md:p-8")}>
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />

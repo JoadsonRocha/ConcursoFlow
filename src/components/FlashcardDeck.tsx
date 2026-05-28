@@ -115,8 +115,8 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-8 animate-in slide-in-from-right-8 duration-500 px-4">
-      <header className="flex justify-between items-center bg-white p-4 rounded-2xl border border-border shadow-sm">
+    <div className="max-w-xl mx-auto space-y-4 md:space-y-6 animate-in slide-in-from-right-8 duration-500 px-4 pb-4">
+      <header className="flex justify-between items-center bg-white p-3 md:p-4 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center font-display text-lg font-bold">
             {currentIndex + 1}
@@ -140,7 +140,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
         )}
       </header>
 
-      <div className="relative h-80 md:h-96 group">
+      <div className="relative h-72 md:h-80 group">
         <AnimatePresence mode="wait">
           {!isFlipped ? (
             <motion.div
