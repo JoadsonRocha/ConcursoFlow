@@ -37,6 +37,7 @@ import {
   Play,
   Instagram
 } from 'lucide-react';
+import { SIcon } from '../components/SIcon';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contest, Subject } from '../types';
@@ -457,9 +458,9 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         <div className="flex items-stretch gap-2 shrink-0">
           <button 
             onClick={() => setShowLogModal(true)}
-            className="hidden md:flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20 group border border-transparent"
+            className="flex items-center justify-center gap-2 bg-primary text-white px-3 sm:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl hover:brightness-110 active:scale-95 transition-all shadow-md shadow-primary/20 group border border-transparent"
           >
-            <PencilLine className="w-4 h-4 text-white" />
+            <PencilLine className="w-4 h-4 md:w-4 md:h-4 text-white" />
             <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Registrar</span>
           </button>
 
@@ -1116,16 +1117,6 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
           </div>
         )}
       </AnimatePresence>
-
-      {/* Mobile FAB for Record */}
-      <div className="fixed bottom-6 right-6 z-[100] md:hidden">
-        <button 
-          onClick={() => setShowLogModal(true)}
-          className="w-14 h-14 bg-primary text-white rounded-full shadow-2xl shadow-primary/40 flex items-center justify-center active:scale-90 transition-transform border border-white/20"
-        >
-          <PencilLine className="w-6 h-6" />
-        </button>
-      </div>
 
       <footer className="mt-4 pt-2 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">

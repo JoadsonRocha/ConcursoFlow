@@ -48,6 +48,8 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [dailyHours, setDailyHours] = useState(contest.dailyGoalHours || 2);
+  const [dailyQuestions, setDailyQuestions] = useState(contest.dailyGoalQuestions || 20);
 
   const schedule = contest.schedule || [];
   const maxDay = schedule.length > 0 ? Math.max(...schedule.map(d => d.dayNumber)) : 0;
@@ -222,7 +224,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       ).join('\n');
       
       const newSchedule = await generateSchedule(subjectsSummary, weeksCount * 7);
-      onUpdate({ ...contest, schedule: newSchedule });
+      onUpdate({ ...contest, schedule: newSchedule, dailyGoalHours: dailyHours, dailyGoalQuestions: dailyQuestions });
     } catch (error) {
       console.error("Erro ao gerar cronograma:", error);
       toast.error("Erro ao carregar o cronograma. Verifique sua conexão.");
@@ -404,6 +406,31 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                 </button>
                );
              })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/50">
+          <div className="space-y-2 text-left">
+            <label className="text-xs font-bold text-text-sub uppercase tracking-wider block">Horas por Dia</label>
+            <input 
+              type="number"
+              min="1"
+              max="16"
+              value={dailyHours}
+              onChange={(e) => setDailyHours(Number(e.target.value))}
+              className="w-full bg-slate-50 border border-border p-3 rounded-xl text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20 text-center"
+            />
+          </div>
+          <div className="space-y-2 text-left">
+            <label className="text-xs font-bold text-text-sub uppercase tracking-wider block">Questões por Dia</label>
+            <input 
+              type="number"
+              min="5"
+              max="200"
+              value={dailyQuestions}
+              onChange={(e) => setDailyQuestions(Number(e.target.value))}
+              className="w-full bg-slate-50 border border-border p-3 rounded-xl text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20 text-center"
+            />
           </div>
         </div>
 

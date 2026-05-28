@@ -152,10 +152,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sendPasswordResetEmail(auth, email, actionCodeSettings);
   };
 
-    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrochaRR@gmail.com'].includes(profile?.email || '');
-    const plan = (profile?.userPlan === 'pro' && !isSpecialUser) ? 'beta' : (profile?.userPlan || 'beta');
-    const effectivePlan = isSpecialUser ? 'pro' : plan;
-    const planType = (effectivePlan === 'pro' || effectivePlan === 'monthly' || effectivePlan === 'annual') ? 'pro' : (effectivePlan === 'beta' ? 'beta' : 'free');
+    const userEmail = (profile?.email || user?.email || '').toLowerCase().trim();
+    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com'].includes(userEmail);
+    const effectivePlan = isSpecialUser ? 'pro' : 'beta';
+    const planType = effectivePlan;
 
   return (
     <AuthContext.Provider value={{ 
@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout, 
       profile,
       updateProfile: updateProfileData,
-      isPro: planType === 'pro' || planType === 'beta',
+      isPro: planType === 'pro',
       isBeta: planType === 'beta',
       planType
     }}>

@@ -23,7 +23,8 @@ import {
   Bell,
   Brain,
   Instagram,
-  LifeBuoy
+  LifeBuoy,
+  Bot
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -31,6 +32,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
 import Subjects from './pages/Subjects';
 import Microlearning from './pages/Microlearning';
+import Tutor from './pages/Tutor';
 import MentorMepp from './pages/MentorMepp';
 import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
@@ -48,6 +50,7 @@ import Pareto from './pages/Pareto';
 import Explorar from './pages/Explorar';
 import Planos from './pages/Planos';
 import BrandLogo from './components/BrandLogo';
+import { SIcon } from './components/SIcon';
 import { useAuth } from './contexts/AuthContext';
 import { onMessage } from 'firebase/messaging';
 import { db, requestNotificationPermission, logPageView, messaging } from './lib/firebase';
@@ -947,6 +950,25 @@ export default function App() {
           </div>
         </header>
 
+        {/* Floating Mentor Stratis - Apenas para PRO */}
+        {isPro && location.pathname !== '/tutor' && location.pathname !== '/auth' && (
+          <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 pointer-events-none">
+            <button 
+              onClick={() => navigate('/tutor')}
+              className="w-14 h-14 bg-gradient-to-tr from-accent to-amber-500 text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform border border-white/20 pointer-events-auto group relative"
+            >
+              <SIcon className="w-6 h-6 animate-pulse" />
+              {/* Tooltip on hover */}
+              <div className="absolute right-full mr-4 bg-white/90 backdrop-blur-md border border-border px-3 py-2 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none hidden md:block">
+                 <div className="flex flex-col text-right">
+                    <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest leading-none mb-0.5">Mentor Stratis</span>
+                    <span className="text-xs font-black text-text-main uppercase tracking-tight">Iniciar Mentoria</span>
+                 </div>
+              </div>
+            </button>
+          </div>
+        )}
+
         <div className="p-4 md:p-8 w-full max-w-[1536px] mx-auto space-y-10">
           <AnimatePresence mode="wait">
             <Routes location={location}>
@@ -956,6 +978,7 @@ export default function App() {
               <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
               <Route path="/microaprendizado" element={<Microlearning contest={currentContest} onUpdate={handleUpdateContest} />} />
+              <Route path="/tutor" element={<Tutor contest={currentContest} />} />
               <Route path="/mepp" element={currentContest ? <MentorMepp contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />

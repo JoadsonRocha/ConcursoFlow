@@ -51,7 +51,8 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
   /**
    * Obtém as etapas concluídas (checklist) para o tópico da meta de hoje.
    */
-  const currentMeppStages = contest?.meppReviews?.find(r => r.topicName === todayTask?.specificTopic)?.stagesCompleted || [];
+  const currentTopicName = todayTask ? (todayTask.specificTopic || todayTask.generalTopic || "Estudo do Dia") : "";
+  const currentMeppStages = contest?.meppReviews?.find(r => r.topicName === currentTopicName && r.reviewType !== 'completed')?.stagesCompleted || [];
 
   /**
    * Lógica Principal: Alternar etapas do checklist diário (MEPP).

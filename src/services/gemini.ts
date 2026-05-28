@@ -119,3 +119,16 @@ export const generateParetoAnalysis = async (contestRole: string, banca: string,
     throw error;
   }
 };
+
+export const chatWithTutor = async (chatHistory: any[], contextData: any) => {
+  try {
+    const data = await fetchWithAuth("/api/ai/tutor", {
+      method: "POST",
+      body: JSON.stringify({ chatHistory, contextData }),
+    });
+    return data;
+  } catch (error: any) {
+    console.warn("Erro ao consultar o tutor AI:", error.message || error);
+    return error.message || "Erro ao conectar com a IA. Tente novamente em alguns segundos.";
+  }
+};

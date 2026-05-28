@@ -89,15 +89,17 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
     const result = await action();
     res.json(result);
   } catch (error: any) {
+    const errorMsg = String(error?.message || error);
+    const statusCode = typeof error?.status === 'number' && error.status >= 100 && error.status <= 599 ? error.status : 500;
+    
+    if (statusCode === 429 || error?.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || statusCode === 503 || errorMsg.includes('503')) {
+      console.warn(`[AI] Quota/Rate Limit atingido para ${usageField}.`);
+      return res.status(statusCode === 500 ? 429 : statusCode).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
+    }
+
     console.error(`AI Route Error (${usageField}):`, error);
 
     try {
-      const errorMsg = String(error?.message || error);
-      const statusCode = typeof error?.status === 'number' && error.status >= 100 && error.status <= 599 ? error.status : 500;
-      
-      if (statusCode === 429 || error?.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || statusCode === 503 || errorMsg.includes('503')) {
-        return res.status(statusCode === 500 ? 429 : statusCode).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
-      }
       res.status(statusCode === 500 ? 500 : statusCode).json({ error: errorMsg, rawError: String(error) });
     } catch (fallbackError) {
       console.error("Critical fallback route error", fallbackError);
@@ -145,6 +147,13 @@ router.post('/svg-map', authenticate, (req, res) => {
 router.post('/pareto', authenticate, (req, res) => {
   const { contestRole, banca, subjects, isHighPerformance } = req.body;
   handleAiRequest(req, res, 'importUsage', 'importLimit', () => GeminiService.analyzePareto(contestRole, banca, subjects, isHighPerformance));
+});
+
+router.post('/tutor', authenticate, (req, res) => {
+  const { chatHistory, contextData } = req.body;
+  // Using quizUsage or importUsage? Let's use 'quizUsage' as a proxy for tutor/chat interactions, or just default to importUsage. 
+  // Let's use 'importUsage' or maybe 'summaryUsage' as it's a text chat. Let's use 'summaryUsage' for text.
+  handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.chatWithTutor(chatHistory, contextData));
 });
 
 export default router;
