@@ -143,7 +143,13 @@ export function useContestStats(contest: Contest | null) {
 
     // Today Task Calculation
     const getStartDate = () => {
-      if (contest.scheduleStartDate) return new Date(contest.scheduleStartDate + 'T00:00:00');
+      if (contest.scheduleStartDate) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(contest.scheduleStartDate)) {
+          return new Date(contest.scheduleStartDate + 'T00:00:00');
+        }
+        const parsed = new Date(contest.scheduleStartDate);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
       if ((contest as any).createdAt && (contest as any).createdAt.toDate) {
         return (contest as any).createdAt.toDate();
       }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Contest } from '../types';
 import { toast } from 'sonner';
 import { 
@@ -87,7 +87,26 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>('selection');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards') {
+      return tabParam as any;
+    }
+    return 'selection';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards') {
+      setActiveTab(tabParam as any);
+    } else {
+      setActiveTab('selection');
+    }
+  }, [location.search]);
+
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -350,7 +369,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
           >
             <div className="flex justify-between items-center gap-4">
               <span className="text-[10px] font-bold text-accent uppercase tracking-widest px-3 py-1 bg-accent/10 rounded-full border border-accent/20">
-                {previewFlashcard.description || previewFlashcard.subjectName || previewFlashcard.subject || 'Flashcard'}
+                {previewFlashcard.title || previewFlashcard.subjectName || previewFlashcard.subject || previewFlashcard.description || 'Flashcard'}
               </span>
               <button onClick={() => setPreviewFlashcard(null)} className="p-2 rounded-xl hover:bg-slate-100 transition-colors"><X /></button>
             </div>
@@ -651,7 +670,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
             </button>
               <div className="text-center flex-1 min-w-0">
                 <h2 className="text-xl font-display font-bold text-text-main italic truncate">{previewFlashcard.front}</h2>
-                <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{previewFlashcard.description || previewFlashcard.subjectName || previewFlashcard.subject || 'Flashcard'}</p>
+                <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest">{previewFlashcard.title || previewFlashcard.subjectName || previewFlashcard.subject || previewFlashcard.description || 'Flashcard'}</p>
               </div>
             <button 
               onClick={() => {
@@ -841,7 +860,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
               </div>
             ) : (
               Object.entries(flashcards.reduce((acc: any, card: any) => {
-                const groupName = card.description || card.subjectName || card.subject || 'Flashcards Gerais';
+                const groupName = card.title || card.subjectName || card.subject || card.description || 'Flashcards Gerais';
                 if (!acc[groupName]) acc[groupName] = [];
                 acc[groupName].push(card);
                 return acc;

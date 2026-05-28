@@ -115,7 +115,7 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-4 md:space-y-6 animate-in slide-in-from-right-8 duration-500 px-4 pb-4">
+    <div className="max-w-xl mx-auto space-y-4 md:space-y-6 animate-in slide-in-from-right-8 duration-500 px-4 pb-28 md:pb-32">
       <header className="flex justify-between items-center bg-white p-3 md:p-4 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center font-display text-lg font-bold">
@@ -191,45 +191,49 @@ export default function FlashcardDeck({ cards, onFinish }: FlashcardDeckProps) {
         </AnimatePresence>
       </div>
 
-      <AnimatePresence mode="wait">
-        {!isFlipped ? (
-           <motion.div 
-             key="hint"
-             initial={{ opacity: 0, y: 10 }}
-             animate={{ opacity: 1, y: 0 }}
-             exit={{ opacity: 0, y: -10 }}
-             className="text-center"
-           >
-             <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest animate-pulse">Toque no cartão para ver a resposta</p>
-           </motion.div>
-        ) : (
-          <motion.div 
-            key="actions"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3"
-          >
-            {[
-              { label: 'De novo', value: 1, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
-              { label: 'Difícil', value: 2, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20' },
-              { label: 'Bom', value: 3, color: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' },
-              { label: 'Fácil', value: 4, color: 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20' }
-            ].map(btn => (
-              <button
-                key={btn.value}
-                onClick={() => handleRate(btn.value)}
-                className={cn(
-                  "py-3 md:py-4 border rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all",
-                  btn.color
-                )}
+      <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-4 md:p-6 z-[210] shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+        <div className="max-w-xl mx-auto w-full">
+          <AnimatePresence mode="wait">
+            {!isFlipped ? (
+               <motion.div 
+                 key="hint"
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -10 }}
+                 className="text-center py-2"
+               >
+                 <p className="text-[10px] font-black text-text-sub uppercase tracking-widest animate-pulse">Toque no cartão acima para ver a resposta</p>
+               </motion.div>
+            ) : (
+              <motion.div 
+                key="actions"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="grid grid-cols-4 gap-2 md:gap-3"
               >
-                {btn.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {[
+                  { label: 'De novo', value: 1, color: 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20' },
+                  { label: 'Difícil', value: 2, color: 'bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20' },
+                  { label: 'Bom', value: 3, color: 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' },
+                  { label: 'Fácil', value: 4, color: 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20' }
+                ].map(btn => (
+                  <button
+                    key={btn.value}
+                    onClick={() => handleRate(btn.value)}
+                    className={cn(
+                      "py-3 md:py-4 border rounded-xl font-bold text-[10px] md:text-xs uppercase tracking-widest transition-all cursor-pointer active:scale-95 text-center flex items-center justify-center",
+                      btn.color
+                    )}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }

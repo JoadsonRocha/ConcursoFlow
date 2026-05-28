@@ -24,7 +24,8 @@ import {
   Brain,
   Instagram,
   LifeBuoy,
-  Bot
+  Bot,
+  Library
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Contest, Subject } from './types';
@@ -713,7 +714,8 @@ export default function App() {
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-biblioteca" to="/microaprendizado?tab=library" icon={Library} label="Minha Biblioteca" active={location.pathname === '/microaprendizado' && location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Mentor MEPP" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
@@ -768,16 +770,11 @@ export default function App() {
             >
               <Menu className={cn("w-5 h-5 transition-transform", isSidebarOpen ? "rotate-90" : "rotate-0")} />
             </button>
-              <Link to="/" className="flex flex-col hover:opacity-80 transition-opacity">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
-                    STRATIS PLANNER
-                  </h2>
-                  <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">BETA</span>
-                </div>
-                <span className="text-[10px] font-bold text-text-sub uppercase tracking-[0.15em] mt-1 opacity-60">
-                  Estratégia para Concursos
-                </span>
+              <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
+                  STRATIS PLANNER
+                </h2>
+                <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">BETA</span>
               </Link>
           </div>
 

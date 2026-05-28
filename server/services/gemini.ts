@@ -66,6 +66,11 @@ export async function generateFlashcards(topic: string, count: number = 5) {
   const params = { topic, count };
   const prompt = `VOCÊ É UM PROFESSOR DE CONCURSOS ESPECIALISTA EM REVISÕES ATIVAS E MEMORIZAÇÃO DE ALTO DESEMPENHO.
   Gere ${count} flashcards de estudo "NÍVEL ESPECIALISTA" para concurso público sobre o tema: "${topic}". 
+  
+  DIRETRIZES DE CONTEÚDO CRÍTICAS:
+  1. As PERGUNTAS (campo "front") devem ser EXTREMAMENTE SUCINTAS, DIRETAS E OBJETIVAS. Use no máximo uma frase curta, sem rodeios ou contextualização desnecessária (ex: "Qual o prazo de prescrição de X?", "Qual princípio rege Y?", "De quem é a competência exclusiva para Z?").
+  2. As RESPOSTAS (campo "back") devem ser igualmente cirúrgicas, claras e direto ao ponto tático de memorização.
+
   DIRETRIZ DE FORMATO: Retorne um JSON com array de objetos contendo "front" e "back".`;
 
   const text = await generateContentWithCache("generateFlashcards", params, prompt, GEMINI_MODEL, {
