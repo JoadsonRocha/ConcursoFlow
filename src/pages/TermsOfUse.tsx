@@ -110,6 +110,13 @@ export default function TermsOfUse() {
             Estes Termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de Boa Vista/RR para dirimir quaisquer questões.
           </p>
         </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">12. Contato</h2>
+          <p className="leading-relaxed">
+            Se você tiver qualquer dúvida sobre estes Termos de Uso, sinta-se à vontade para nos contatar através do e-mail: <span className="text-primary font-medium">info@stratisplanner.com.br</span>
+          </p>
+        </section>
       </div>
 
       <footer className="mt-20 pt-8 border-t border-border text-center">

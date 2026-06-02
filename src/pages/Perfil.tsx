@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown } from 'lucide-react';
+import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { getStorage } from 'firebase/storage';
-import { auth, db, updateProfile, sendPasswordResetEmail } from '../lib/firebase';
+import { auth, db, updateProfile as firebaseUpdateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { createCheckoutSession } from '../services/stripe';
+import { createCheckoutSession, createPortalSession } from '../services/stripe';
 import { toast } from 'sonner';
 import ProModal from '../components/ProModal';
 
 export default function Perfil() {
-  const { user, profile, logout, isPro, resetPassword } = useAuth();
+  const { user, profile, logout, isPro, resetPassword, updateProfile, planType } = useAuth();
+  const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || user?.photoURL || '');
   const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '');
@@ -29,6 +30,18 @@ export default function Perfil() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [isProModalOpen, setIsProModalOpen] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      await createPortalSession();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao redirecionar para o portal de gerenciamento da Stripe.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const handleTestNotification = async () => {
     if (!("Notification" in window)) {
@@ -63,14 +76,30 @@ export default function Perfil() {
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('success') === 'true') {
-      toast.success('Parabéns! Sua assinatura Premium PRO foi ativada.', {
-        duration: 5000,
-      });
+      // Atualização resiliente e instantânea no lado do cliente como fallback de segurança
+      if (updateProfile) {
+        updateProfile({ userPlan: 'annual' })
+          .then(() => {
+            toast.success('Parabéns! Sua assinatura Premium PRO foi ativada e está ativa com sucesso.', {
+              duration: 5000,
+            });
+          })
+          .catch((err) => {
+            console.error('Erro ao atualizar plano diretamente pelo cliente:', err);
+            toast.success('Parabéns! Sua assinatura Premium PRO foi ativada.', {
+              duration: 5000,
+            });
+          });
+      } else {
+        toast.success('Parabéns! Sua assinatura Premium PRO foi ativada.', {
+          duration: 5000,
+        });
+      }
       
       // Cleanup URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [updateProfile]);
 
   const toggleTour = async () => {
     if (!user) return;
@@ -168,7 +197,7 @@ export default function Perfil() {
         authUpdates.photoURL = finalPhotoURL;
       }
 
-      await updateProfile(user, authUpdates);
+      await firebaseUpdateProfile(user, authUpdates);
       
       setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
     } catch (err) {
@@ -261,15 +290,15 @@ export default function Perfil() {
                 <div className="text-sm font-medium italic text-text-sub mt-1 max-w-sm">"{fraseStatus}"</div>
               )}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-3">
-                {isPro ? (
+                {planType === 'pro' ? (
                   <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-amber-500/5 border-amber-500/20 text-amber-600">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
                     Plano PRO Ativo
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-primary/5 border-primary/20 text-primary">
-                    <Zap className="w-3.5 h-3.5 text-primary" />
-                    Versão BETA Ativa
+                  <div className="inline-flex items-center gap-2 border text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full bg-slate-100 border-slate-200 text-slate-600">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
+                    Plano GRATUITO 🌱
                   </div>
                 )}
                 <div className="inline-flex items-center gap-2 bg-accent/5 border border-accent/20 text-accent text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full">
@@ -286,7 +315,7 @@ export default function Perfil() {
             </div>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="p-8 md:p-10 space-y-8">
+          <form id="profile-form" onSubmit={handleUpdateProfile} className="p-8 md:p-10 space-y-8">
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-text-sub uppercase tracking-wider ml-1">Nome Completo</label>
@@ -384,51 +413,109 @@ export default function Perfil() {
                 </button>
               </div>
             </div>
-
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full bg-text-main text-white font-bold uppercase tracking-wider text-sm py-4 rounded-2xl shadow-sm hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Salvar Alterações
-                </>
-              )}
-            </button>
           </form>
         </section>
 
-        <section className="bg-white p-8 md:p-10 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[11px] font-black text-[#5C7187] uppercase tracking-[0.2em]">SITUAÇÃO DA CONTA</h3>
-            </div>
+        <section className="bg-white border border-border rounded-2xl p-8 md:p-10 space-y-6 shadow-sm">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold font-display text-text-main flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" />
+              Controle de Assinaturas
+            </h3>
+            <p className="text-xs text-text-sub font-medium">
+              Escolha seu Nível de Performance para Aprovação
+            </p>
+          </div>
+
+          <div className="mt-4">
             {isPro ? (
-              <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                Assinatura PRO Ativa
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-zinc-50/50">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none block mb-1">Nível Atual</span>
+                    <h4 className="text-sm font-black text-amber-600 flex items-center gap-1.5 uppercase tracking-wide">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0"></span>
+                      Estrategista PRO
+                    </h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                      Sua assinatura está ativa e sendo processada via Stripe. Aproveite toda a inteligência e os recursos ilimitados!
+                    </p>
+                  </div>
+                  <div className="mt-4 text-[10px] font-bold text-amber-700 bg-amber-500/10 px-3 py-1.5 rounded-lg uppercase tracking-wide inline-flex items-center gap-1 w-fit">
+                    Acesso Ilimitado Liberado
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-white relative overflow-hidden">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none block mb-1">Pagamentos</span>
+                    <h4 className="text-sm font-bold text-text-main">Gerenciar Assinatura</h4>
+                    <p className="text-[11px] text-[#5C7187] leading-normal pt-1">
+                      Altere sua forma de pagamento, consulte faturas ou realize o cancelamento diretamente no portal seguro do Stripe.
+                    </p>
+                  </div>
+                  <div className="mt-5">
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={portalLoading}
+                      className="w-full py-3 bg-slate-900 border border-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-slate-800 transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                    >
+                      {portalLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin pointer-events-none" />
+                      ) : (
+                        <>
+                          <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                          Acessão ao Portal Stripe
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="px-5 py-2.5 rounded-[14px] text-[12px] font-bold shadow-sm transition-all inline-block bg-primary/10 text-primary border border-primary/20">
-                Fase Beta Ativa
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between bg-slate-50">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest leading-none block mb-1">Nível Atual</span>
+                    <h4 className="text-sm font-bold text-slate-700">Plano Semente (Gratuito)</h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                      Limite de geração básica e acesso básico à plataforma.
+                    </p>
+                  </div>
+                  <div className="mt-4 text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-400"></span> Pleno Uso
+                  </div>
+                </div>
+
+                <div className="border border-primary/20 rounded-2xl p-5 flex flex-col justify-between bg-gradient-to-br from-indigo-50/40 via-transparent build:transparent relative overflow-hidden">
+                  <div className="space-y-1 relative z-10">
+                    <span className="text-[10px] font-extrabold text-primary uppercase tracking-widest leading-none block mb-1">Assinar Pro</span>
+                    <h4 className="text-sm font-black text-text-main flex items-center gap-1.5">Estrategista PRO</h4>
+                    <p className="text-[11px] text-[#5C7187] leading-relaxed pt-1">
+                      Desbloqueie cronogramas de até 12 semanas, mentor inteligente 24/7, mapas mentais, flashcards e análise de recorrência (Pareto) ilimitados.
+                    </p>
+                  </div>
+                  <div className="mt-5 relative z-10">
+                    <button
+                      onClick={() => navigate('/planos')}
+                      className="w-full bg-[#f97316] text-white py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-[#f97316]/10"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-current text-white shrink-0 animate-bounce" />
+                      Assinar Pro
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-          <p className="text-[10px] text-text-sub font-medium leading-relaxed opacity-60">
-            {isPro 
-              ? "Você possui acesso total e ilimitado aos recursos de inteligência artificial, suporte prioritário e novos recursos premium no StratisPlanner."
-              : "Você possui acesso completo a todos os recursos avançados de inteligência artificial, flashcards e mapas mentais durante o período de desenvolvimento Beta."
-            }
-          </p>
-          <div className="pt-6 border-b border-slate-100"></div>
         </section>
 
-
-
         <section className="bg-white border border-border rounded-2xl p-8 md:p-10 space-y-8 shadow-sm">
-
           <div className="space-y-4">
+            <div className="flex items-center gap-2 text-[#5C7187] mb-2">
+               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-key-round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 .8-.4l.949-.949A2 2 0 0 1 8.162 20H10a2 2 0 0 0 2-2v-.838a2 2 0 0 1 .586-1.414l.293-.293a2 2 0 0 0 0-2.828l-1.465-1.465a2 2 0 0 0-2.828 0l-.3.3A2 2 0 0 1 6.894 14H5a2 2 0 0 0-2 2v.414a2 2 0 0 1-.586 1.414z"/><circle cx="15.5" cy="8.5" r="5.5"/><path d="m18 11 2 2"/></svg>
+               <h3 className="text-base font-bold text-text-main">Segurança de Acesso</h3>
+            </div>
             <button 
               type="button"
               onClick={() => setAdvancedSettingsOpen(!advancedSettingsOpen)}
@@ -461,23 +548,6 @@ export default function Perfil() {
                       className="whitespace-nowrap px-8 py-4 bg-white text-text-main border border-border rounded-xl text-xs font-bold uppercase tracking-wider hover:border-primary/50 hover:text-primary transition-all active:scale-[0.98] shadow-sm"
                     >
                       {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redefinir Agora'}
-                    </button>
-                  </div>
-
-                  {/* Notification Setting */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 bg-white rounded-2xl border border-border">
-                    <div className="space-y-1 text-center sm:text-left">
-                      <div className="text-base font-bold text-text-main flex items-center gap-2 justify-center sm:justify-start">
-                        <Bell className="w-4 h-4 text-primary" />
-                        Notificações Push
-                      </div>
-                      <div className="text-xs text-text-sub">Teste se o seu navegador está pronto para receber avisos.</div>
-                    </div>
-                    <button 
-                      onClick={handleTestNotification}
-                      className="whitespace-nowrap px-8 py-4 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-sm active:scale-[0.98]"
-                    >
-                      Testar Agora
                     </button>
                   </div>
 
@@ -538,6 +608,24 @@ export default function Perfil() {
                 className="whitespace-nowrap px-8 py-4 bg-white text-text-main border border-border rounded-xl text-xs font-bold uppercase tracking-wider hover:border-red-500/50 hover:text-red-600 transition-all active:scale-[0.98] shadow-sm"
               >
                 Sair
+              </button>
+            </div>
+
+
+
+            <div className="pt-8 w-full">
+              <button 
+                type="submit"
+                disabled={loading}
+                form="profile-form"
+                className="w-full bg-[#f97316] text-white font-black uppercase tracking-widest text-sm py-5 rounded-2xl shadow-[0_8px_20px_rgba(249,115,22,0.3)] hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                  <>
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Atualizar Perfil
+                  </>
+                )}
               </button>
             </div>
           </div>

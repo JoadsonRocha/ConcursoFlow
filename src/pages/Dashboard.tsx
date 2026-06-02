@@ -35,7 +35,10 @@ import {
   Square,
   Brain,
   Play,
-  Instagram
+  Instagram,
+  Laptop,
+  Smartphone,
+  Youtube
 } from 'lucide-react';
 import { SIcon } from '../components/SIcon';
 import { toast } from 'sonner';
@@ -135,7 +138,7 @@ const ContestSelectorItem = ({
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSwitchContest, onDelete }) => {
-  const { user, isPro, isBeta } = useAuth();
+  const { user, isPro } = useAuth();
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showLogModal, setShowLogModal ] = useState(false);
@@ -511,7 +514,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     {contests.length > 1 && (
                       <button 
                         onClick={() => {
-                          if (!isPro && !isBeta) {
+                          if (!isPro) {
                              setShowProModal(true);
                              setProFeatureName('Comparar Similaridade entre Editais');
                              setIsSelectorOpen(false);
@@ -1118,23 +1121,78 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         )}
       </AnimatePresence>
 
-      <footer className="mt-4 pt-2 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <footer className="mt-12 pt-6 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-6 pb-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-center sm:text-left">
           <BrandLogo size="sm" />
-          <span className="text-[10px] font-bold text-text-sub uppercase tracking-widest opacity-40">
+          <div className="h-4 w-[1px] bg-slate-200 hidden sm:block"></div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
             © {new Date().getFullYear()} Stratis Planner
           </span>
         </div>
-        <div className="flex items-center gap-6">
-          <a 
-            href="https://www.instagram.com/stratis.planner/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center text-text-sub hover:text-primary transition-all"
-            title="Instagram Stratis Planner"
-          >
-            <Instagram className="w-5 h-5" />
-          </a>
+
+        {/* Links para mídias sociais e download de apps */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto justify-end">
+          {/* Social Badges in squircles */}
+          <div className="flex items-center gap-2.5">
+            <a 
+              href="https://www.instagram.com/stratis.planner/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-pink-600 hover:border-pink-300 hover:bg-pink-50/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+              title="Instagram Stratis Planner"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); }}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-black hover:border-slate-400 hover:bg-slate-100/50 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+              title="TikTok Stratis Planner"
+            >
+              <svg 
+                stroke="currentColor" 
+                fill="currentColor" 
+                strokeWidth="0" 
+                viewBox="0 0 448 512" 
+                className="w-4 h-4" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+              </svg>
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); }}
+              className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+              title="YouTube Stratis Planner"
+            >
+              <Youtube className="w-4 h-4" />
+            </a>
+          </div>
+
+          <div className="h-4 w-[1px] bg-slate-200 hidden sm:block"></div>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">Baixar App:</span>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); toast.info("O aplicativo para Computador estará disponível em breve!"); }}
+              className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200/70 hover:border-indigo-500 hover:bg-indigo-50/20 text-slate-600 hover:text-indigo-600 rounded-xl transition-all duration-300 cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm"
+              title="Baixar para Computador"
+            >
+              <Laptop className="w-3.5 h-3.5 shrink-0" />
+              <span>Computador</span>
+            </a>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); toast.info("O aplicativo para Celular estará disponível em breve!"); }}
+              className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200/70 hover:border-indigo-500 hover:bg-indigo-50/20 text-slate-600 hover:text-indigo-600 rounded-xl transition-all duration-300 cursor-pointer text-[9px] font-black uppercase tracking-wider shadow-sm"
+              title="Baixar para Celular"
+            >
+              <Smartphone className="w-3.5 h-3.5 shrink-0" />
+              <span>Celular</span>
+            </a>
+          </div>
         </div>
       </footer>
 

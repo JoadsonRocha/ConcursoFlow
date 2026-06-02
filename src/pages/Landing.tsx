@@ -17,7 +17,11 @@ import {
   ChevronDown,
   CheckCircle2,
   Star,
-  Instagram
+  Instagram,
+  Laptop,
+  Youtube,
+  Loader2,
+  Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -25,9 +29,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import BrandLogo from '../components/BrandLogo';
 import { contentData } from '../constants/content';
+import { createCheckoutSession } from '../services/stripe';
+import { toast } from 'sonner';
 
 const Landing = () => {
-  const { login, loginEmail, signup } = useAuth();
+  const { login, loginEmail, signup, user, profile, planType } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -36,6 +42,7 @@ const Landing = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -94,6 +101,48 @@ const Landing = () => {
     }
   };
 
+  const handlePlanAction = async (planId: string) => {
+    if (!user) {
+      navigate('/auth?plan=' + planId);
+      toast.info("Crie uma conta ou faça login para assinar um plano!");
+      return;
+    }
+
+    setLoadingPlan(planId);
+
+    try {
+      await createCheckoutSession(planId);
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao iniciar checkout com o Stripe.');
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const premiumFeatures = [
+    { name: 'Edital Verticalizado Inteligente', desc: 'Organização e Checklist completo para controle de tópicos' },
+    { name: 'Análise de Pareto de Recorrência (80/20)', desc: 'Identificação preditiva dos temas mais prioritários de cada banca' },
+    { name: 'AI Flashcards & Mapas Mentais Ilimitados', desc: 'Criação ilimitada com revisão ativa e repetição espaçada' },
+    { name: 'Mentor Stratis Inteligente (Coaching 24/7)', desc: 'Tutor de inteligência artificial de plantão para tirar qualquer dúvida' },
+    { name: 'Grade de Similaridade entre Editais', desc: 'Mapeamento instantâneo de disciplinas para conciliar múltiplos concursos' },
+    { name: 'Estatísticas & Analytics Avançados', desc: 'Acompanhamento profundo de horas líquidas, simulados e metas' },
+    { name: 'Aulas Rápidas e Resumos por IA', desc: 'Módulo de microlearning com resumos gerados sob demanda' },
+    { name: 'Cronogramas Adaptativos até 12 Semanas', desc: 'Planejamento dinâmico focado no seu tempo disponível real' },
+    { name: 'Exportação Premium de Planos (PDF)', desc: 'Geração e download de cronogramas e editais em alta qualidade para impressão' },
+    { name: 'Modo Foco Imersivo com Lofi & Pomodoro', desc: 'Simulador mental com efeitos binaurais para concentração máxima' },
+    { name: 'Compartilhamento & Comunidade Stratis', desc: 'Acesso completo a trilhas e cronogramas validados por aprovados' }
+  ];
+
+  const plans = [
+    { id: 'monthly_plan', name: 'Mensal PRO', price: 'R$ 29,90', period: 'mês' },
+    { id: 'annual_plan', name: 'Anual PRO', price: 'R$ 197,90', period: 'ano' }
+  ];
+
+  const isMonthlyCurrent = 
+    (profile?.userPlan === 'monthly') || (planType === 'pro' && !profile?.userPlan); // fallback for custom/special users
+  const isAnnualCurrent = 
+    (profile?.userPlan === 'annual');
+
   const features = [
     {
       icon: BrainCircuit,
@@ -142,15 +191,28 @@ const Landing = () => {
           
           <div className="flex items-center gap-4 md:gap-10">
             <div className="hidden lg:flex items-center gap-10">
-              {['Benefícios', 'Funcionalidades', 'Insights'].map((item) => (
-                <a 
-                  key={item} 
-                  href={`#${item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} 
-                  className="text-xs font-bold text-text-sub hover:text-primary uppercase tracking-wider transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
+              {['Benefícios', 'Funcionalidades', 'Planos'].map((item) => {
+                if (item === 'Planos') {
+                  return (
+                    <Link
+                      key={item}
+                      to="/planos"
+                      className="text-xs font-bold text-text-sub hover:text-primary uppercase tracking-wider transition-colors"
+                    >
+                      {item}
+                    </Link>
+                  );
+                }
+                return (
+                  <a 
+                    key={item} 
+                    href={`#${item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`} 
+                    className="text-xs font-bold text-text-sub hover:text-primary uppercase tracking-wider transition-colors"
+                  >
+                    {item}
+                  </a>
+                );
+              })}
             </div>
             <Link 
               to="/auth"
@@ -163,29 +225,26 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-16 md:pt-24 md:pb-24 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 md:space-y-8">
+      <section className="relative pt-20 pb-16 md:pt-24 md:pb-24 px-6 animate-fade-in">
+        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 md:space-y-8 animate-fade-in">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="space-y-4 md:space-y-6"
           >
-            <div className="inline-flex items-center gap-3 bg-white/50 backdrop-blur-md border border-border px-5 py-2 rounded-full text-[10px] md:text-xs font-bold text-text-sub uppercase tracking-wider shadow-sm">
-              <Zap className="w-3 h-3 text-primary" />
-              A nova era da preparação para concursos
-            </div>
-            <h1 className="text-3xl md:text-4xl font-display text-text-main leading-[1.1] tracking-tight font-extrabold">
-              Aprovação com <br/>
-              <span className="text-primary italic relative">
-                estratégia
-                <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-2 md:h-3 text-primary/30" viewBox="0 0 200 10" preserveAspectRatio="none">
-                  <path d="M0,5 Q100,10 200,5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            <h1 className="text-4xl md:text-6xl font-display text-text-main leading-[1.05] tracking-tight font-black max-w-4xl mx-auto">
+              Estude exatamente o que <br className="hidden md:block" />
+              vai cair na sua prova com <br className="hidden md:block" />
+              <span className="text-secondary italic relative inline-block px-1">
+                estratégia inteligente.
+                <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-2 md:h-3 text-secondary/40" viewBox="0 0 200 10" preserveAspectRatio="none">
+                  <path d="M0,5 Q100,10 200,5" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                 </svg>
-              </span> absoluta.
+              </span>
             </h1>
-            <p className="text-base md:text-xl text-text-sub font-medium leading-relaxed max-w-2xl mx-auto pt-4 md:pt-2">
-              Transforme seu edital em um plano de batalha. O Stratis Planner organiza seus tópicos por relevância, cria metas reais e monitora sua evolução dia após dia.
+            <p className="text-base md:text-lg text-text-sub font-semibold leading-relaxed max-w-3xl mx-auto pt-4 md:pt-2">
+              Transforme editais gigantescos em uma rota de aprovação de alta performance. O <strong>Stratis Planner</strong> descobre os assuntos prioritários de cada banca através da Lei de Pareto, monta seu plano diário baseado no seu tempo real e acelera sua memorização.
             </p>
           </motion.div>
 
@@ -193,20 +252,20 @@ const Landing = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-lg"
+            className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-xl justify-center"
           >
             <Link 
                to="/auth"
-               className="flex-1 bg-primary text-white flex items-center justify-center gap-2 rounded-xl py-4 md:py-5 text-xs md:text-sm font-bold tracking-widest uppercase shadow-xl hover:shadow-primary/40 hover:-translate-y-1 transition-all"
+               className="flex-1 bg-secondary text-white flex items-center justify-center gap-2 rounded-xl py-4.5 px-8 text-xs md:text-sm font-black tracking-widest uppercase shadow-xl hover:shadow-secondary/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all"
             >
-              Acessar Plataforma
+              Começar Grátis Agora
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
             <button 
-               onClick={() => document.getElementById('beneficios')?.scrollIntoView({ behavior: 'smooth' })}
-               className="flex-1 bg-white border border-slate-200 text-text-main py-4 md:py-5 rounded-xl text-xs md:text-sm font-bold uppercase tracking-widest hover:bg-slate-50 hover:-translate-y-1 transition-all shadow-sm"
+               onClick={() => document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' })}
+               className="flex-1 bg-white border border-slate-200/90 text-text-main py-4.5 px-8 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all shadow-sm"
             >
-              Ver Benefícios
+               Ver Planos PRO
             </button>
           </motion.div>
 
@@ -273,100 +332,249 @@ const Landing = () => {
       </section>
 
       {/* Benefícios */}
-      <section id="beneficios" className="py-24 md:py-32 px-6 bg-white border-t border-border/50 relative">
+      <section id="beneficios" className="py-24 md:py-32 px-6 bg-white border-t border-slate-200/50 relative">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-             <div className="text-primary font-bold text-xs uppercase tracking-widest">Os Benefícios</div>
-             <h2 className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight">O fim do caos nos estudos</h2>
+          <div className="text-center mb-16 space-y-4 max-w-2xl mx-auto">
+             <div className="text-secondary font-black text-xs uppercase tracking-widest">O Método Estratégico</div>
+             <h2 className="text-3xl md:text-5xl font-display font-black text-text-main leading-tight tracking-tight">O fim do caos e da procrastinação nos estudos</h2>
+             <p className="text-text-sub font-semibold text-sm md:text-base leading-relaxed">
+               97% dos candidatos desistem de seus cronogramas porque são complexos demais para manter. Veja como a <strong>Stratis Planner</strong> resolve os maiores gargalos da sua preparação:
+             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50">
-               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-8"><Zap className="w-6 h-6"/></div>
-               <h3 className="text-xl font-bold text-text-main mb-4 font-display">Mais Velocidade</h3>
-               <p className="text-slate-600 text-sm leading-relaxed">Poupe até 15h semanais que seriam gastas com planejamento manual. Nossa tecnologia fatia seu edital e entrega a meta do dia pronta.</p>
+             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
+               <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-8 shadow-inner"><Zap className="w-6 h-6"/></div>
+               <h3 className="text-xl font-black text-text-main mb-3 font-display">Economia de 15h Semanais</h3>
+               <p className="text-slate-600 text-sm leading-relaxed font-medium">Poupe dezenas de horas que você costumava gastar criando planilhas manuais ou editais verticais no Word. Nosso sistema divide as matérias em tarefas diárias prontas instantaneamente.</p>
              </div>
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50">
-               <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-8"><ShieldCheck className="w-6 h-6"/></div>
-               <h3 className="text-xl font-bold text-text-main mb-4 font-display">Controle Total</h3>
-               <p className="text-slate-600 text-sm leading-relaxed">Marque conteúdos estudados, acompanhe seu ritmo diário e nunca mais perca o fio da meada na sua preparação.</p>
+             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
+               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600 mb-8 shadow-inner"><ShieldCheck className="w-6 h-6"/></div>
+               <h3 className="text-xl font-black text-text-main mb-3 font-display">Cronograma Sem Medo</h3>
+               <p className="text-slate-600 text-sm leading-relaxed font-medium">A vida acontece. Se você não conseguiu bater a meta hoje por causa do trabalho ou cansaço, a plataforma reorganiza automaticamente seus dias futuros de forma suave, sem causar acúmulo opressor de matérias.</p>
              </div>
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50">
-               <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-8"><Target className="w-6 h-6"/></div>
-               <h3 className="text-xl font-bold text-text-main mb-4 font-display">Pareto 80/20</h3>
-               <p className="text-slate-600 text-sm leading-relaxed">Identifique os tópicos que representam 80% das questões da sua banca e saiba exatamente onde colocar sua energia.</p>
+             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
+               <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 mb-8 shadow-inner"><Target className="w-6 h-6"/></div>
+               <h3 className="text-xl font-black text-text-main mb-3 font-display">Estudo Inteligente 80/20</h3>
+               <p className="text-slate-600 text-sm leading-relaxed font-medium">Não estude tudo com a mesma intensidade. De forma cirúrgica, saiba quais são os 20% do conteúdo programático que representam 80% das questões históricas de acordo com a sua banca de concurso.</p>
              </div>
           </div>
         </div>
       </section>
-
-      {/* Funcionalidades Bento Grid */}
       <section id="funcionalidades" className="py-24 md:py-32 px-6 bg-slate-50/50 relative">
         <div className="max-w-6xl mx-auto space-y-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
              <div className="space-y-4 max-w-2xl">
-                <div className="text-primary font-bold text-[10px] md:text-xs uppercase tracking-widest">Funcionalidades</div>
-                <h2 className="text-2xl md:text-3xl font-display leading-[1.1] text-text-main tracking-tight font-extrabold">
-                   Um passo à frente <br/>do seu objetivo.
+                <div className="text-secondary font-black text-[10px] md:text-xs uppercase tracking-widest">Nossos Recursos Elite</div>
+                <h2 className="text-3xl md:text-5xl font-display leading-[1.1] text-text-main tracking-tight font-black">
+                   Tudo o que você precisa para <br/>vencer a concorrência.
                 </h2>
-                <p className="text-lg text-text-sub font-medium max-w-xl mx-auto md:mx-0">
-                  Ferramentas criadas por quem entende a rotina de quem estuda pra concurso.
+                <p className="text-sm md:text-base text-text-sub font-semibold max-w-xl">
+                  Esqueça as gambiarras em planilhas ou PDFs avulsos. Desenvolvemos o ecossistema definitivo focado no concurseiro profissional.
                 </p>
              </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-             <div className="md:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+             <div className="md:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                 <div className="relative z-10 space-y-4">
-                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                   <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary group-hover:scale-110 transition-transform duration-500 shadow-inner">
                       <BrainCircuit className="w-5 h-5" />
                    </div>
-                   <h3 className="text-2xl font-display text-text-main font-bold">Mapeamento Estratégico</h3>
-                   <p className="text-slate-600 text-sm md:text-base font-medium max-w-lg leading-relaxed">Nossa plataforma analisa o edital, organiza os assuntos e indica o que é prioritário com base no histórico de provas e relevância por banca.</p>
+                   <h3 className="text-2xl font-display text-text-main font-black">Mapeamento e Filtro Cirúrgico de Editais</h3>
+                   <p className="text-slate-600 text-sm md:text-base font-medium max-w-2xl leading-relaxed">Nossa tecnologia analisa a estrutura do seu edital, agrupa por disciplinas fundamentais e traça quais tópicos merecem prioridade absoluta com base nos pesos atribuídos pela banca estudada.</p>
                 </div>
              </div>
 
-             <div className="md:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group overflow-hidden">
-                <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-6 group-hover:scale-110 transition-transform duration-500 text-center">
+             <div className="md:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-center hover:shadow-xl transition-all group overflow-hidden shadow-sm">
+                <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-6 group-hover:scale-110 transition-transform duration-500 text-center shadow-inner">
                    <Calendar className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-display text-text-main font-bold mb-3">Cronograma Ágil</h3>
-                <p className="text-slate-600 md:text-base font-medium leading-relaxed">Planos diários flexíveis. O sistema ajusta sua rota conforme seu tempo disponível e evolução real.</p>
+                <h3 className="text-xl font-display text-text-main font-black mb-3">Flexibilidade sem Culpa</h3>
+                <p className="text-slate-600 text-sm leading-relaxed font-semibold">Tire folgas planejadas ou recupere dias perdidos de forma transparente. Nosso cronograma inteligente reprograma tudo com apenas um clique.</p>
              </div>
 
-             <div className="md:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-xl transition-all group">
-                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-6 group-hover:scale-110 transition-transform duration-500">
+             <div className="md:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-center hover:shadow-xl transition-all group shadow-sm">
+                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
                    <Target className="w-5 h-5" />
                 </div>
-                <h3 className="text-xl font-display text-text-main font-bold mb-3">Microlearning Organizado</h3>
-                <p className="text-slate-600 md:text-base font-medium leading-relaxed">Crie flashcards com descrições personalizadas e tags. Utilize geradores automáticos para acelerar sua memorização por tópicos específicos.</p>
+                <h3 className="text-xl font-display text-text-main font-black mb-3">Revisão Espaçada e Microlearning</h3>
+                <p className="text-slate-600 text-sm leading-relaxed font-semibold">Crie flashcards dinâmicos com IA e monitore sua curva de esquecimento automaticamente. Memorize fórmulas, leis e conceitos chaves brincando.</p>
              </div>
 
              {/* Feature 4: Wide */}
-             <div className="md:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:shadow-xl transition-all group relative overflow-hidden">
+             <div className="md:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-between hover:shadow-xl transition-all group relative overflow-hidden shadow-sm">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4"></div>
                 <div className="relative z-10 space-y-4">
-                   <div className="w-10 h-10 bg-primary/10 rounded-xl border border-primary/5 flex items-center justify-center text-primary">
+                   <div className="w-10 h-10 bg-indigo-500/10 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform duration-500 shadow-inner">
                       <Users className="w-5 h-5" />
                    </div>
-                   <h3 className="text-2xl font-display font-bold text-text-main">Comunidade e Compartilhamento</h3>
-                   <p className="text-slate-600 text-sm md:text-base font-medium leading-relaxed max-w-lg">Não precisa começar do zero. Importe editais organizados, cronogramas de pessoas aprovadas e troque materiais validados com milhares de outros estudantes na plataforma.</p>
+                   <h3 className="text-2xl font-display font-black text-text-main">Comunidade de Aprovados</h3>
+                   <p className="text-slate-600 text-sm leading-relaxed font-semibold max-w-xl">Aproveite cronogramas prontos que já foram validados e compartilhados pela comunidade. Importe caminhos vitoriosos de aprovados reais de forma imediata.</p>
                 </div>
              </div>
           </div>
         </div>
       </section>
 
-      {/* Depoimentos / Aprovados Reais */}
-      <section className="py-16 md:py-20 px-6 bg-white border-t border-border/50 relative">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 space-y-4">
-             <div className="text-primary font-bold text-xs uppercase tracking-widest">Aprovados Reais</div>
-             <h2 className="text-3xl md:text-5xl font-display font-bold text-text-main tracking-tight">Eles viram o nome no Diário Oficial</h2>
-             <p className="text-text-sub font-medium max-w-xl mx-auto">Histórias reais de quem transformou planejamento em aprovação.</p>
+      {/* Seção de Planos de Estudos (Preços) - Foco em Conversão */}
+      <section id="planos" className="py-24 bg-slate-50 relative border-t border-b border-slate-200/60 overflow-hidden">
+        {/* Background Accent Gradients */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-secondary/5 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
+
+        <div className="max-w-4xl mx-auto px-4 relative z-10">
+          {/* Main white panel grouping all content, exactly like the Planos page structure */}
+          <div className="bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-xl p-6 sm:p-10 md:p-12 space-y-8">
+            {/* Header section inside the panel */}
+            <div className="text-center space-y-3 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 bg-secondary/10 text-secondary text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full rounded-tl-none animate-pulse mb-2 mx-auto">
+                <Crown className="w-3.5 h-3.5 text-secondary" /> Invista no seu Futuro
+              </div>
+              <h2 className="text-3xl md:text-4xl font-display font-black text-slate-900 tracking-tight leading-none">
+                Desbloqueie seu <span className="text-secondary">Potencial PRO</span>
+              </h2>
+              <p className="text-slate-500 text-xs md:text-sm font-semibold leading-relaxed">
+                Acesse ferramentas avançadas de organização e inteligência artificial para sua evolução acelerada rumo à aprovação.
+              </p>
+            </div>
+
+            {/* Unified Compact Row with Features Left and Purchases Right */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start max-w-4xl mx-auto pt-4">
+              
+              {/* Left Column: All Features included in Premium plan */}
+              <div className="md:col-span-7 space-y-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                    <Zap className="w-4 h-4 fill-current" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-display font-bold text-slate-900 leading-tight">
+                      Recursos Inclusos no Plano PRO
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      Tudo o que você precisa em uma única assinatura sem limites
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {premiumFeatures.map((feature, idx) => (
+                    <div key={idx} className="flex gap-2.5 items-start">
+                      <div className="w-4.5 h-4.5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100/60 shadow-sm">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      </div>
+                      <div className="flex flex-col text-left leading-tight">
+                        <span className="font-bold text-slate-800 text-xs">
+                          {feature.name}
+                        </span>
+                        <span className="text-slate-400 font-semibold text-[10px]">
+                          {feature.desc}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Checkout choices */}
+              <div className="md:col-span-5 space-y-4">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center md:text-left mb-2">
+                  Selecione o seu Ciclo de Estudo:
+                </div>
+
+                {/* Monthly Subscription Box */}
+                <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-5 hover:border-slate-300 transition-colors relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Assinatura Mensal</span>
+                    <span className="text-[9px] text-slate-400 font-bold uppercase">Recorrente</span>
+                  </div>
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-2xl font-black text-slate-900">R$ 29,90</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">/mês</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePlanAction('monthly_plan')}
+                    disabled={isMonthlyCurrent || loadingPlan !== null}
+                    className={cn(
+                      "w-full py-2.5 rounded-lg font-black uppercase tracking-wider text-[10px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm",
+                      isMonthlyCurrent
+                        ? "bg-slate-100 text-slate-500 border border-slate-200 cursor-default"
+                        : "bg-slate-900 text-white hover:bg-slate-800 active:scale-95"
+                    )}
+                  >
+                    {loadingPlan === 'monthly_plan' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isMonthlyCurrent ? (
+                      'Assinatura Mensal Ativa'
+                    ) : (
+                      'Iniciar Mensal PRO'
+                    )}
+                  </button>
+                </div>
+
+                {/* Annual Subscription Box (Recommended) */}
+                <div className="bg-white border-2 border-secondary rounded-2xl p-5 relative ring-4 ring-secondary/5">
+                  <div className="absolute -top-2.5 right-4 bg-accent text-white text-[8px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10 animate-pulse">
+                    MELHOR CUSTO-BENEFÍCIO
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Assinatura Anual</span>
+                    <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded font-black uppercase tracking-wider">
+                      Economize +40%
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-2xl font-black text-slate-900">R$ 197,90</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">/ano</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium mb-4">
+                    (Equivale a apenas <span className="text-slate-800 font-bold">R$ 16,49/mês</span>)
+                  </div>
+
+                  <button
+                    onClick={() => handlePlanAction('annual_plan')}
+                    disabled={isAnnualCurrent || loadingPlan !== null}
+                    className={cn(
+                      "w-full py-2.5 rounded-lg font-black uppercase tracking-wider text-[10px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md",
+                      isAnnualCurrent
+                        ? "bg-slate-100 text-slate-500 border border-slate-200 cursor-default shadow-none"
+                        : "bg-secondary text-white hover:bg-secondary/90 shadow-[0_4px_16px_rgba(59,130,246,0.2)] active:scale-95"
+                    )}
+                  >
+                    {loadingPlan === 'annual_plan' ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : isAnnualCurrent ? (
+                      'Assinatura Anual Ativa'
+                    ) : (
+                      'Iniciar Anual PRO'
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-center text-[9px] text-slate-400 font-semibold leading-relaxed max-w-[280px] mx-auto">
+                  🔒 Pagamento 100% seguro via Stripe. Cancelamento facilitado com um clique nas configurações do seu perfil.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Footer information inside the white panel */}
+            <p className="text-center text-[10px] font-medium text-slate-400 pt-4 border-t border-slate-50 max-w-sm mx-auto leading-relaxed">
+              Pagamento seguro processado pelo Stripe. Cancele a qualquer momento nas configurações do seu perfil.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+        </div>
+      </section>
+
+      {/* Depoimentos / Aprovados Reais */}
+      <section className="py-12 md:py-16 px-6 bg-white border-t border-border/50 relative">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+             <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
                <div>
                   <div className="flex text-amber-400 mb-6 font-bold space-x-1">
                       <Star className="w-5 h-5 fill-current" />
@@ -382,7 +590,7 @@ const Landing = () => {
                   <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovada — Receita Federal</p>
                </div>
              </div>
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+             <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
                <div>
                   <div className="flex text-amber-400 mb-6 font-bold space-x-1">
                       <Star className="w-5 h-5 fill-current" />
@@ -398,7 +606,7 @@ const Landing = () => {
                   <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovada — INSS</p>
                </div>
              </div>
-             <div className="bg-slate-50 p-10 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
+             <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
                <div>
                   <div className="flex text-amber-400 mb-6 font-bold space-x-1">
                       <Star className="w-5 h-5 fill-current" />
@@ -414,49 +622,6 @@ const Landing = () => {
                   <p className="text-text-sub text-xs uppercase tracking-wider font-semibold">Aprovado — TJ-SP</p>
                </div>
              </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Espaçador entre seções */}
-      <div className="py-12 bg-white"></div>
-
-      {/* Destaques / Guias Rápidos */}
-      <section className="py-16 md:py-20 px-6 bg-white border-t border-border/50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10 space-y-3">
-             <div className="text-primary font-bold text-[10px] uppercase tracking-widest">Guias Rápidos</div>
-             <h2 className="text-2xl md:text-3xl font-display font-bold text-text-main tracking-tight">O que você precisa saber</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {contentData.filter(item => ['tutorial-2', 'dica-1'].includes(item.id)).map((item) => (
-               <Link 
-                 key={item.id} 
-                 to={`/explorar/${item.id}`}
-                 className="group bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all flex flex-col h-full"
-               >
-                 <div className="relative aspect-[16/8] bg-slate-200 overflow-hidden">
-                   <img 
-                      src={item.image} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                      alt={item.title} 
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).classList.add('hidden');
-                        (e.target as HTMLImageElement).parentElement?.classList.add('bg-primary/20');
-                      }}
-                   />
-                 </div>
-                 <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex items-center gap-3 mb-3">
-                       <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-0.5 rounded-full">{item.category}</span>
-                       <span className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">{item.readTime}</span>
-                    </div>
-                    <h3 className="text-lg font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight mb-2">{item.title}</h3>
-                    <p className="text-xs text-slate-700 font-medium leading-relaxed mb-4 flex-grow">{item.excerpt}</p>
-                 </div>
-               </Link>
-            ))}
           </div>
         </div>
       </section>
@@ -492,86 +657,41 @@ const Landing = () => {
                    {faq.a}
                  </div>
                </details>
-             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stratis Journal Insights */}
-      <section id="insights" className="py-16 md:py-20 px-6 bg-white relative">
-        <div className="max-w-6xl mx-auto space-y-16">
-           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-              <div className="space-y-4">
-                 <div className="text-primary font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                   <Database className="w-4 h-4" /> Stratis Journal
-                 </div>
-                 <h2 className="text-4xl md:text-5xl font-display font-bold text-text-main tracking-tight">Cresça com a nossa inteligência</h2>
-                 <p className="text-text-sub font-medium max-w-xl">Artigos, guias e reflexões semanais para quem não aceita nada menos que a excelência.</p>
-              </div>
-              <Link 
-                 to="/explorar"
-                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:gap-4 transition-all"
-              >
-                Ver Todos os Insights <ArrowRight className="w-4 h-4" />
-              </Link>
-           </div>
-
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {contentData.slice(0, 3).map((item) => (
-                 <Link 
-                   key={item.id} 
-                   to="/explorar"
-                   className="group flex flex-col"
-                 >
-                   <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-6 shadow-sm group-hover:shadow-xl transition-all">
-                   <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title} referrerPolicy="no-referrer" />
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                   </div>
-                   <div className="flex items-center gap-3 mb-3">
-                      <span className={cn(
-                         "text-[9px] font-black uppercase tracking-widest",
-                         item.id.includes('tutorial') ? "text-secondary" : "text-accent"
-                      )}>{item.category}</span>
-                      <span className="text-[9px] font-bold text-slate-700 uppercase tracking-wider">{item.readTime}</span>
-                   </div>
-                   <h3 className="text-base font-display font-bold text-slate-900 group-hover:text-primary transition-colors leading-tight mb-2">{item.title}</h3>
-                   <p className="text-[10px] text-slate-700 font-medium line-clamp-2 leading-relaxed">{item.excerpt}</p>
-                 </Link>
               ))}
            </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 md:py-40 px-6 bg-slate-950 text-white relative overflow-hidden">
+      <section className="py-32 md:py-40 px-6 bg-slate-900 text-white relative overflow-hidden border-t border-slate-800">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl -z-10">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/20 blur-[150px] rounded-full animate-pulse"></div>
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-secondary/15 blur-[150px] rounded-full animate-pulse"></div>
         </div>
         
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-10">
-           <div className="w-16 h-16 bg-white/5 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-sm">
-              <Zap className="w-8 h-8 text-primary shadow-sm" />
+        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-8">
+           <div className="w-16 h-16 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-md">
+              <Zap className="w-8 h-8 text-semibold text-secondary shadow-sm" />
            </div>
-           <h2 className="text-3xl md:text-5xl font-display leading-[1.1] tracking-tight font-bold">
+           <h2 className="text-4xl md:text-6xl font-display leading-[1.05] tracking-tight font-black text-white">
              Dê o passo definitivo rumo ao seu <br />
-             nome no <span className="text-primary italic">Diário Oficial</span>.
+             nome na lista de <span className="text-secondary italic underline decoration-wavy decoration-3">aprovados</span>!
            </h2>
-           <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">
-             Junte-se à elite dos estudantes que utilizam engenharia de dados para vencer editais.
+           <p className="text-slate-300 text-base md:text-lg font-semibold max-w-2xl mx-auto leading-relaxed">
+             Junte-se à nova onda de candidatos que pararam de tentar estudar editais gigantes de forma linear e passaram a estudar com inteligência e engenharia de dados.
            </p>
            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
               <Link 
                 to="/auth"
-                className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90 px-10 py-4 text-xs tracking-wider uppercase shadow-xl rounded-xl font-bold"
-              >
-                Ativar Minha Conta
-              </Link>
-           </div>
-        </div>
-      </section>
+                className="w-full sm:w-auto bg-secondary text-white hover:bg-secondary/95 px-10 py-5 text-xs tracking-widest uppercase shadow-xl shadow-secondary/25 hover:shadow-secondary/40 rounded-xl font-black hover:-translate-y-0.5 active:translate-y-0 transition-all"
+               >
+                 Criar Meu Cronograma Grátis
+               </Link>
+            </div>
+         </div>
+       </section>
 
-      {/* Footer */}
-      <footer className="py-16 border-t border-border bg-white px-6 relative z-10">
+       {/* Footer */}
+      <footer className="py-20 border-t border-slate-100 bg-white px-6 relative z-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
            <div className="col-span-1 md:col-span-2 space-y-6">
               <BrandLogo size="md" />
@@ -581,41 +701,96 @@ const Landing = () => {
            </div>
            <div className="grid grid-cols-2 lg:grid-cols-3 gap-12 col-span-2">
               <div className="space-y-4">
-                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Ecossistema</h4>
-                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ecossistema</h4>
+                 <ul className="space-y-2.5 text-xs font-semibold text-text-sub">
+                    <li>
+                       <Link 
+                         to="/planos" 
+                         className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider"
+                       >
+                          Planos e Preços
+                       </Link>
+                    </li>
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Painéis</li>
                     <li className="hover:text-primary transition-colors cursor-pointer uppercase tracking-wider">Cronogramas</li>
                  </ul>
               </div>
-              <div className="space-y-4">
-                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Social</h4>
-                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
-                    <li>
-                      <a 
-                        href="https://www.instagram.com/stratis.planner/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-primary transition-colors uppercase tracking-wider"
-                      >
-                        <Instagram className="w-4 h-4" />
-                        Instagram
-                      </a>
-                    </li>
-                 </ul>
+              <div className="space-y-6">
+                 <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Redes Sociais</h4>
+                    <div className="flex items-center gap-3 text-text-sub pt-1">
+                       <a 
+                         href="https://www.instagram.com/stratis.planner/" 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="w-10 h-10 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-pink-600 hover:border-pink-300 hover:bg-pink-50/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+                         title="Instagram"
+                       >
+                         <Instagram className="w-5 h-5" />
+                       </a>
+                       <a 
+                         href="#" 
+                         onClick={(e) => { e.preventDefault(); }}
+                         className="w-10 h-10 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-black hover:border-slate-400 hover:bg-slate-100/50 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+                         title="TikTok"
+                       >
+                         <svg 
+                           stroke="currentColor" 
+                           fill="currentColor" 
+                           strokeWidth="0" 
+                           viewBox="0 0 448 512" 
+                           className="w-5 h-5" 
+                           xmlns="http://www.w3.org/2000/svg"
+                         >
+                           <path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z" />
+                         </svg>
+                       </a>
+                       <a 
+                         href="#" 
+                         onClick={(e) => { e.preventDefault(); }}
+                         className="w-10 h-10 flex items-center justify-center bg-slate-50 border border-slate-200/50 text-slate-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow"
+                         title="YouTube"
+                       >
+                         <Youtube className="w-5 h-5" />
+                       </a>
+                    </div>
+                 </div>
+                 <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Download</h4>
+                    <div className="flex flex-col gap-2 max-w-[153px]">
+                       <a 
+                         href="#" 
+                         onClick={(e) => { e.preventDefault(); alert("O aplicativo para Computador estará pronto para download direto do site em breve! Você também pode continuar usando nossa versão Web de alta performance pelo navegador."); }}
+                         className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200/70 hover:border-indigo-500 hover:bg-indigo-50/20 text-slate-600 hover:text-indigo-600 rounded-xl transition-all duration-300 cursor-pointer text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                       >
+                         <Laptop className="w-3.5 h-3.5 shrink-0" />
+                         <span className="truncate">Computador</span>
+                       </a>
+                       <a 
+                         href="#" 
+                         onClick={(e) => { e.preventDefault(); alert("O aplicativo para Celular estará pronto para download direto do site em breve! Você também pode adicionar este site como atalho PWA na sua tela de início."); }}
+                         className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200/70 hover:border-indigo-500 hover:bg-indigo-50/20 text-slate-600 hover:text-indigo-600 rounded-xl transition-all duration-300 cursor-pointer text-[10px] font-bold uppercase tracking-wider shadow-sm"
+                       >
+                         <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                         <span className="truncate">Celular</span>
+                       </a>
+                    </div>
+                  </div>
               </div>
               <div className="space-y-4">
-                 <h4 className="text-xs font-bold text-text-main uppercase tracking-wider opacity-40">Compliance</h4>
-                 <ul className="space-y-2 text-xs font-semibold text-text-sub">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Compliance</h4>
+                 <ul className="space-y-2.5 text-xs font-semibold text-text-sub">
                     <li><Link to="/termos" className="hover:text-primary transition-colors uppercase tracking-wider">Termos</Link></li>
                     <li><Link to="/privacidade" className="hover:text-primary transition-colors uppercase tracking-wider">Privacidade</Link></li>
                     <li><Link to="/cookies" className="hover:text-primary transition-colors uppercase tracking-wider">Cookies</Link></li>
                  </ul>
               </div>
            </div>
-        </div>
-        <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-border flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-           <span className="text-xs font-bold text-text-sub uppercase tracking-wider opacity-40">Stratis Planner 2026 — Estratégia para concursos</span>
-        </div>
+         </div>
+         <div className="max-w-7xl mx-auto pt-8 mt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stratis Planner 2026 — Estratégia de alto nível para concursos</span>
+         </div>
+      
       </footer>
     </div>
   );

@@ -92,8 +92,19 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
     const errorMsg = String(error?.message || error);
     const statusCode = typeof error?.status === 'number' && error.status >= 100 && error.status <= 599 ? error.status : 500;
     
-    if (statusCode === 429 || error?.code === 429 || errorMsg.includes('429') || errorMsg.includes('quota') || statusCode === 503 || errorMsg.includes('503')) {
-      console.warn(`[AI] Quota/Rate Limit atingido para ${usageField}.`);
+    const normalizedError = errorMsg.toLowerCase();
+    if (
+      statusCode === 429 || 
+      error?.code === 429 || 
+      normalizedError.includes('429') || 
+      normalizedError.includes('quota') || 
+      normalizedError.includes('exhausted') || 
+      normalizedError.includes('rate limit') || 
+      normalizedError.includes('ratelimit') ||
+      statusCode === 503 || 
+      normalizedError.includes('503')
+    ) {
+      console.warn(`[AI] Quota/Rate Limit atingido para ${usageField}:`, errorMsg);
       return res.status(statusCode === 500 ? 429 : statusCode).json({ error: "Os limites da inteligência artificial do sistema foram atingidos temporariamente. Por favor, tente novamente daqui a pouco." });
     }
 

@@ -66,8 +66,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) 
-        && isValidUser(incoming())
-        && incoming().userPlan == 'pro'; // Force PRO on creation for this specific requirement
+        && isValidUser(incoming());
       
       allow update: if isOwner(userId) 
         && isValidUser(incoming())

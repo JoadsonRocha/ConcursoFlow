@@ -16,7 +16,6 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
 
   const getLimit = () => {
     if (planType === 'pro') return 50;
-    if (planType === 'beta') return 10;
     return 3;
   };
 

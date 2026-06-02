@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Contest } from '../types';
 import { toast } from 'sonner';
 import { 
   BrainCircuit, 
+  Notebook,
   Lightbulb, 
   Play,
   Award,
@@ -38,6 +39,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function Microlearning({ contest, onUpdate }: { contest?: Contest | null, onUpdate?: (contest: Contest) => void }) {
   const { profile, isPro } = useAuth();
+  const navigate = useNavigate();
 
   const saveStudySession = (totalSeconds: number, questionsCount: number = 0) => {
     if (totalSeconds < 5 && questionsCount === 0) return; // Ignore very short/empty sessions
@@ -191,6 +193,9 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       });
       toast.success("Mapa mental salvo!");
       setShowMindMapCreator(false);
+      setActiveTab('library');
+      setLibrarySubTab('maps');
+      navigate('/microaprendizado?tab=library');
     } catch (err) {
       console.error("Erro ao salvar mapa mental:", err);
       toast.error("Erro ao salvar mapa mental: " + (err instanceof Error ? err.message : String(err)));
@@ -1002,6 +1007,12 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
             onClose={() => setShowCreator(false)} 
             subjects={contest?.subjects || []} 
             currentCount={flashcards.length}
+            onSaveSuccess={() => {
+              setShowCreator(false);
+              setActiveTab('library');
+              setLibrarySubTab('flashcards');
+              navigate('/microaprendizado?tab=library');
+            }}
           />
         )}
         <header className="space-y-2">
@@ -1010,7 +1021,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
             Treinamento e Prática
           </div>
           <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold italic">
-            Revisão
+            Notebook Stratis
           </h1>
           <div className="flex items-center gap-4 mt-2">
             <p className="text-text-sub text-[10px] md:text-sm max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium italic flex-1">
@@ -1114,7 +1125,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
         <div className="relative">
           <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <BrainCircuit className="w-10 h-10 text-primary animate-pulse" />
+            <Notebook className="w-10 h-10 text-primary animate-pulse" />
           </div>
         </div>
         <div className="text-center space-y-2 md:space-y-4">
@@ -1232,10 +1243,10 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-primary/5 p-10 rounded-2xl border-2 border-primary/20 relative overflow-hidden shadow-inner"
                     >
-                        <BrainCircuit className="absolute -right-6 -bottom-6 w-32 h-32 text-primary/5 rotate-12" />
+                        <Notebook className="absolute -right-6 -bottom-6 w-32 h-32 text-primary/5 rotate-12" />
                         <div className="flex items-center gap-4 mb-6 relative z-10">
                           <div className="bg-primary/20 p-2.5 rounded-xl text-primary">
-                             <BrainCircuit className="w-5 h-5" />
+                             <Notebook className="w-5 h-5" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Explicação</span>
                         </div>

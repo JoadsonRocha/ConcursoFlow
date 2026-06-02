@@ -22,7 +22,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onImport, contests }: SettingsProps) {
-  const { profile, updateProfile, isPro, isBeta } = useAuth();
+  const { profile, updateProfile, isPro } = useAuth();
   const navigate = useNavigate();
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
@@ -43,7 +43,11 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   const [dailyHours, setDailyHours] = useState<number | ''>(2);
   const [dailyQuestions, setDailyQuestions] = useState<number | ''>(20);
   const [dailyContentVolume, setDailyContentVolume] = useState<number | ''>(1);
-  const [scheduleStartDate, setScheduleStartDate] = useState('');
+  const [scheduleStartDate, setScheduleStartDate] = useState(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  });
   const [examDate, setExamDate] = useState('2026-06-27');
   const [autoSchedule, setAutoSchedule] = useState(true);
   const [scheduleWeeks, setScheduleWeeks] = useState(4);
@@ -153,7 +157,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
      try {
        let finalContestData = { ...contestData };
        let paretoData = (contestData && !reAnalyzePareto) ? (contestData.paretoData || null) : null;
-       const canUseAnalysis = isPro || isBeta;
+       const canUseAnalysis = isPro;
 
        // Perform AI analysis only if subjects aren't already populated or if re-importing
        if ((!finalContestData.subjects || reImportSubjects) && finalContestData.rawTextForAnalysis) {
@@ -206,7 +210,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
          dailyGoalHours: Number(dailyHours) || 0,
          dailyGoalQuestions: Number(dailyQuestions) || 0,
          dailyContentVolume: Number(dailyContentVolume) || 1,
-         scheduleStartDate: scheduleStartDate || null,
+         scheduleStartDate: scheduleStartDate || new Date().toISOString().split('T')[0],
          schedule: schedule || [],
        };
        
@@ -221,6 +225,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
        setContestData(null);
        setReAnalyzePareto(false);
        setReImportSubjects(false);
+       setScheduleStartDate(new Date().toISOString().split('T')[0]);
        setStage('import');
        setWizardStep(0);
        toast.success(editingContestId ? "Configurações atualizadas!" : "Edital importado com sucesso! Redirecionando para seu cronograma...");
@@ -248,7 +253,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
-              if (!isPro && !isBeta) {
+              if (!isPro) {
                 setProFeatureName('Exportação de Plano de Estudo (PDF)');
                 setShowProModal(true);
                 return;
@@ -275,11 +280,11 @@ export default function Settings({ onImport, contests }: SettingsProps) {
           <button
             onClick={() => { setActiveTab('ai'); setRawText(''); setEditingContestId(null); setContestData(null); }}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all relative group",
-              activeTab === 'ai' && !editingContestId ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
+               "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all relative group",
+               activeTab === 'ai' && !editingContestId ? "bg-white text-primary shadow-sm" : "text-text-sub hover:text-text-main"
             )}
           >
-            {!isPro && !isBeta && (
+            {!isPro && (
                <div className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[7px] px-1 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
                  PRO
                </div>
@@ -321,6 +326,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                   setDailyQuestions(selected.dailyGoalQuestions || 20);
                   setDailyContentVolume(selected.dailyContentVolume || 1);
                   setExamDate(selected.examDate || '2026-12-31');
+                  setScheduleStartDate(selected.scheduleStartDate || new Date().toISOString().split('T')[0]);
                   setScheduleWeeks(4); 
                   setContestData(selected);
                   setActiveTab('manual');
@@ -513,7 +519,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                       <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="application/pdf" className="hidden" />
                       <button 
                         onClick={() => {
-                          if (!isPro && !isBeta) {
+                          if (!isPro) {
                             setProFeatureName('Importação de Edital via PDF');
                             setShowProModal(true);
                             return;
@@ -526,7 +532,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           extractingPdf ? "bg-slate-500 cursor-not-allowed opacity-80" : "bg-gradient-to-r from-primary to-accent hover:scale-[1.02]"
                         )}
                       >
-                        {!isPro && !isBeta && (
+                        {!isPro && (
                            <div className="absolute top-1 right-2 bg-accent text-white text-[8px] px-1.5 py-0.5 rounded-md font-black shadow-sm transform border border-white z-10 group-hover:scale-110 transition-transform">
                              PRO
                            </div>
@@ -616,7 +622,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                           <div className="space-y-2">
                             <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
                               {[2, 4, 8, 12].map((w) => {
-                                const isWeekPro = w !== 4 && !isPro && !isBeta;
+                                const isWeekPro = w !== 4 && !isPro;
                                 return (
                                   <button
                                     key={w}
@@ -644,7 +650,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                                 );
                               })}
                             </div>
-                            {!isPro && !isBeta && (
+                            {!isPro && (
                               <p className="text-[8px] text-text-sub text-center font-bold tracking-tight uppercase">
                                 Plano Free inclui cronograma fixo de 4 semanas
                               </p>

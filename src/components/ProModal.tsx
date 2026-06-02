@@ -18,66 +18,73 @@ export default function ProModal({ isOpen, onClose, featureName }: ProModalProps
   if (!isOpen) return null;
 
   const features = [
-    'Múltiplos editais simultâneos',
-    'Importação automática via PDF',
-    'Mesclar disciplinas entre editais',
-    'Geração ilimitada de cronogramas'
+    'Edital Verticalizado Inteligente',
+    'Análise de Pareto (Recorrência)',
+    'AI Flashcards Ilimitados',
+    'Mapas Mentais Dinâmicos',
+    'Mentor Stratis (AI Coach 24/7)',
+    'Grade de Similaridades',
+    'Estatísticas Detalhadas',
+    'Resumos & Microlearning',
+    'Cronogramas até 12 Semanas',
+    'Exportações completas em PDF'
   ];
 
   const getTargetPlan = () => {
-    if (planType === 'free') return 'BETA';
     return 'PRO';
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 select-none">
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="fixed inset-0 bg-[#0f172a]/60 backdrop-blur-sm" 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" 
             onClick={onClose}
           />
-            <motion.div 
-            initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0, y: 15 }} 
             animate={{ scale: 1, opacity: 1, y: 0 }} 
-            exit={{ scale: 0.95, opacity: 0, y: 20 }} 
-            className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col"
+            exit={{ scale: 0.95, opacity: 0, y: 15 }} 
+            className="w-full max-w-sm sm:max-w-md bg-white rounded-2xl shadow-xl relative z-10 overflow-hidden flex flex-col"
           >
-            {/* Top Half: Gradient */}
-            <div className="bg-gradient-to-br from-indigo-700 to-indigo-500 p-8 sm:p-10 text-white relative">
+            {/* Top Half: Gradient Banner */}
+            <div className="bg-gradient-to-br from-indigo-700 to-indigo-500 p-4 sm:p-5 text-white relative">
               <button 
                 onClick={onClose} 
-                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-20"
+                className="absolute top-3 right-3 p-1.5 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-20 cursor-pointer"
               >
-                <X size={16} />
+                <X size={12} />
               </button>
-
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
-                <Zap className="w-6 h-6 text-white" />
+              
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center shrink-0">
+                  <Zap className="w-3.5 h-3.5 text-white fill-current" />
+                </div>
+                <h2 className="text-sm font-display font-black text-white leading-tight uppercase tracking-wide">
+                  Potencial {getTargetPlan()}
+                </h2>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white leading-tight mb-3">
-                Subir para {getTargetPlan()}
-              </h2>
-              <p className="text-indigo-100 text-sm sm:text-base font-medium leading-relaxed">
+              <p className="text-indigo-100 text-[10px] font-semibold leading-normal">
                 {featureName ? (
-                  <>A funcionalidade <strong className="text-white font-bold">{featureName}</strong> exige um plano superior.</>
+                  <>A funcionalidade <strong className="text-white font-black">{featureName}</strong> exige uma conta Premium {getTargetPlan()}.</>
                 ) : (
-                  <>Ative o plano {getTargetPlan()} para ter acesso a funcionalidades avançadas e exclusivas.</>
+                  <>Ative o plano {getTargetPlan()} para desbloquear ferramentas analíticas e IA avançada.</>
                 )}
               </p>
             </div>
 
-            {/* Bottom Half: Content */}
-            <div className="p-8 sm:p-10 bg-white flex flex-col items-center">
-              <div className="space-y-4 w-full mb-8">
+            {/* Bottom Half: Features & Actions */}
+            <div className="p-4 sm:p-5 bg-white flex flex-col items-center">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 w-full mb-4">
                 {features.map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 w-5 h-5 shrink-0" />
-                    <span className="text-sm sm:text-base font-bold text-slate-700">{feature}</span>
+                  <div key={i} className="flex items-center gap-1.5">
+                    <CheckCircle2 className="text-emerald-500 w-3 h-3 shrink-0" />
+                    <span className="text-[10px] font-bold text-slate-700 leading-tight truncate">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -87,13 +94,13 @@ export default function ProModal({ isOpen, onClose, featureName }: ProModalProps
                   onClose();
                   navigate('/planos');
                 }}
-                className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm uppercase tracking-wider transition-colors shadow-lg shadow-indigo-600/30"
+                className="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-wider transition-colors shadow-sm cursor-pointer hover:scale-[1.01] active:scale-[0.99] mb-2"
               >
-                Conhecer Planos
+                Quero ser PRO
               </button>
 
-              <p className="mt-6 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] text-slate-400 text-center">
-                Ative o PRO na aba &lt;PREFERÊNCIAS&gt; para testar.
+              <p className="text-[8px] font-black uppercase tracking-[0.1em] text-slate-400 text-center">
+                GARANTIA DE REEMBOLSO DE 7 DIAS • CANCELAMENTO EXPEDITO
               </p>
             </div>
           </motion.div>

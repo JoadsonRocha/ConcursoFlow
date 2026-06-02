@@ -32,7 +32,7 @@ interface ParetoProps {
 }
 
 export default function Pareto({ contest, contests = [], onContestChange, onUpdate }: ParetoProps) {
-  const { profile, isPro, isBeta } = useAuth();
+  const { profile, isPro } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [banca, setBanca] = useState(contest.banca || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -50,7 +50,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
     if (!banca) return;
     
     // Check PRO status for FIRST analysis and re-analyzing
-    if (!isPro && !isBeta) {
+    if (!isPro) {
       setShowProModal(true);
       return;
     }

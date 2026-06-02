@@ -11,9 +11,10 @@ interface FlashcardCreatorProps {
   onClose: () => void;
   subjects: { id: string, name: string }[];
   currentCount: number;
+  onSaveSuccess?: () => void;
 }
 
-export default function FlashcardCreator({ onClose, subjects, currentCount }: FlashcardCreatorProps) {
+export default function FlashcardCreator({ onClose, subjects, currentCount, onSaveSuccess }: FlashcardCreatorProps) {
   const { profile, updateProfile, isPro, planType } = useAuth();
   const [showProModal, setShowProModal] = useState(false);
   const [mode, setMode] = useState<'manual' | 'ai'>('ai');
@@ -28,7 +29,6 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
 
   const getLimit = () => {
     if (planType === 'pro') return 1000;
-    if (planType === 'beta') return 50;
     return 20;
   };
 
@@ -72,6 +72,7 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
       }
 
       setSuccess(true);
+      if (onSaveSuccess) onSaveSuccess();
       setTimeout(() => onClose(), 1500);
     } catch (error) {
       console.error("Erro ao salvar card:", error);
@@ -143,6 +144,7 @@ export default function FlashcardCreator({ onClose, subjects, currentCount }: Fl
       // Update usage - MOVED TO SERVER
       
       setSuccess(true);
+      if (onSaveSuccess) onSaveSuccess();
       setTimeout(() => onClose(), 1500);
     } catch (error) {
       console.error("Erro ao salvar lote:", error);

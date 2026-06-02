@@ -16,8 +16,7 @@ interface AuthContextType {
   profile: Profile | null;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   isPro: boolean;
-  isBeta: boolean;
-  planType: 'free' | 'beta' | 'pro';
+  planType: 'free' | 'pro';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 updatedAt: serverTimestamp(),
                 currentContestId: null,
                 tourCompleted: false,
-                userPlan: 'beta',
+                userPlan: 'free',
                 lastUsageReset: serverTimestamp(),
                 summaryUsage: 0,
                 flashcardUsage: 0,
@@ -123,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: res.user.uid,
       email: email,
       displayName: name,
-      userPlan: 'beta',
+      userPlan: 'free',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       currentContestId: null,
@@ -153,8 +152,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
     const userEmail = (profile?.email || user?.email || '').toLowerCase().trim();
-    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com'].includes(userEmail);
-    const effectivePlan = isSpecialUser ? 'pro' : 'beta';
+    const isSpecialUser = ['onrocha08@gmail.com'].includes(userEmail);
+    
+    let effectivePlan: 'free' | 'pro' = 'free';
+    if (isSpecialUser) {
+      effectivePlan = 'pro';
+    } else if (profile?.userPlan) {
+      const p = profile.userPlan;
+      if (p === 'monthly' || p === 'annual' || p === 'pro' || p === 'beta') {
+        effectivePlan = 'pro';
+      }
+    }
     const planType = effectivePlan;
 
   return (
@@ -169,7 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       profile,
       updateProfile: updateProfileData,
       isPro: planType === 'pro',
-      isBeta: planType === 'beta',
       planType
     }}>
       {children}

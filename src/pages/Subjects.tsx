@@ -46,7 +46,6 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
 
   const getLimit = () => {
     if (planType === 'pro') return 500;
-    if (planType === 'beta') return 25;
     return 10;
   };
 

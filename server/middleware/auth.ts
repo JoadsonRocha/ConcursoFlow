@@ -15,7 +15,9 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    const authApp = admin.app('auth');
+    // Tenta obter o app de autenticação específico 'auth' se existir, ou cai de volta para o app padrão.
+    const hasAuthApp = admin.apps.some(app => app?.name === 'auth');
+    const authApp = hasAuthApp ? admin.app('auth') : admin.app();
     const decodedToken = await admin.auth(authApp).verifyIdToken(idToken);
     req.user = decodedToken;
     next();

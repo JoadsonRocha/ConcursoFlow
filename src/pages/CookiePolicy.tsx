@@ -85,7 +85,7 @@ export default function CookiePolicy() {
         <section className="space-y-4">
           <h2 className="text-xl font-bold text-text-main border-b border-border pb-2">Dúvidas?</h2>
           <p className="leading-relaxed">
-            Se você tiver qualquer dúvida sobre como utilizamos cookies, sinta-se à vontade para nos contatar através do e-mail: <span className="text-primary font-medium">contato@stratisplanner.com.br</span>
+            Se você tiver qualquer dúvida sobre como utilizamos cookies, sinta-se à vontade para nos contatar através do e-mail: <span className="text-primary font-medium">info@stratisplanner.com.br</span>
           </p>
         </section>
       </div>

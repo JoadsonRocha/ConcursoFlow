@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
             <li>Solicitar a portabilidade dos dados para outro fornecedor.</li>
           </ul>
           <p className="mt-4 font-medium italic">
-            Para exercer seus direitos, envie um e-mail para: <span className="text-primary">contato@stratisplanner.com.br</span>
+            Para exercer seus direitos, envie um e-mail para: <span className="text-primary">info@stratisplanner.com.br</span>
           </p>
         </section>
 

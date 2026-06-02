@@ -31,5 +31,12 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     throw new Error(errorData.error || errorData.details || (response.statusText ? `Erro na requisição: ${response.statusText}` : `Erro HTTP ${response.status} ao acessar a API`));
   }
 
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text().catch(() => "");
+    console.error(`[API] Expected JSON but received non-JSON: ${contentType} for URL: ${finalUrl}. Starting:`, text.substring(0, 300));
+    throw new Error(`O servidor retornou uma resposta não-JSON (URL: ${url}). Verifique a conectividade da API.`);
+  }
+
   return response.json();
 }

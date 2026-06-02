@@ -33,9 +33,15 @@ if (admin.apps.length === 0) {
       });
       console.log('✅ Firebase Admin: Inicializado com Service Account.');
     } else {
-      adminApp = admin.initializeApp({
+      const initOptions: admin.AppOptions = {
         projectId: DB_PROJECT_ID
-      });
+      };
+      try {
+        initOptions.credential = admin.credential.applicationDefault();
+      } catch (credErr) {
+        console.warn('⚠️ Firebase Admin default credentials check failed, using project fallback:', credErr);
+      }
+      adminApp = admin.initializeApp(initOptions);
       console.log('✅ Firebase Admin: Inicializado com projeto:', DB_PROJECT_ID);
     }
   } catch (err) {
@@ -49,6 +55,12 @@ try {
   if (hasServiceAccount) {
     const sa = JSON.parse(serviceAccountJson as string);
     authConfig.credential = admin.credential.cert(sa);
+  } else {
+    try {
+      authConfig.credential = admin.credential.applicationDefault();
+    } catch (credErr) {
+      console.warn('⚠️ Firebase Auth default credentials check failed:', credErr);
+    }
   }
   authApp = admin.initializeApp(authConfig, 'auth');
   console.log('✅ Firebase Auth App: Inicializado para o projeto:', AUTH_PROJECT_ID);
@@ -108,6 +120,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     const userId = session.metadata?.userId;
     const planType = session.metadata?.planType || 'pro';
     const customerEmail = session.customer_details?.email || session.customer_email;
+    const stripeCustomerId = session.customer as string;
 
     if (userId || customerEmail) {
       try {
@@ -122,6 +135,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         if (userDocRef) {
           await userDocRef.update({
             userPlan: planType,
+            stripeCustomerId: stripeCustomerId || '',
             updatedAt: FieldValue.serverTimestamp()
           });
         }
@@ -197,36 +211,128 @@ app.use('/api/ai', aiRoutes);
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const db = getDb();
-    const stripe = getStripe();
     const { priceId: planKey, userId, userEmail } = req.body;
-    let stripePriceId = planKey;
-    if (planKey === 'monthly_plan') stripePriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
-    else if (planKey === 'annual_plan') stripePriceId = process.env.STRIPE_ANNUAL_PRICE_ID;
-
-    if (!stripePriceId) {
-      throw new Error('ID do plano não configurado.');
-    }
 
     if (userId) {
-      const userDoc = await db.collection('users').doc(userId).get();
-      const currentPlan = userDoc.data()?.userPlan;
-      if (userDoc.exists && (currentPlan === 'pro' || currentPlan === 'annual' || currentPlan === 'monthly')) {
-          if (currentPlan === 'pro' || currentPlan === 'annual') throw new Error('Você já possui uma assinatura Premium Anual ativa.');
-          if (currentPlan === 'monthly' && planKey === 'monthly_plan') throw new Error('Você já possui uma assinatura mensal ativa.');
+      try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          const emailToCheck = (userData?.email || userEmail || '').toLowerCase().trim();
+          const currentPlan = userData?.userPlan;
+          if (currentPlan === 'pro' || currentPlan === 'annual' || currentPlan === 'monthly') {
+            if (currentPlan === 'pro' || currentPlan === 'annual') throw new Error('Você já possui uma assinatura Premium Anual ativa.');
+            if (currentPlan === 'monthly' && planKey === 'monthly_plan') throw new Error('Você já possui uma assinatura mensal ativa.');
+          }
+        }
+      } catch (dbError: any) {
+        console.warn('⚠️ Firestore Admin Warning: Não foi possível checar o plano atual no banco:', dbError.message || dbError);
+        // If it was a user-facing premium active error thrown by us, bubble it up
+        if (dbError.message?.includes('Você já possui')) {
+          throw dbError;
+        }
       }
     }
+
+    const stripe = getStripe();
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey || stripeKey === '' || stripeKey.includes('placeholder')) {
+      throw new Error('Chave secreta do Stripe (STRIPE_SECRET_KEY) não está configurada ou é inválida. Por favor, configure o seu valor real no menu Configurações.');
+    }
+
+    let stripePriceId = planKey;
+    if (planKey === 'monthly_plan' || planKey === 'price_1TXNEaGqodgUicbTYG0SPo4j') {
+      stripePriceId = process.env.STRIPE_MONTHLY_PRICE_ID || 'price_1TXNEaGqodgUicbTYG0SPo4j';
+    } else if (planKey === 'annual_plan' || planKey === 'price_1TXOHnGqodgUicbTyhPXiUYO') {
+      stripePriceId = process.env.STRIPE_ANNUAL_PRICE_ID || 'price_1TXOHnGqodgUicbTyhPXiUYO';
+    }
+
+    if (!stripePriceId) {
+      throw new Error('ID do plano não configurado (STRIPE_MONTHLY_PRICE_ID ou STRIPE_ANNUAL_PRICE_ID).');
+    }
+
+    const baseOrigin = req.body.originURL || process.env.VITE_APP_URL || 'http://localhost:3000';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: userEmail,
       line_items: [{ price: stripePriceId, quantity: 1 }],
       mode: 'subscription',
-      success_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/perfil?success=true`,
-      cancel_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/planos?canceled=true`,
+      success_url: `${baseOrigin}/perfil?success=true`,
+      cancel_url: `${baseOrigin}/planos?canceled=true`,
       metadata: { userId, planType: planKey === 'annual_plan' ? 'annual' : 'monthly' },
     });
 
     res.json({ id: session.id, url: session.url });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Stripe Customer Portal Session
+app.post('/api/create-portal-session', async (req, res) => {
+  try {
+    const { userId, userEmail, originURL } = req.body;
+
+    if (!userEmail) {
+      throw new Error('E-mail do usuário é obrigatório.');
+    }
+
+    const db = getDb();
+    const stripe = getStripe();
+    let customerId = '';
+
+    // Try to get customerId from Firestore
+    if (userId) {
+      try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          customerId = userDoc.data()?.stripeCustomerId || '';
+        }
+      } catch (dbError: any) {
+        console.warn('⚠️ Firestore Admin Warning: Não foi possível checar stripeCustomerId no banco:', dbError.message || dbError);
+      }
+    }
+
+    // Fallback: search Stripe for a customer with this email
+    if (!customerId) {
+      try {
+        const customers = await stripe.customers.list({
+          email: userEmail.toLowerCase().trim(),
+          limit: 1,
+        });
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+          
+          // Update Firestore for future quick lookup
+          if (userId) {
+            await db.collection('users').doc(userId).update({
+              stripeCustomerId: customerId,
+            }).catch(() => {});
+          }
+        }
+      } catch (stripeError: any) {
+        console.error('❌ Error finding customer in Stripe:', stripeError);
+      }
+    }
+
+    if (!customerId) {
+      throw new Error('Nenhuma assinatura ou cliente ativo com transações reais encontrado para este e-mail no Stripe.');
+    }
+
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey || stripeKey === '' || stripeKey.includes('placeholder')) {
+      throw new Error('Chave secreta do Stripe não configurada.');
+    }
+
+    const baseOrigin = originURL || process.env.VITE_APP_URL || 'http://localhost:3000';
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${baseOrigin}/perfil`,
+    });
+
+    res.json({ url: session.url });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
   }

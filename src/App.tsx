@@ -6,6 +6,7 @@ import {
   BookOpen, 
   Calendar, 
   BrainCircuit, 
+  Notebook,
   Menu,
   LogOut,
   User as UserIcon,
@@ -62,20 +63,30 @@ import Dashboard from './pages/Dashboard';
 import FocusMode from './pages/FocusMode';
 import Estatisticas from './pages/Estatisticas';
 
-const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id, variant = 'default' }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string, variant?: 'default' | 'highlight' }) => (
   <Link 
     id={id}
     to={to} 
     className={cn(
-      "flex items-center gap-3 py-2 rounded-lg transition-all duration-300 group relative text-[12px] font-bold uppercase tracking-wider",
-      active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main",
+      "flex items-center gap-3 py-2 rounded-lg transition-all duration-300 group relative text-[12px] font-black uppercase tracking-wider",
+      variant === 'highlight'
+        ? (active ? "bg-amber-500/20 text-amber-600 shadow-sm shadow-amber-500/5" : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20")
+        : (active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main"),
       collapsed ? "justify-center px-0" : "px-4"
     )}
     title={collapsed ? label : undefined}
   >
-    <Icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : "text-text-sub/50 group-hover:text-text-main")} />
+    <Icon className={cn(
+      "w-4 h-4 shrink-0", 
+      variant === 'highlight' 
+        ? "text-amber-500 group-hover:scale-110 transition-transform animate-pulse" 
+        : (active ? "text-primary" : "text-text-sub/50 group-hover:text-text-main")
+    )} />
     {!collapsed && <span>{label}</span>}
-    {active && !collapsed && (
+    {variant === 'highlight' && !collapsed && (
+      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-extrabold uppercase scale-90 tracking-widest leading-none">PRO</span>
+    )}
+    {active && !collapsed && variant !== 'highlight' && (
       <motion.div 
         layoutId="active-nav-bg"
         className="absolute inset-y-2 left-0 w-1 bg-primary rounded-full shadow-[0_0_10px_var(--color-primary)] opacity-80"
@@ -112,9 +123,7 @@ export default function App() {
   const [migrated, setMigrated] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [runTour, setRunTour] = useState(false);
-  const [showBetaModal, setShowBetaModal] = useState(() => {
-    return sessionStorage.getItem('betaModalShown') !== 'true';
-  });
+  const [showBetaModal, setShowBetaModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
@@ -453,12 +462,12 @@ export default function App() {
     
     // Limits check - Only for NEW imports
     if (!isEdit) {
-      const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+      const limit = planType === 'pro' ? Infinity : 1;
       if (contests.length >= limit) {
-        const planName = planType === 'pro' ? 'PRO' : (planType === 'beta' ? 'BETA' : 'GRATUITO');
+        const planName = planType === 'pro' ? 'PRO' : 'GRATUITO';
         toast.error(`Limite de ${limit} edital atingido no plano ${planName}. Faça o upgrade para expandir seus limites!`, {
           action: {
-            label: "Ver Planos",
+            label: "Assinar Pro",
             onClick: () => navigate("/planos")
           },
           duration: 5000
@@ -622,55 +631,7 @@ export default function App() {
 
   return (
     <div className="flex h-[100dvh] w-full bg-bg font-sans overflow-hidden relative">
-      {/* Beta Modal */}
-      <AnimatePresence>
-        {user && showBetaModal && (
-          <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={handleCloseBetaModal}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-[2001] overflow-hidden flex flex-col"
-            >
-              <div className="bg-amber-100 p-6 flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-amber-500 rounded-full flex justify-center items-center mb-4 text-white shadow-lg shadow-amber-500/30">
-                  <AlertTriangle className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-black text-amber-950 uppercase tracking-tight">Fase Beta</h3>
-              </div>
-              <div className="p-6 text-center space-y-4 text-text-sub">
-                <p className="font-medium">
-                  Você está acessando uma versão de <strong>testes antecipados (Beta)</strong> do Stratis Planner.
-                </p>
-                <p className="text-sm">
-                  O aplicativo está em evolução rápida e aperfeiçoando suas respostas via IA. Por isso, <strong>inconsistências matemáticas ou pequenas instabilidades</strong> podem ocorrer nos próximos dias.
-                </p>
-                <div className="pt-4 border-t border-slate-100">
-                  <button 
-                    onClick={handleCloseBetaModal}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-wider py-4 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-[0.98]"
-                  >
-                    Estou Ciente e Quero Testar
-                  </button>
-                </div>
-              </div>
-              <button 
-                onClick={handleCloseBetaModal}
-                className="absolute top-4 right-4 text-amber-900/50 hover:text-amber-900 p-2 transition-colors bg-white/50 backdrop-blur rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Navigation & Screens */}
 
       {user && profile && React.createElement(Joyride as any, {
           steps: tourSteps,
@@ -714,13 +675,15 @@ export default function App() {
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={BrainCircuit} label="Revisão" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-biblioteca" to="/microaprendizado?tab=library" icon={Library} label="Minha Biblioteca" active={location.pathname === '/microaprendizado' && location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Mentor MEPP" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/suporte" icon={LifeBuoy} label="Suporte" active={location.pathname === '/suporte'} collapsed={!isSidebarOpen} />
+              {!isPro && (
+                <SidebarItem to="/planos" icon={Crown} label="Assinar Pro" active={location.pathname === '/planos'} collapsed={!isSidebarOpen} variant="highlight" />
+              )}
             </nav>
           </div>
 
@@ -774,7 +737,6 @@ export default function App() {
                 <h2 className="text-lg font-display font-bold text-text-main tracking-tight uppercase leading-none">
                   STRATIS PLANNER
                 </h2>
-                <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">BETA</span>
               </Link>
           </div>
 
@@ -928,6 +890,24 @@ export default function App() {
                             <span className="text-[10px] text-text-sub uppercase tracking-wider italic">Central de Ajuda</span>
                           </div>
                         </Link>
+                        {!isPro && (
+                          <Link 
+                            to="/planos"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="flex items-center gap-4 px-6 py-4 bg-amber-50/50 hover:bg-amber-50 border-l-4 border-amber-500 transition-all group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                              <Crown className="w-4 h-4" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-amber-600 uppercase tracking-tight flex items-center gap-1.5">
+                                Assinar Pro
+                                <span className="text-[8px] bg-amber-500 text-white font-extrabold px-1 py-0.2 rounded-full leading-none shrink-0 scale-90">HOT</span>
+                              </span>
+                              <span className="text-[10px] text-amber-600/70 uppercase tracking-wider italic font-semibold">Nossos Planos</span>
+                            </div>
+                          </Link>
+                        )}
                         <hr className="border-border my-2 mx-6" />
                         <button 
                           onClick={() => { logout(); setIsUserMenuOpen(false); }}

@@ -136,7 +136,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneDeck = async (deck: any) => {
     if (!user) return;
     
-    const limit = planType === 'pro' ? 1000 : (planType === 'beta' ? 50 : 20);
+    const limit = planType === 'pro' ? 1000 : 20;
     if (personalFlashcardsCount + deck.cards.length > limit) {
       setProFeatureName(`Limite de ${limit} Flashcards atingido`);
       setShowProModal(true);
@@ -181,7 +181,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleClone = async (contest: Contest) => {
     if (!user) return;
     
-    const limit = planType === 'pro' ? Infinity : (planType === 'beta' ? 2 : 1);
+    const limit = planType === 'pro' ? Infinity : 1;
     if (contests && contests.length >= limit) {
        setProFeatureName(`Limite de ${limit} Edital atingido`);
        setShowProModal(true);
@@ -191,6 +191,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
     try {
       const clonedContest = {
         ...contest,
+        scheduleStartDate: new Date().toISOString().split('T')[0],
         ownerId: user.uid,
         isPublic: false,
         likesCount: 0,
@@ -216,7 +217,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const handleCloneMindMap = async (map: any) => {
     if (!user) return;
     
-    const limit = planType === 'pro' ? 50 : (planType === 'beta' ? 10 : 3);
+    const limit = planType === 'pro' ? 50 : 3;
     if (personalMapsCount >= limit) {
       setProFeatureName(`Limite de ${limit} Mapas Mentais atingido`);
       setShowProModal(true);

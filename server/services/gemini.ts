@@ -21,7 +21,7 @@ export function getAiClient(): GoogleGenAI {
   return aiClient;
 }
 
-const GEMINI_MODEL = "gemini-flash-latest";
+const GEMINI_MODEL = "gemini-3.5-flash";
 
 function parseJsonResponse(text: string, defaultValue: any = null) {
   if (!text) return defaultValue;

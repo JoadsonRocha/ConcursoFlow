@@ -51,6 +51,27 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const [dailyHours, setDailyHours] = useState(contest.dailyGoalHours || 2);
   const [dailyQuestions, setDailyQuestions] = useState(contest.dailyGoalQuestions || 20);
 
+  const getStartDate = () => {
+    if (contest.scheduleStartDate) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(contest.scheduleStartDate)) {
+        return new Date(contest.scheduleStartDate + 'T00:00:00');
+      }
+      const parsed = new Date(contest.scheduleStartDate);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    if ((contest as any).createdAt) {
+      const createDate = typeof (contest as any).createdAt.toDate === 'function' 
+        ? (contest as any).createdAt.toDate() 
+        : new Date((contest as any).createdAt);
+      if (!isNaN(createDate.getTime())) return createDate;
+    }
+    const timestampStr = contest.id.split('-')[1];
+    if (timestampStr && !isNaN(parseInt(timestampStr, 10))) {
+      return new Date(parseInt(timestampStr, 10));
+    }
+    return new Date();
+  };
+
   const schedule = contest.schedule || [];
   const maxDay = schedule.length > 0 ? Math.max(...schedule.map(d => d.dayNumber)) : 0;
   const totalWeeks = Math.ceil(maxDay / 7);
@@ -234,24 +255,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   };
 
   const getTodayDayNumber = () => {
-    const getStartDate = () => {
-      if (contest.scheduleStartDate) {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(contest.scheduleStartDate)) {
-          return new Date(contest.scheduleStartDate + 'T00:00:00');
-        }
-        const parsed = new Date(contest.scheduleStartDate);
-        if (!isNaN(parsed.getTime())) return parsed;
-      }
-      if ((contest as any).createdAt && (contest as any).createdAt.toDate) {
-        return (contest as any).createdAt.toDate();
-      }
-      const timestampStr = contest.id.split('-')[1];
-      if (timestampStr && !isNaN(parseInt(timestampStr, 10))) {
-        return new Date(parseInt(timestampStr, 10));
-      }
-      return new Date();
-    };
-
     const start = new Date(getStartDate());
     start.setHours(0, 0, 0, 0);
     const now = new Date();
@@ -264,24 +267,6 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const todayDayNumber = getTodayDayNumber();
 
   const getDayDate = (dayNum: number) => {
-    const getStartDate = () => {
-      if (contest.scheduleStartDate) {
-        if (/^\d{4}-\d{2}-\d{2}$/.test(contest.scheduleStartDate)) {
-          return new Date(contest.scheduleStartDate + 'T00:00:00');
-        }
-        const parsed = new Date(contest.scheduleStartDate);
-        if (!isNaN(parsed.getTime())) return parsed;
-      }
-      if ((contest as any).createdAt && (contest as any).createdAt.toDate) {
-        return (contest as any).createdAt.toDate();
-      }
-      const timestampStr = contest.id.split('-')[1];
-      if (timestampStr && !isNaN(parseInt(timestampStr, 10))) {
-        return new Date(parseInt(timestampStr, 10));
-      }
-      return new Date();
-    };
-
     const start = new Date(getStartDate());
     start.setHours(0, 0, 0, 0);
     const date = new Date(start);
@@ -589,6 +574,24 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : (isPro ? <Download className="w-4 h-4" /> : <Lock className="w-3.5 h-3.5 text-accent" />)}
              Exportar Plano
            </button>
+
+           <div className="flex items-center gap-2 bg-white border border-border px-3 py-2 rounded-xl shadow-sm hover:border-slate-300 transition-all select-none">
+             <CalendarDays className="w-4 h-4 text-primary shrink-0" />
+             <div className="flex flex-col text-left">
+               <span className="text-[8px] font-black uppercase text-slate-400 leading-none">Início do Ritmo</span>
+               <input 
+                 type="date"
+                 value={contest.scheduleStartDate || new Date().toISOString().split('T')[0]}
+                 onChange={(e) => {
+                   const newStartDate = e.target.value;
+                   const updated = { ...contest, scheduleStartDate: newStartDate };
+                   onUpdate(updated);
+                   toast.success("Início do cronograma atualizado! 🗓️");
+                 }}
+                 className="bg-transparent border-none p-0 text-[10px] font-black text-slate-700 outline-none focus:ring-0 cursor-pointer h-4 leading-tight"
+               />
+             </div>
+           </div>
 
            <div className="flex gap-2">
              <button 

@@ -5,12 +5,9 @@ import {
   Sparkles, 
   AlertTriangle, 
   Bell, 
-  CheckSquare, 
-  Square, 
   Brain, 
   Plus, 
   Trash2, 
-  Timer,
   BookOpen,
   ArrowLeft,
   BookOpenCheck,
@@ -391,70 +388,9 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
       </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Column 1: Daily Meta Stages Checklist */}
-        <div className="lg:col-span-4 bg-white border border-border rounded-2xl p-4 md:p-5 flex flex-col justify-between shadow-sm">
-          <div>
-            <div className="flex items-center justify-between mb-3 border-b border-border/60 pb-2">
-              <h4 className="text-[10px] font-black text-text-main uppercase tracking-widest flex items-center gap-1.5">
-                <Timer className="w-3 h-3 text-primary" />
-                Rotina Diária MEPP
-              </h4>
-              <div className="text-[8px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                HOJE
-              </div>
-            </div>
-            <p className="text-[10px] text-text-sub font-semibold leading-relaxed mb-4 italic">
-              {todayTask 
-                ? `Para a meta de hoje "${todayTask.specificTopic || todayTask.generalTopic}":` 
-                : "Não há meta de estudos definida para o dia de hoje."}
-            </p>
-            
-            <div className="space-y-2.5">
-              {[
-                { key: 'theory', title: '1. Estudo Teórico Ativo', desc: 'Leitura focada do PDF/Aulas' },
-                { key: 'recall', title: '2. Recuperação Ativa', desc: 'Flashcards ou esquemas mentais rápidos' },
-                { key: 'practice', title: '3. Resolução de Exercícios', desc: 'Resolver questões de bancas anteriores' },
-                { key: 'errors', title: '4. Caderno de Erros', desc: 'Anotar os erros e analisar fraquezas' }
-              ].map((step, sIdx) => {
-                const isChecked = currentMeppStages.includes(step.key);
-                return (
-                  <button
-                    key={sIdx}
-                    onClick={() => handleToggleMeppStage(step.key)}
-                    className={cn(
-                      "w-full p-2.5 rounded-xl border flex items-center gap-3 transition-all text-left group",
-                      isChecked 
-                        ? "bg-emerald-50/50 border-emerald-200 hover:border-emerald-300" 
-                        : "bg-slate-50/50 border-slate-100 hover:border-slate-200"
-                    )}
-                  >
-                    <div className={cn("shrink-0", isChecked ? "text-emerald-500" : "text-text-sub/40 group-hover:text-text-sub/60")}>
-                      {isChecked ? <CheckSquare className="w-4.5 h-4.5" /> : <Square className="w-4.5 h-4.5" />}
-                    </div>
-                    <div className="overflow-hidden">
-                      <div className={cn("text-[11px] font-black uppercase tracking-tight", isChecked ? "text-emerald-900" : "text-text-main")}>
-                        {step.title}
-                      </div>
-                      <div className="text-[9px] font-bold text-text-sub truncate opacity-85 uppercase tracking-wider">
-                        {step.desc}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          <div className="mt-4 pt-3 border-t border-slate-100 text-center">
-            <span className="text-[8px] font-black text-text-sub uppercase tracking-wider">
-              {"Consistência > Intensidade 🎯"}
-            </span>
-          </div>
-        </div>
 
-        {/* Column 2: Spaced Repetition Active Reviews List & Scheduler */}
-        <div className="lg:col-span-8 bg-white border border-border rounded-2xl p-4 md:p-5 flex flex-col shadow-sm gap-4">
+        {/* Spaced Repetition Active Reviews List & Scheduler */}
+        <div className="lg:col-span-12 bg-white border border-border rounded-2xl p-4 md:p-5 flex flex-col shadow-sm gap-4">
           <div className="flex items-center justify-between mb-1 border-b border-border/60 pb-2">
             <h4 className="text-[10px] font-black text-text-main uppercase tracking-widest flex items-center gap-1.5">
               <Brain className="w-3.5 h-3.5 text-indigo-500" />
