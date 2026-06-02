@@ -189,9 +189,27 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
     }
     
     try {
+      const resetSchedule = (contest.schedule || []).map(day => ({
+        ...day,
+        completed: false
+      }));
+
+      const resetSubjects = (contest.subjects || []).map(sub => ({
+        ...sub,
+        completedTopics: 0,
+        topics: (sub.topics || []).map(topic => ({
+          ...topic,
+          completed: false
+        }))
+      }));
+
       const clonedContest = {
         ...contest,
+        schedule: resetSchedule,
+        subjects: resetSubjects,
         scheduleStartDate: new Date().toISOString().split('T')[0],
+        meppReviews: [],
+        dailyHistory: [],
         ownerId: user.uid,
         isPublic: false,
         likesCount: 0,

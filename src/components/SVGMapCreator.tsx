@@ -66,7 +66,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex justify-center items-end sm:items-center sm:p-4">
       <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Mapas Mentais Ilimitados" />
       <div className="bg-white w-full max-w-5xl h-[95vh] sm:h-[85vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-300">
-        <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-border">
+        <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-border shrink-0 bg-white">
           <input 
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -84,7 +84,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
             <button onClick={onClose} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 transition-colors"><X className="w-5 h-5 sm:w-6 sm:h-6" /></button>
           </div>
         </div>
-        <div className="p-4 sm:p-6 border-b border-border bg-slate-50 flex flex-col gap-3">
+        <div className="p-4 sm:p-6 border-b border-border bg-slate-50 flex flex-col gap-3 shrink-0">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <input
                 value={prompt}

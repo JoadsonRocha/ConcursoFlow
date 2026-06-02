@@ -44,16 +44,57 @@ function parseJsonResponse(text: string, defaultValue: any = null) {
   }
 }
 
+async function generateWithRetryAndFallback(payload: any, initialModel: string = GEMINI_MODEL, maxRetries = 3) {
+  let delay = 300; // ms
+  let currentModel = initialModel;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const genAI = getAiClient();
+      const response = await genAI.models.generateContent({
+        model: currentModel,
+        ...payload
+      });
+      return response;
+    } catch (error: any) {
+      const errorMsg = String(error?.message || error).toLowerCase();
+      const code = error?.code || error?.status;
+      const isRetryable = 
+        code === 429 || 
+        code === 503 ||
+        errorMsg.includes("429") || 
+        errorMsg.includes("503") || 
+        errorMsg.includes("quota") || 
+        errorMsg.includes("limit") || 
+        errorMsg.includes("unavailable") ||
+        errorMsg.includes("demand") ||
+        errorMsg.includes("temporary");
+      
+      if (isRetryable && attempt < maxRetries) {
+        if (currentModel === "gemini-3.5-flash") {
+          currentModel = "gemini-3.1-flash-lite"; // Fallback model
+          console.warn(`[Gemini Retry] Attempt ${attempt} failed with ${error?.message || error}. Falling back to ${currentModel} and retrying...`);
+        } else {
+          console.warn(`[Gemini Retry] Attempt ${attempt} failed with ${error?.message || error}. Retrying in ${delay}ms...`);
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // exponential backoff
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error("Resiliência limite atingida no modelo de inteligência artificial.");
+}
+
 async function generateContentWithCache(serviceName: string, params: any, prompt: string, model: string = GEMINI_MODEL, config: any = {}) {
   const cached = await getCachedResponse(serviceName, params);
   if (cached) return cached;
 
-  const genAI = getAiClient();
-  const response = await genAI.models.generateContent({
-    model,
+  const response = await generateWithRetryAndFallback({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     ...config
-  });
+  }, model);
 
   const result = response.text;
   if (result) {
@@ -267,13 +308,21 @@ export async function generateSVGMap(title: string, prompt: string, quantity: nu
   
   Retorne EXCLUSIVAMENTE um array de strings JSON, onde cada string é o código XML do SVG pronto para ser renderizado na web. Não adicione textos aleatórios.`;
 
-  const text = await generateContentWithCache("generateSVGMap", params, enhancedPrompt);
+  const text = await generateContentWithCache("generateSVGMap", params, enhancedPrompt, GEMINI_MODEL, {
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.STRING
+        }
+      }
+    }
+  });
   return parseJsonResponse(text || "[]", []);
 }
 
 export async function chatWithTutor(chatHistory: any[], contextData: any) {
-  const genAI = getAiClient();
-
   const prompt = `Você é a inteligência estratégica e parceira de jornada dentro da plataforma "StratisPlanner".
   Esqueça o jargão inicial de "sou um especialista". Sua postura é a de um mentor direto ao ponto, pragmático, focado em maximizar a inteligência de prova e o desempenho com base em dados reais.
   
@@ -298,13 +347,12 @@ export async function chatWithTutor(chatHistory: any[], contextData: any) {
     parts: [{ text: msg.content }]
   }));
 
-  const response = await genAI.models.generateContent({
-    model: GEMINI_MODEL,
+  const response = await generateWithRetryAndFallback({
     contents: [
       { role: "user", parts: [{ text: prompt }] },
       ...formattedHistory
     ] // Inyect context as first user message, then follow the history
-  });
+  }, GEMINI_MODEL);
 
   return response.text || "Desculpe, não consegui elaborar uma resposta no momento.";
 }

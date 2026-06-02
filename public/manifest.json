@@ -1,11 +1,11 @@
 {
   "name": "Stratis Planner",
   "short_name": "Stratis",
-  "description": "Seu Planejador Estratégico de Estudos",
+  "description": "Sistema inteligente de cronogramas e estudos para concursos públicos.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
   "gcm_sender_id": "684995404002",
   "icons": [
     {

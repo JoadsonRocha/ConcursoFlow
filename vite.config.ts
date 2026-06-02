@@ -19,8 +19,9 @@ export default defineConfig(({mode}) => {
         manifest: {
           name: 'Stratis Planner',
           short_name: 'Stratis',
-          description: 'Inteligência para concursos',
-          theme_color: '#3b82f6',
+          description: 'Sistema inteligente de cronogramas e estudos para concursos públicos.',
+          theme_color: '#0f172a',
+          background_color: '#f8fafc',
           icons: [
             {
               src: '/logo_pwa.png',

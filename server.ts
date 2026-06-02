@@ -12,6 +12,15 @@ import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/
 
 dotenv.config();
 
+// Register global error catchers to prevent unhandled rejections or uncaught exceptions from crashing the server
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 [Unhandled Promise Rejection]:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('🔥 [Uncaught Exception]:', error);
+});
+
 // Initialize Firebase Admin
 let adminApp: admin.app.App | null = null;
 let authApp: admin.app.App | null = null;

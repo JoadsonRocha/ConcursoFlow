@@ -10,79 +10,86 @@ const router = Router();
 
 // Generic handler for AI usage to stay DRY
 async function handleAiRequest(req: AuthRequest, res: any, usageField: string, limitField: string, action: Function) {
-  const userId = req.user?.uid;
-  if (!userId) return res.status(401).json({ error: 'ID do usuário não identificado.' });
-
-  const getDb = () => {
-    try {
-      const currentDbId = DATABASE_ID || '';
-      if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
-        return getFirestore(admin.app(), currentDbId);
-      }
-      return getFirestore();
-    } catch (e) {
-      console.warn("⚠️ AI Route: Falha ao obter Firestore, tentando fallback.", e);
-      return getFirestore();
-    }
-  };
-  const db = getDb();
-
   try {
-    const db = getDb();
-    
-    try {
-      // 1. Check limits and increment usage atomically
-      await db.runTransaction(async (transaction) => {
-        const userRef = db.collection('users').doc(userId);
-        const userDoc = await transaction.get(userRef);
+    const userId = req.user?.uid;
+    if (!userId) return res.status(401).json({ error: 'ID do usuário não identificado.' });
 
-        if (!userDoc.exists) return; // if user not found, just skip tracking
-
-        const data = userDoc.data();
-        let plan = data?.userPlan || 'free';
-        
-        // Hardcoded PRO for special user
-        if (data?.email === 'onrocha08@gmail.com') {
-          plan = 'pro';
+    const getDb = () => {
+      try {
+        const currentDbId = DATABASE_ID || '';
+        if (currentDbId && currentDbId !== '(default)' && currentDbId !== '') {
+          return getFirestore(admin.app(), currentDbId);
         }
-
-        let usage = data?.[usageField] || 0;
-        const limits = PLANS[plan] || PLANS.free;
-        const limit = (limits as any)[limitField];
-
-        const now = new Date();
-        const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
-        let needsReset = false;
-        if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
-          needsReset = true;
-          usage = 0;
+        return getFirestore();
+      } catch (e) {
+        console.warn("⚠️ AI Route: Falha ao obter Firestore, tentando fallback.", e);
+        try {
+          return getFirestore();
+        } catch (inner) {
+          console.error("⚠️ AI Route: Falha total ao iniciar Firestore.", inner);
+          return null;
         }
-
-        if (usage >= limit) {
-          throw new Error(`Limite atingido para o seu plano. Faça upgrade para continuar.`);
-        }
-
-        const updateData: any = {
-          [usageField]: FieldValue.increment(1),
-          updatedAt: FieldValue.serverTimestamp()
-        };
-
-        if (needsReset) {
-            updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
-            updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
-            updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
-            updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
-            updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
-            updateData.lastUsageReset = FieldValue.serverTimestamp();
-        }
-
-        transaction.update(userRef, updateData);
-      });
-    } catch (transactionErr: any) {
-      if (transactionErr.message.includes('Limite atingido')) {
-        throw transactionErr; // Re-throw limit errors
       }
-      console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr.message || transactionErr);
+    };
+
+    const db = getDb();
+    if (db) {
+      try {
+        // 1. Check limits and increment usage atomically
+        await db.runTransaction(async (transaction) => {
+          const userRef = db.collection('users').doc(userId);
+          const userDoc = await transaction.get(userRef);
+
+          if (!userDoc.exists) return; // if user not found, just skip tracking
+
+          const data = userDoc.data();
+          let plan = data?.userPlan || 'free';
+          
+          // Hardcoded PRO for special user
+          if (data?.email === 'onrocha08@gmail.com') {
+            plan = 'pro';
+          }
+
+          let usage = data?.[usageField] || 0;
+          const limits = PLANS[plan] || PLANS.free;
+          const limit = (limits as any)[limitField];
+
+          const now = new Date();
+          const lastReset = data?.lastUsageReset?.toDate ? data.lastUsageReset.toDate() : new Date(0);
+          let needsReset = false;
+          if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+            needsReset = true;
+            usage = 0;
+          }
+
+          if (usage >= limit) {
+            throw new Error(`Limite atingido para o seu plano. Faça upgrade para continuar.`);
+          }
+
+          const updateData: any = {
+            [usageField]: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp()
+          };
+
+          if (needsReset) {
+              updateData.summaryUsage = usageField === 'summaryUsage' ? 1 : 0;
+              updateData.flashcardUsage = usageField === 'flashcardUsage' ? 1 : 0;
+              updateData.mindmapUsage = usageField === 'mindmapUsage' ? 1 : 0;
+              updateData.importUsage = usageField === 'importUsage' ? 1 : 0;
+              updateData.quizUsage = usageField === 'quizUsage' ? 1 : 0;
+              updateData.lastUsageReset = FieldValue.serverTimestamp();
+          }
+
+          transaction.update(userRef, updateData);
+        });
+      } catch (transactionErr: any) {
+        if (transactionErr?.message?.includes('Limite atingido')) {
+          throw transactionErr; // Re-throw limit errors
+        }
+        console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr?.message || transactionErr);
+      }
+    } else {
+      console.warn(`⚠️ [AI Route] Firestore não está disponível para registrar uso, continuando sem tracking de limites.`);
     }
 
     // 2. Perform AI action

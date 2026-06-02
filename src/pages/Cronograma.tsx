@@ -245,7 +245,16 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
       ).join('\n');
       
       const newSchedule = await generateSchedule(subjectsSummary, weeksCount * 7);
-      onUpdate({ ...contest, schedule: newSchedule, dailyGoalHours: dailyHours, dailyGoalQuestions: dailyQuestions });
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      onUpdate({ 
+        ...contest, 
+        schedule: newSchedule, 
+        dailyGoalHours: dailyHours, 
+        dailyGoalQuestions: dailyQuestions,
+        scheduleStartDate: todayStr
+      });
+      toast.success("Novo cronograma gerado iniciando a partir de hoje! 🗓️");
     } catch (error) {
       console.error("Erro ao gerar cronograma:", error);
       toast.error("Erro ao carregar o cronograma. Verifique sua conexão.");
@@ -262,6 +271,31 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     const diffTime = Math.max(0, now.getTime() - start.getTime());
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(1, diffDays + 1);
+  };
+
+  const handleRealignment = () => {
+    if (!contest.schedule || contest.schedule.length === 0) return;
+    
+    // Find first day not completed
+    const firstIncomplete = contest.schedule.find(d => !d.completed);
+    if (!firstIncomplete) {
+      toast.info("Todas as suas metas já estão concluídas! 🎉");
+      return;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Set start date such that: firstIncomplete.dayNumber starts today
+    const newStart = new Date(today.getTime() - (firstIncomplete.dayNumber - 1) * 24 * 60 * 60 * 1000);
+    const newStartStr = newStart.toISOString().split('T')[0];
+    
+    onUpdate({
+      ...contest,
+      scheduleStartDate: newStartStr
+    });
+    
+    toast.success(`Cronograma realinhado com sucesso! Suas metas pendentes (a partir do Dia ${firstIncomplete.dayNumber}) foram trazidas para HOJE, limpando atrasos acumulados! 📆`);
   };
 
   const todayDayNumber = getTodayDayNumber();
@@ -593,7 +627,16 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
              </div>
            </div>
 
-           <div className="flex gap-2">
+            <button
+              onClick={handleRealignment}
+              className="flex-1 md:flex-none px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap"
+              title="Ajustar o cronograma para que o primeiro dia incompleto seja HOJE"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current text-indigo-500 hover:text-inherit shrink-0" />
+              Realinhar Metas para Hoje
+            </button>
+
+            <div className="flex gap-2">
              <button 
               onClick={() => { if(confirm("Deseja deletar e gerar um novo cronograma?")) onUpdate({ ...contest, schedule: [] }) }}
               className="p-3.5 bg-red-500/5 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
