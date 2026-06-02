@@ -12,6 +12,7 @@ export default defineConfig(({mode}) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
+        manifestFilename: 'manifest.json',
         includeAssets: ['favicon.ico', 'logo.png', 'logo_pwa.png', 'apple-touch-icon.png'],
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
@@ -20,24 +21,35 @@ export default defineConfig(({mode}) => {
           name: 'Stratis Planner',
           short_name: 'Stratis',
           description: 'Sistema inteligente de cronogramas e estudos para concursos públicos.',
+          start_url: '/',
+          display: 'standalone',
+          orientation: 'portrait',
           theme_color: '#0f172a',
           background_color: '#f8fafc',
           icons: [
             {
               src: '/logo_pwa.png',
               sizes: '192x192',
-              type: 'image/png'
+              type: 'image/png',
+              purpose: 'any'
             },
             {
               src: '/logo_pwa.png',
-              sizes: '512x512',
-              type: 'image/png'
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'maskable'
             },
             {
               src: '/logo_pwa.png',
               sizes: '512x512',
               type: 'image/png',
-              purpose: 'any maskable'
+              purpose: 'any'
+            },
+            {
+              src: '/logo_pwa.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
             }
           ]
         }

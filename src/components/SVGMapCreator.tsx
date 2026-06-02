@@ -65,7 +65,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex justify-center items-end sm:items-center sm:p-4">
       <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName="Mapas Mentais Ilimitados" />
-      <div className="bg-white w-full max-w-5xl h-[95vh] sm:h-[85vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-300">
+      <div className="bg-white w-full max-w-5xl h-full max-h-[85dvh] sm:max-h-[85vh] sm:h-[85vh] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:fade-in duration-300">
         <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-border shrink-0 bg-white">
           <input 
             value={title}
@@ -116,17 +116,19 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
               </div>
             </div>
         </div>
-        <div className="p-4 sm:p-6 flex-1 flex flex-wrap justify-center gap-4 sm:gap-6 overflow-y-auto bg-slate-100">
-          {svgs.map((svg, index) => (
-            <div key={index} className="w-[45%] sm:w-48 aspect-[1/1.414] bg-white shadow-sm sm:shadow-md rounded-none overflow-hidden flex items-center justify-center shrink-0">
-              <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
-            </div>
-          ))}
-          {svgs.length < 5 && (
-            <button onClick={addSvg} className="w-[45%] sm:w-48 aspect-[1/1.414] border-2 border-dashed border-slate-300 rounded-none flex items-center justify-center hover:bg-slate-50 shrink-0">
-              <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
-            </button>
-          )}
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto bg-slate-100 flex flex-col">
+          <div className="m-auto w-full flex flex-wrap justify-center gap-4 sm:gap-6">
+            {svgs.map((svg, index) => (
+              <div key={index} className="w-[45%] sm:w-48 aspect-[1/1.414] bg-white shadow-sm sm:shadow-md rounded-none overflow-hidden flex items-center justify-center shrink-0">
+                <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+              </div>
+            ))}
+            {svgs.length < 5 && (
+              <button onClick={addSvg} className="w-[45%] sm:w-48 aspect-[1/1.414] border-2 border-dashed border-slate-300 rounded-none flex items-center justify-center hover:bg-slate-50 shrink-0">
+                <ImageIcon className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -12,6 +12,31 @@ import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/
 
 dotenv.config();
 
+// Self-healing icon copies for PWA compatibility and pre-cache safety
+try {
+  const publicDir = path.join(process.cwd(), 'public');
+  const logoPwaPath = path.join(publicDir, 'logo_pwa.png');
+  if (fs.existsSync(logoPwaPath)) {
+    const faviconPath = path.join(publicDir, 'favicon.ico');
+    const appleIconPath = path.join(publicDir, 'apple-touch-icon.png');
+    const appleIconPrecom = path.join(publicDir, 'apple-touch-icon-precomposed.png');
+    
+    if (!fs.existsSync(faviconPath)) {
+      fs.copyFileSync(logoPwaPath, faviconPath);
+      console.log('✅ PWA: Copied logo_pwa.png to favicon.ico');
+    }
+    if (!fs.existsSync(appleIconPath)) {
+      fs.copyFileSync(logoPwaPath, appleIconPath);
+      console.log('✅ PWA: Copied logo_pwa.png to apple-touch-icon.png');
+    }
+    if (!fs.existsSync(appleIconPrecom)) {
+      fs.copyFileSync(logoPwaPath, appleIconPrecom);
+    }
+  }
+} catch (iconErr) {
+  console.warn('⚠️ Non-fatal: Failed to ensure fallback icon files:', iconErr);
+}
+
 // Register global error catchers to prevent unhandled rejections or uncaught exceptions from crashing the server
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🔥 [Unhandled Promise Rejection]:', reason);
