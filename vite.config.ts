@@ -16,8 +16,11 @@ export default defineConfig(({mode}) => {
         includeAssets: ['favicon.ico', 'logo.png', 'logo_pwa.png', 'apple-touch-icon.png'],
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          importScripts: ['/firebase-messaging-sw.js']
         },
         manifest: {
+          id: '/',
+          gcm_sender_id: '684995404002',
           name: 'Stratis Planner',
           short_name: 'Stratis',
           description: 'Sistema inteligente de cronogramas e estudos para concursos públicos.',
@@ -52,7 +55,7 @@ export default defineConfig(({mode}) => {
               purpose: 'maskable'
             }
           ]
-        }
+        } as any
       })
     ],
     define: {

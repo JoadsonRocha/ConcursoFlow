@@ -105,10 +105,8 @@ export const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      // Registrar explicitamente o Service Worker do Firebase para garantir funcionamento em mobile
-      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-        scope: '/firebase-cloud-messaging-push-scope'
-      });
+      // Usar o Service Worker principal (que agora importa o script do firebase)
+      const registration = await navigator.serviceWorker.ready;
       
       const token = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BDvuiqC7UGhpS13HspovFt_T7okTNxj0fexcUYz9KkSX4Cer1XQvWyEJsu2qNPQN_to4bozEcYKXQdLANOjWBTg',
