@@ -43,6 +43,12 @@ const app = initializeApp(config);
 // Ativar App Check apenas em produção ou se houver chave definida
 // Em desenvolvimento, o Firebase possui um debug token que pode ser configurado no console
 if (typeof window !== 'undefined') {
+  if (import.meta.env.DEV) {
+    // Quando definido como true, o Firebase imprimirá um debug token no console do navegador.
+    // Esse token deve ser copiado e colado na seção "App Check" > "Apps" do Firebase Console.
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+  
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   if (siteKey) {
     initializeAppCheck(app, {
@@ -131,6 +137,9 @@ export const sendEmail = async (to: string | string[], subject: string, html: st
     await addDoc(mailRef, {
       to,
       from: "Stratis Planner <suporte@stratisplanner.com.br>",
+      subject,
+      html,
+      text: text || '',
       message: {
         subject,
         html,
