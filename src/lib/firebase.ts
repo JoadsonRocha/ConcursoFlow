@@ -130,6 +130,7 @@ export const sendEmail = async (to: string | string[], subject: string, html: st
     const mailRef = collection(db, 'mail');
     await addDoc(mailRef, {
       to,
+      from: "Stratis Planner <suporte@stratisplanner.com.br>",
       message: {
         subject,
         html,
