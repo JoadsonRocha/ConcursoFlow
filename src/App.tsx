@@ -601,6 +601,16 @@ export default function App() {
     setShowBetaModal(false);
   };
 
+  if (location.pathname === '/reset-password') {
+    return (
+      <div className="h-[100dvh] w-full overflow-y-auto bg-bg">
+        <Routes>
+          <Route path="/reset-password" element={<ResetPassword />} />
+        </Routes>
+      </div>
+    );
+  }
+
   if (authLoading || (user && dataLoading) || (user && !currentContest && contests.length > 0)) {
     return (
       <div className="h-[100dvh] w-screen flex flex-col items-center justify-center bg-bg gap-4">

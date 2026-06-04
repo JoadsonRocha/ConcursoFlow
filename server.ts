@@ -273,7 +273,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const rawLink = await admin.auth().generatePasswordResetLink(email);
     const url = new URL(rawLink);
-    url.host = 'app.stratisplanner.com.br';
+    url.host = 'www.stratisplanner.com.br';
     const link = url.toString();
     
     // Configura o email
@@ -315,7 +315,7 @@ app.post('/api/auth/verify-email', async (req, res) => {
   try {
     const rawLink = await admin.auth().generateEmailVerificationLink(email);
     const url = new URL(rawLink);
-    url.host = 'app.stratisplanner.com.br';
+    url.host = 'www.stratisplanner.com.br';
     const link = url.toString();
     
     // Configura o email

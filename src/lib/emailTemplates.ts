@@ -24,7 +24,7 @@ export const getWelcomeEmailTemplate = (name: string) => `
       <p>Estamos muito felizes em ter você conosco no Stratis Planner.</p>
       <p>Nossa plataforma foi criada para ajudar você a planejar, organizar e alcançar seus objetivos de forma inteligente.</p>
       <div style="text-align: center;">
-        <a href="https://app.stratisplanner.com.br/dashboard" class="btn" style="color: white;">Acessar meu Dashboard</a>
+        <a href="https://www.stratisplanner.com.br/dashboard" class="btn" style="color: white;">Acessar meu Dashboard</a>
       </div>
       <p style="margin-top: 30px;">Se precisar de ajuda, basta responder a este email.</p>
       <p>Abraços,<br>Equipe Stratis Planner</p>
