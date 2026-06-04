@@ -67,17 +67,21 @@ export const storage = getStorage(app);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 export let analytics: any = null;
 if (typeof window !== 'undefined') {
-  isSupported().then((supported) => {
-    if (supported) {
-      try {
-        analytics = getAnalytics(app);
-      } catch (e) {
-        console.warn("Analytics initialization failed, skipping:", e);
+  try {
+    isSupported().then((supported) => {
+      if (supported) {
+        try {
+          analytics = getAnalytics(app);
+        } catch (e) {
+          console.warn("Analytics initialization failed, skipping:", e);
+        }
       }
-    }
-  }).catch((e) => {
-    console.warn("Analytics isSupported check failed, skipping:", e);
-  });
+    }).catch((e) => {
+      console.warn("Analytics isSupported check blocked (likely by an adblocker):", e);
+    });
+  } catch (err) {
+    console.warn("Analytics initialization block, skipping:", err);
+  }
 }
 
 export const logPageView = (path: string, title?: string) => {
@@ -128,28 +132,34 @@ export const requestNotificationPermission = async () => {
 };
 
 /**
- * Envia um email através da extensão do Resend para o Firebase
- * escrevendo um documento na coleção 'mail'
+ * Envia um email enviando uma requisição para o nosso próprio backend,
+ * que usa diretamente a SDK do Resend.
  */
 export const sendEmail = async (to: string | string[], subject: string, html: string, text?: string) => {
   try {
-    const mailRef = collection(db, 'mail');
-    await addDoc(mailRef, {
-      to,
-      from: "Stratis Planner <suporte@stratisplanner.com.br>",
-      subject,
-      html,
-      text: text || '',
-      message: {
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to,
+        from: "Stratis Planner <suporte@stratisplanner.com.br>",
         subject,
         html,
         text: text || '',
-      }
+      })
     });
-    console.log('Email enviado para fila de processamento');
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.error || 'Erro ao enviar email pela API');
+    }
+
+    console.log('Email disparado com sucesso pela API');
     return true;
   } catch (error) {
-    console.error('Erro ao enviar email:', error);
+    console.error('Erro ao enviar email através da API:', error);
     throw error;
   }
 };

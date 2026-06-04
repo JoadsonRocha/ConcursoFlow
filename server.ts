@@ -238,6 +238,118 @@ app.post('/api/notify', async (req, res) => {
   }
 });
 
+// Endpoint para envio direto de email via Resend (Alternativa à extensão do Firebase)
+import { Resend } from 'resend';
+const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
+
+app.post('/api/send-email', async (req, res) => {
+  const { to, subject, html, text, from } = req.body;
+  if (!to || !subject) return res.status(400).json({ error: 'Faltam campos obrigatórios para envio de email' });
+  
+  try {
+    const data = await resend.emails.send({
+      from: from || 'Stratis Planner <suporte@stratisplanner.com.br>',
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+    });
+    
+    if (data.error) {
+      return res.status(400).json({ error: data.error.message });
+    }
+    
+    res.json({ success: true, data });
+  } catch (error: any) {
+    console.error('Erro ao enviar email diretamente via Resend:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
+
+  try {
+    const rawLink = await admin.auth().generatePasswordResetLink(email);
+    const url = new URL(rawLink);
+    url.host = 'app.stratisplanner.com.br';
+    const link = url.toString();
+    
+    // Configura o email
+    const subject = 'Redefinição de Senha - Stratis Planner';
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Redefina sua senha</h2>
+        <p>Você solicitou a redefinição da sua senha no Stratis Planner.</p>
+        <p>Clique no botão abaixo para criar uma nova senha:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Redefinir Senha</a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">Se você não solicitou essa alteração, ignore este e-mail.</p>
+      </div>
+    `;
+
+    const data = await resend.emails.send({
+      from: 'Stratis Planner <suporte@stratisplanner.com.br>',
+      to: [email],
+      subject,
+      html,
+    });
+
+    if (data.error) {
+      return res.status(400).json({ error: data.error.message });
+    }
+
+    res.json({ success: true, message: 'Link de recuperação enviado com sucesso.' });
+  } catch (error: any) {
+    console.error('Erro ao gerar/enviar reset de senha:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/verify-email', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
+
+  try {
+    const rawLink = await admin.auth().generateEmailVerificationLink(email);
+    const url = new URL(rawLink);
+    url.host = 'app.stratisplanner.com.br';
+    const link = url.toString();
+    
+    // Configura o email
+    const subject = 'Verifique seu E-mail - Stratis Planner';
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Bem-vindo(a) ao Stratis Planner!</h2>
+        <p>Para concluir seu cadastro, por favor verifique seu endereço de e-mail.</p>
+        <p>Clique no botão abaixo para verificar:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${link}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Verificar E-mail</a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">Se você não se cadastrou no Stratis Planner, ignore este e-mail.</p>
+      </div>
+    `;
+
+    const data = await resend.emails.send({
+      from: 'Stratis Planner <suporte@stratisplanner.com.br>',
+      to: [email],
+      subject,
+      html,
+    });
+
+    if (data.error) {
+      return res.status(400).json({ error: data.error.message });
+    }
+
+    res.json({ success: true, message: 'Link de verificação enviado com sucesso.' });
+  } catch (error: any) {
+    console.error('Erro ao gerar/enviar verificação de e-mail:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Mount modular routes
 app.use('/api/ai', aiRoutes);
 

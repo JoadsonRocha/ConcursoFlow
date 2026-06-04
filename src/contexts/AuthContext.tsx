@@ -111,9 +111,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await updateProfile(res.user, { displayName: name });
     
     try {
-      await sendEmailVerification(res.user);
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!response.ok) {
+        // Fallback
+        await sendEmailVerification(res.user);
+      }
     } catch (err) {
-      console.error("Erro ao enviar email de verificação:", err);
+      console.error("Erro ao enviar email de verificação pela API (fallback acionado):", err);
+      try {
+        await sendEmailVerification(res.user);
+      } catch (e) {
+        console.error("Erro ao enviar email de verificação:", e);
+      }
     }
 
     // Explicitly create the profile doc here to ensure the name is captured
@@ -144,11 +157,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    const actionCodeSettings = {
-      url: `${window.location.origin}/reset-password`,
-      handleCodeInApp: false
-    };
-    return sendPasswordResetEmail(auth, email, actionCodeSettings);
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao redefinir a senha');
+      }
+      return data;
+    } catch (err) {
+      console.error('Erro no resetPassword:', err);
+      // Fallback para o modo tradicional se a API falhar ou backend estiver offline
+      return sendPasswordResetEmail(auth, email);
+    }
   };
 
     const userEmail = (profile?.email || user?.email || '').toLowerCase().trim();
