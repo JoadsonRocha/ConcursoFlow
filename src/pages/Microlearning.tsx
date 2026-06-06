@@ -23,7 +23,8 @@ import {
   Trash2,
   BookOpen,
   Globe,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -36,9 +37,10 @@ import SVGMapCreator from '../components/SVGMapCreator';
 import SVGMapViewer from '../components/SVGMapViewer';
 import { Node, Edge } from 'reactflow';
 import { useAuth } from '../contexts/AuthContext';
+import NotebookSources from '../components/NotebookSources';
 
 export default function Microlearning({ contest, onUpdate }: { contest?: Contest | null, onUpdate?: (contest: Contest) => void }) {
-  const { profile, isPro } = useAuth();
+  const { user, profile, isPro } = useAuth();
   const navigate = useNavigate();
 
   const saveStudySession = (totalSeconds: number, questionsCount: number = 0) => {
@@ -90,10 +92,10 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   };
 
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library'>(() => {
+  const [activeTab, setActiveTab] = useState<'selection' | 'quiz' | 'flashcards' | 'library' | 'notebook'>(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards') {
+    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards' || tabParam === 'notebook') {
       return tabParam as any;
     }
     return 'selection';
@@ -102,7 +104,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards') {
+    if (tabParam === 'library' || tabParam === 'selection' || tabParam === 'quiz' || tabParam === 'flashcards' || tabParam === 'notebook') {
       setActiveTab(tabParam as any);
     } else {
       setActiveTab('selection');
@@ -123,6 +125,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   const [flashcardToDelete, setFlashcardToDelete] = useState<string | string[] | null>(null);
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [personalMindMaps, setPersonalMindMaps] = useState<any[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
   const [isLibraryLoading, setIsLibraryLoading] = useState(true);
   const [librarySubTab, setLibrarySubTab] = useState<'flashcards' | 'maps'>('flashcards');
   const [dueCards, setDueCards] = useState<any[]>([]);
@@ -142,9 +145,9 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   };
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!user) return;
 
-    const q = query(collection(db, 'users', auth.currentUser.uid, 'flashcards'));
+    const q = query(collection(db, 'users', user.uid, 'flashcards'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setFlashcards(cards);
@@ -164,7 +167,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       setIsLibraryLoading(false);
     });
 
-    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', auth.currentUser.uid));
+    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid));
     const unsubscribeMaps = onSnapshot(qMaps, (snapshot) => {
       setPersonalMindMaps(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setIsLibraryLoading(false);
@@ -173,20 +176,28 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       setIsLibraryLoading(false);
     });
 
+    const qSources = query(collection(db, 'users', user.uid, 'sources'));
+    const unsubscribeSources = onSnapshot(qSources, (snapshot) => {
+      setSources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.error(err);
+    });
+
     return () => {
         unsubscribe();
         unsubscribeMaps();
+        unsubscribeSources();
     };
-  }, []);
+  }, [user]);
 
   const saveMindMap = async (svgData: string[], title: string) => {
-    if (!auth.currentUser) return;
+    if (!user) return;
     try {
       await addDoc(collection(db, 'mindmaps'), {
         title,
         svgData,
         isPublic: false,
-        ownerId: auth.currentUser.uid,
+        ownerId: user.uid,
         createdAt: serverTimestamp(),
         likesCount: 0,
         clonesCount: 0
@@ -220,15 +231,15 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   };
 
   const confirmDeleteFlashcard = async () => {
-    if (!flashcardToDelete || !auth.currentUser) return;
+    if (!flashcardToDelete || !user) return;
     try {
       if (Array.isArray(flashcardToDelete)) {
         await Promise.all(flashcardToDelete.map(id => 
-          deleteDoc(doc(db, 'users', auth.currentUser!.uid, 'flashcards', id))
+          deleteDoc(doc(db, 'users', user.uid, 'flashcards', id))
         ));
         toast.success("Coleção removida!");
       } else {
-        await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'flashcards', flashcardToDelete));
+        await deleteDoc(doc(db, 'users', user.uid, 'flashcards', flashcardToDelete));
         toast.success("Flashcard removido!");
       }
       setFlashcardToDelete(null);
@@ -267,7 +278,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   };
 
   const publishItem = async () => {
-    if (!auth.currentUser) return;
+    if (!user) return;
     
     if (!isPro) {
       setShowPublishModal(false);
@@ -297,7 +308,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
           title: publishForm.title,
           description: publishForm.description,
           isPublic: true,
-          ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          ownerName: user.displayName || user.email?.split('@')[0] || 'Concurseiro',
           ownerIsCreator: !!profile?.isCreator,
           publishedAt: serverTimestamp(),
         });
@@ -308,8 +319,8 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
           front: item.front,
           back: item.back,
           subjectName: item.subject || 'Geral',
-          ownerId: auth.currentUser.uid,
-          ownerName: auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Concurseiro',
+          ownerId: user.uid,
+          ownerName: user.displayName || user.email?.split('@')[0] || 'Concurseiro',
           ownerIsCreator: !!profile?.isCreator,
           likesCount: 0,
           clonesCount: 0,
@@ -552,7 +563,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                 />
               </div>
               <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex items-center justify-between text-xs text-slate-500">
-                <span>Autor: <strong className="text-slate-700">{auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0]}</strong></span>
+                <span>Autor: <strong className="text-slate-700">{user?.displayName || user?.email?.split('@')[0]}</strong></span>
                 <span>{new Date().toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
@@ -998,6 +1009,22 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
     );
   }
 
+  if (activeTab === 'notebook') {
+    return (
+      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20 select-none">
+        {allModals}
+        <NotebookSources 
+          onBack={() => {
+            setActiveTab('selection');
+            navigate('/microaprendizado?tab=selection');
+          }} 
+          subjects={contest?.subjects || []}
+          contestId={contest?.id}
+        />
+      </div>
+    );
+  }
+
   if (activeTab === 'selection') {
     return (
       <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20">
@@ -1102,6 +1129,50 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                   </button>
              </div>
           </div>
+
+          {/* Sources & AI Chat Sector */}
+          <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
+               <MessageSquare className="w-24 h-24 text-emerald-500" />
+            </div>
+            
+            <div className="space-y-4 relative z-10">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-emerald-500 shadow-sm">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-display text-text-main font-bold">Fontes & Chat</h3>
+                <p className="text-text-sub text-xs leading-relaxed italic">Estude perguntando diretamente para as suas fontes (PDF, Web, YouTube).</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4 relative z-10">
+               <div className="flex gap-2">
+                  <div className="p-3 bg-slate-50 border border-border rounded-xl text-center flex-1">
+                    <div className="text-xl font-display font-bold text-text-main">{sources.length}</div>
+                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-1">Fontes</div>
+                  </div>
+                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center flex-1 flex flex-col justify-center items-center">
+                    <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
+                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Ativo</div>
+                  </div>
+               </div>
+
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={() => {
+                      setActiveTab('notebook');
+                      navigate('/microaprendizado?tab=notebook');
+                    }}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Entrar no Notebook
+                  </button>
+               </div>
+            </div>
+          </div>
+
         </div>
         
         {showMindMapCreator && (

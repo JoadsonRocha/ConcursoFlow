@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { getStorage } from 'firebase/storage';
 import { auth, db, updateProfile as firebaseUpdateProfile, sendPasswordResetEmail } from '../lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { createCheckoutSession, createPortalSession } from '../services/stripe';
 import { toast } from 'sonner';
 import ProModal from '../components/ProModal';
@@ -105,7 +105,10 @@ export default function Perfil() {
     if (!user) return;
     try {
       const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { tourCompleted: !profile?.tourCompleted });
+      await updateDoc(userRef, { 
+        tourCompleted: !profile?.tourCompleted,
+        updatedAt: serverTimestamp()
+      });
     } catch (err) {
       console.error("Erro ao atualizar tour:", err);
     }
@@ -187,7 +190,7 @@ export default function Perfil() {
         nivelAtual,
         fraseStatus,
         isCreator,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       });
       
       const authUpdates: { displayName?: string, photoURL?: string } = { displayName };

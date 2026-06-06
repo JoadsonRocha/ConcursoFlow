@@ -166,11 +166,7 @@ export default function Auth() {
                   {authMode === 'recover' && 'Enviaremos instruções para redefinir sua senha.'}
                   {authMode === 'success_recover' && 'Verifique sua caixa de entrada para redefinir a senha.'}
                 </p>
-                {authMode === 'signup' && (
-                  <div className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-md mt-1 w-fit">
-                    Acesso PRO Ativado
-                  </div>
-                )}
+
               </div>
             </div>
           </header>
@@ -227,7 +223,7 @@ export default function Auth() {
                       <input 
                         type="text"
                         required
-                        placeholder="Ex: Joadson Rocha"
+                        placeholder="Ex: João Silva"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="w-full bg-white border border-border rounded-xl py-3 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"

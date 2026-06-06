@@ -36,7 +36,12 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-const databaseId = firebaseConfig.firestoreDatabaseId;
+// Se o usuário estiver usando o próprio projeto via VITE_, usar o banco de dados default,
+// a menos que ele também especifique um DATABASE_ID customizado.
+const isCustomProject = !!import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const databaseId = isCustomProject 
+  ? (import.meta.env.VITE_FIREBASE_DATABASE_ID || '(default)') 
+  : firebaseConfig.firestoreDatabaseId;
 
 const app = initializeApp(config);
 

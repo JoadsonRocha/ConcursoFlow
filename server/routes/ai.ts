@@ -174,4 +174,117 @@ router.post('/tutor', authenticate, (req, res) => {
   handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.chatWithTutor(chatHistory, contextData));
 });
 
+function cleanHtml(html: string): string {
+  // Strip script, style, and svg tags first
+  let text = html.replace(/<(script|style|svg|noscript|header|footer|nav)[^>]*>([\s\S]*?)<\/\1>/gi, '');
+  // Strip all remaining HTML tags
+  text = text.replace(/<[^>]+>/g, ' ');
+  // Decode common HTML entities
+  text = text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  // Normalize whitespace
+  text = text.replace(/\s+/g, ' ').trim();
+  // Limit length to avoid massive inputs
+  return text.substring(0, 45000); 
+}
+
+// Endpoint to scrape plain-text content from any web page url
+router.post('/scrape-url', authenticate, async (req, res) => {
+  const { url } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: 'URL da página é obrigatória.' });
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ error: `Impossível acessar a URL solicitada (Status: ${response.status}).` });
+    }
+
+    const html = await response.text();
+    const cleanText = cleanHtml(html);
+
+    // Get title from <title> tag
+    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : 'Página da Web';
+
+    res.json({
+      title,
+      content: cleanText
+    });
+  } catch (err: any) {
+    console.error('Error scraping web page:', err);
+    res.status(500).json({ error: `Erro no servidor ao ler a página: ${err.message || err}` });
+  }
+});
+
+// Endpoint to fetch basic video details and description for any YouTube Watch link
+router.post('/scrape-youtube', authenticate, async (req, res) => {
+  const { url } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: 'URL do YouTube é obrigatória.' });
+  }
+
+  try {
+    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
+    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+
+    if (!videoId) {
+      return res.status(400).json({ error: 'ID do vídeo não identificado. Certifique-se de usar um link válido do YouTube.' });
+    }
+
+    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ error: 'Falha ao acessar os dados do YouTube.' });
+    }
+
+    const html = await response.text();
+    
+    // Extract title
+    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].replace('- YouTube', '').trim() : 'Vídeo do YouTube';
+
+    // Extract description from meta tag
+    const descMatch = html.match(/<meta\s+name="description"\s+content="([\s\S]*?)"/i) || html.match(/<meta\s+property="og:description"\s+content="([\s\S]*?)"/i);
+    const description = descMatch ? descMatch[1].trim() : '';
+
+    const content = `Vídeo do YouTube: ${title}\nURL: ${url}\nID do Vídeo: ${videoId}\n\nDescrição do Vídeo:\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n[Nota: Conteúdo de vídeo importado para o Notebook Stratis. Use seu conhecimento de IA associado para responder dúvidas táticas adicionais sobre este tema.]`;
+
+    res.json({
+      title,
+      description,
+      content
+    });
+  } catch (err: any) {
+    console.error('Error fetching YouTube details:', err);
+    res.status(500).json({ error: `Erro no servidor ao ler vídeo do YouTube: ${err.message || err}` });
+  }
+});
+
+// Endpoint to chat with a study source
+router.post('/chat-document', authenticate, (req, res) => {
+  const { message, chatHistory, sourceContent, sourceTitle } = req.body;
+  if (!message || !sourceContent || !sourceTitle) {
+    return res.status(400).json({ error: 'Campos obrigatórios ausentes para o chat com documento.' });
+  }
+  handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => 
+    GeminiService.chatWithDocument(message, chatHistory || [], sourceContent, sourceTitle)
+  );
+});
+
 export default router;

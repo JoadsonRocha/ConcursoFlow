@@ -145,7 +145,7 @@ export default function App() {
               fcmToken: token, // Mantido para compatibilidade retrospectiva
               fcmTokens: updatedTokens,
               notificationsEnabled: true,
-              updatedAt: new Date()
+              updatedAt: serverTimestamp()
             });
             localStorage.setItem('stratis_fcm_token_device', token);
             console.log('Token FCM salvo com sucesso para este dispositivo:', token);

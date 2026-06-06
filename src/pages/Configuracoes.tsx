@@ -58,8 +58,33 @@ export default function Settings({ onImport, contests }: SettingsProps) {
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
+      let activePdfjs: any = pdfjs;
+      
+      // Verification if the imported pdfjs is fully functional, otherwise fallback
+      if (!activePdfjs || typeof activePdfjs.getDocument !== 'function') {
+        activePdfjs = await new Promise<any>((resolve, reject) => {
+          if ((window as any).pdfjsLib) {
+            resolve((window as any).pdfjsLib);
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+          script.onload = () => {
+            const lib = (window as any).pdfjsLib;
+            if (lib) {
+              lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+              resolve(lib);
+            } else {
+              reject(new Error('pdfjsLib not found on window after CDN load'));
+            }
+          };
+          script.onerror = () => reject(new Error('Failed to load pdf.js from CDN'));
+          document.body.appendChild(script);
+        });
+      }
+
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const pdf = await activePdfjs.getDocument({ data: arrayBuffer }).promise;
       let fullText = "";
       
       const numPages = Math.min(pdf.numPages, 50); 
@@ -73,7 +98,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
       return fullText;
     } catch (err) {
       console.error("PDF Extraction error:", err);
-      throw new Error("Não foi possível ler o PDF. Tente copiar e colar o texto manualmente.");
+      throw new Error("Não foi possível ler o PDF. Certifique-se de que não possui senha ou tente copiar e colar o texto manualmente.");
     }
   };
 

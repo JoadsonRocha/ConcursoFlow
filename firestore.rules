@@ -3,137 +3,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // ======================================================
-    // 1. GLOBAL HELPERS & SAFETY
-    // ======================================================
-    
-    match /{document=**} {
-      allow read, write: if false; // Default deny
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    // ======================================================
-    // 2. ENTITY VALIDATORS
-    // ======================================================
-
-    function isValidUser(data) {
-      return data.email is string 
-        && data.uid == request.auth.uid
-        && (!data.hasAll(['displayName']) || (data.displayName is string && data.displayName.size() <= 100))
-        && (!data.hasAll(['userPlan']) || (data.userPlan in ['free', 'pro', 'annual', 'monthly']))
-        && data.keys().hasAll(['email', 'uid', 'createdAt', 'updatedAt']);
-    }
-
-    function isValidContest(data) {
-      return data.name is string && data.name.size() <= 200
-        && data.role is string && data.role.size() <= 200
-        && data.ownerId == request.auth.uid
-        && data.keys().hasAll(['name', 'role', 'ownerId']);
-    }
-
-    function isValidSupportTicket(data) {
-      return data.name is string && data.name.size() <= 100
-        && data.email is string && data.email.size() <= 100
-        && data.message is string && data.message.size() <= 5000
-        && (!data.hasAll(['subject']) || (data.subject is string && data.subject.size() <= 200))
-        && data.keys().hasAll(['name', 'email', 'message', 'createdAt']);
-    }
-
-    // ======================================================
-    // 3. COLLECTION RULES
-    // ======================================================
-
-    // Users Profiles
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) 
-        && isValidUser(incoming());
-      
-      allow update: if isOwner(userId) 
-        && isValidUser(incoming())
-        && (!incoming().diff(existing()).affectedKeys().hasAny(['uid', 'createdAt', 'userPlan', 'isCreator', 'subscriptionId', 'summaryUsage', 'flashcardUsage', 'mindmapUsage', 'importUsage', 'quizUsage', 'lastUsageReset'])) // Lockdown immutable fields
-        && incoming().updatedAt == request.time;
-        
-      // Subcollection: Contests
-      match /contests/{contestId} {
-        allow list: if isOwner(userId);
-        allow get: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidContest(incoming()) && incoming().createdAt == request.time;
-        allow update: if isOwner(userId) && isValidContest(incoming()) && incoming().updatedAt == request.time;
-        allow delete: if isOwner(userId);
-      }
-      
-      // Subcollection: Flashcards
-      match /flashcards/{flashcardId} {
-        allow list: if isOwner(userId);
-        allow get: if isOwner(userId);
-        allow write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
-    // MindMaps
-    match /mindmaps/{mindmapId} {
-      allow read: if resource.data.isPublic == true || isOwner(resource.data.ownerId);
-      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update, delete: if isOwner(existing().ownerId);
-    }
-
-    // Community Collections (Shared)
-    match /shared_contests/{sharedId} {
-      allow list: if true;
-      allow get: if true;
-      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
-      allow update: if isOwner(existing().ownerId);
-      allow delete: if isOwner(existing().ownerId);
-    }
-
-    match /shared_flashcards/{sharedId} {
-      allow list: if true;
-      allow get: if true;
-      allow write: if isSignedIn() && (request.method == 'create' ? incoming().ownerId == request.auth.uid : isOwner(existing().ownerId));
-    }
-
-    match /shared_decks/{deckId} {
-      allow list: if true;
-      allow get: if true;
-      allow write: if isSignedIn() && (request.method == 'create' ? incoming().ownerId == request.auth.uid : isOwner(existing().ownerId));
-    }
-
-    // Connection Test Document
-    match /test/connection {
+    match /mindmaps/{document=**} {
       allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    // Mail collection for Resend/Firebase Email Extension
-    match /mail/{mailId} {
-      allow create: if isSignedIn();
-      allow read, update, delete: if false;
+    match /shared_contests/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    // Support Tickets
-    match /support_tickets/{ticketId} {
-      allow create: if isValidSupportTicket(incoming()) 
-        && incoming().createdAt == request.time;
-      allow read, update, delete: if false; // Secure access for admins only via console for now
+    match /shared_decks/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /shared_flashcards/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /support_tickets/{document=**} {
+      allow create: if true;
+      allow read, write: if request.auth != null;
+    }
+
+    match /feedbacks/{document=**} {
+      allow create: if true;
+      allow read, write: if request.auth != null;
+    }
+
+    match /mail/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Default fallback - allow nothing
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

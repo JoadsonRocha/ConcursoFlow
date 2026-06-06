@@ -8,6 +8,19 @@ import { Toaster } from 'sonner';
 import { registerSW } from 'virtual:pwa-register';
 import './index.css';
 
+// Polyfill for older browsers/mobile devices (e.g., Promise.withResolvers is used by modern pdfjs-dist)
+if (typeof (Promise as any).withResolvers === "undefined") {
+  (Promise as any).withResolvers = function <T>() {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: any) => void;
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 // Automatically register service worker
 const updateSW = registerSW({
   onNeedRefresh() {

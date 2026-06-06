@@ -24,6 +24,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useContestStats } from '../hooks/useContestStats';
 import { db, auth } from '../lib/firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface EstatisticasProps {
@@ -34,6 +35,7 @@ type TabType = 'geral' | 'mepp';
 
 export default function Estatisticas({ contest }: EstatisticasProps) {
   const stats = useContestStats(contest);
+  const { user } = useAuth();
   const { 
     overallProgress, 
     totalTopics, 
@@ -62,12 +64,12 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
 
   // Load real-time stats from firestore for flashcards and mindmaps
   useEffect(() => {
-    if (!auth.currentUser) {
+    if (!user) {
       setLoadingFirestoreStats(false);
       return;
     }
 
-    const qCards = query(collection(db, 'users', auth.currentUser.uid, 'flashcards'));
+    const qCards = query(collection(db, 'users', user.uid, 'flashcards'));
     const unsubscribeCards = onSnapshot(qCards, (snapshot) => {
       const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setFlashcardCount(cards.length);
@@ -85,7 +87,7 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
       setLoadingFirestoreStats(false);
     });
 
-    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', auth.currentUser.uid));
+    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid));
     const unsubscribeMaps = onSnapshot(qMaps, (snapshot) => {
       setMindmapCount(snapshot.docs.length);
     }, (err) => {
@@ -96,7 +98,7 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
       unsubscribeCards();
       unsubscribeMaps();
     };
-  }, []);
+  }, [user]);
 
   return (
     <div className="flex-1 w-full max-w-7xl mx-auto space-y-6 lg:space-y-8 pb-16 overflow-x-hidden animate-fade-in px-4 sm:px-6">

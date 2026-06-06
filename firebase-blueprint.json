@@ -110,6 +110,31 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "message", "createdAt"]
+    },
+    "StudySource": {
+      "title": "Study Source",
+      "description": "An interactive study document (text, file, youtube url, webpage) for document chat.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "file", "youtube", "web"] },
+        "content": { "type": "string" },
+        "url": { "type": "string" },
+        "fileName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "content", "createdAt"]
+    },
+    "SourceMessage": {
+      "title": "Source Message",
+      "description": "A chat message inside a study source chat session.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "content", "createdAt"]
     }
   },
   "firestore": {
@@ -124,6 +149,14 @@
     "/users/{userId}/flashcards/{flashcardId}": {
       "schema": "Flashcard",
       "description": "Stores private user flashcards."
+    },
+    "/users/{userId}/sources/{sourceId}": {
+      "schema": "StudySource",
+      "description": "Stores user-specific customized study sources (web, YouTube, PDF, etc.)."
+    },
+    "/users/{userId}/sources/{sourceId}/messages/{messageId}": {
+      "schema": "SourceMessage",
+      "description": "Stores messages exchanged inside a study source context chat."
     },
     "/mindmaps/{mindmapId}": {
       "schema": "MindMap",

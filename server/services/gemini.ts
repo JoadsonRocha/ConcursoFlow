@@ -441,3 +441,41 @@ export async function analyzePareto(contestRole: string, banca: string, subjects
   return parseJsonResponse(text || "{}", {});
 }
 
+export async function chatWithDocument(message: string, chatHistory: any[], sourceContent: string, sourceTitle: string) {
+  const systemInstruction = `Você é um Tutor de Estudos especialista da plataforma StratisPlanner.
+  Você está fornecendo mentoria inteligente para o aluno com base na seguinte FONTE DE ESTUDO ATIVA.
+  
+  FONTE DE ESTUDO ATIVA:
+  - Título: "${sourceTitle}"
+  - Conteúdo da Fonte:
+  --- INÍCIO DO CONTEÚDO ---
+  ${sourceContent}
+  --- FIM DO CONTEÚDO ---
+  
+  DIRETRIZES DE RESPOSTA CRÍTICAS:
+  1. Responda diretamente e didaticamente à dúvida do aluno, preferindo sempre utilizar o CONTEÚDO da fonte fornecida acima.
+  2. Se a explicação exigir fatos táticos, cite as partes relevantes do texto.
+  3. Se a informação NÃO estiver de modo algum descrita ou sugerida no texto da fonte, informe educadamente que essa informação específica não está contida nesta fonte, mas dê um direcionamento estratégico confiável do que você sabe a respeito, se for útil para o concurso.
+  4. Mantenha respostas altamente estruturadas, pragmáticas, fáceis de ler no celular, usando Markdown (parágrafos curtos, bullets táticos, termos chaves em negrito).
+  5. Estimule o aprendizado ativo. Incentive o usuário a testar o conhecimento em flashcards ou mapas mentais baseados na matéria estudada.`;
+
+  const formattedHistory = chatHistory.map(msg => ({
+    role: msg.role === "user" ? "user" : "model",
+    parts: [{ text: msg.content }]
+  }));
+
+  const contents = [
+    ...formattedHistory,
+    { role: "user", parts: [{ text: message }] }
+  ];
+
+  const response = await generateWithRetryAndFallback({
+    contents,
+    config: {
+      systemInstruction
+    }
+  }, "gemini-3.5-flash");
+
+  return response.text || "Desculpe, não consegui analisar o documento no momento.";
+}
+

@@ -31,10 +31,14 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
 
     const unsubFlash = onSnapshot(collection(db, 'users', user.uid, 'flashcards'), (snap) => {
       setPersonalFlashcardsCount(snap.docs.length);
+    }, (err) => {
+      console.warn("Erro ao carregar contagem de flashcards:", err);
     });
 
     const unsubMaps = onSnapshot(query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid)), (snap) => {
       setPersonalMapsCount(snap.docs.length);
+    }, (err) => {
+      console.warn("Erro ao carregar contagem de mapas mentais:", err);
     });
 
     return () => {
@@ -57,7 +61,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
         setSharedContests(docs);
         setLoading(false);
       }, (err) => {
-        console.error("Erro ao carregar comunidade:", err);
+        console.error("Erro ao carregar edital da comunidade:", err);
         setLoading(false);
       });
       return () => unsubscribe();
@@ -73,6 +77,9 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
         }));
         setSharedDecks(docs);
         setLoading(false);
+      }, (err) => {
+        console.error("Erro ao carregar decks compartilhados:", err);
+        setLoading(false);
       });
       return () => unsubscribe();
     } else {
@@ -86,6 +93,9 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
           id: doc.id
         }));
         setSharedMindMaps(docs);
+        setLoading(false);
+      }, (err) => {
+        console.error("Erro ao carregar mapas mentais compartilhados:", err);
         setLoading(false);
       });
       return () => unsubscribe();
