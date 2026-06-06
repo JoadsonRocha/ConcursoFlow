@@ -77,7 +77,12 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
       const now = new Date();
       const due = cards.filter((card: any) => {
         if (!card.nextReview) return true;
-        const reviewDate = card.nextReview.toDate();
+        let reviewDate;
+        if (typeof card.nextReview.toDate === 'function') {
+          reviewDate = card.nextReview.toDate();
+        } else {
+          reviewDate = new Date(card.nextReview);
+        }
         return reviewDate <= now;
       });
       setDueFlashcardCount(due.length);

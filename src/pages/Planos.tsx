@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { CheckCircle2, Zap, Star, Loader2, CreditCard, ArrowRight, ShieldCheck, Target, BrainCircuit, Calendar, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,10 @@ export default function Planos() {
   const { user, profile, planType } = useAuth();
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handlePlanAction = async (planId: string) => {
     if (!user) {
@@ -35,11 +39,11 @@ export default function Planos() {
   const premiumFeatures = [
     { name: 'Edital Verticalizado Inteligente', desc: 'Organização e Checklist completo para controle de tópicos' },
     { name: 'Análise de Pareto de Recorrência (80/20)', desc: 'Identificação preditiva dos temas mais prioritários de cada banca' },
-    { name: 'AI Flashcards & Mapas Mentais Ilimitados', desc: 'Criação ilimitada com revisão ativa e repetição espaçada' },
+    { name: 'Notebook Stratis (Caderno Inteligente)', desc: 'Geração 10x mais rápida de Flashcards, Mapas Mentais e Quizzes via PDF/Texto' },
     { name: 'Mentor Stratis Inteligente (Coaching 24/7)', desc: 'Tutor de inteligência artificial de plantão para tirar qualquer dúvida' },
     { name: 'Grade de Similaridade entre Editais', desc: 'Mapeamento instantâneo de disciplinas para conciliar múltiplos concursos' },
     { name: 'Estatísticas & Analytics Avançados', desc: 'Acompanhamento profundo de horas líquidas, simulados e metas' },
-    { name: 'Aulas Rápidas e Resumos por IA', desc: 'Módulo de microlearning com resumos gerados sob demanda' },
+    { name: 'Flashcards & Mapas Dinâmicos Ilimitados', desc: 'Módulo de microlearning focado na retenção e repetição espaçada' },
     { name: 'Cronogramas Adaptativos até 12 Semanas', desc: 'Planejamento dinâmico focado no seu tempo disponível real' },
     { name: 'Exportação Premium de Planos (PDF)', desc: 'Geração e download de cronogramas e editais em alta qualidade para impressão' },
     { name: 'Modo Foco Imersivo com Lofi & Pomodoro', desc: 'Simulador mental com efeitos binaurais para concentração máxima' },
@@ -48,7 +52,7 @@ export default function Planos() {
 
   const plans = [
     { id: 'monthly_plan', name: 'Mensal PRO', price: 'R$ 29,90', period: 'mês' },
-    { id: 'annual_plan', name: 'Anual PRO', price: 'R$ 197,90', period: 'ano' }
+    { id: 'annual_plan', name: 'Anual PRO', price: 'R$ 297,90', period: 'ano' }
   ];
 
   const isMonthlyCurrent = 
@@ -161,11 +165,11 @@ export default function Planos() {
                 </div>
                 
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-2xl font-black text-slate-900">R$ 197,90</span>
+                  <span className="text-2xl font-black text-slate-900">R$ 297,90</span>
                   <span className="text-[10px] text-slate-400 font-bold uppercase">/ano</span>
                 </div>
                 <div className="text-[10px] text-slate-500 font-medium mb-4">
-                  (Equivale a apenas <span className="text-slate-800 font-bold">R$ 16,49/mês</span>)
+                  (Equivale a apenas <span className="text-slate-800 font-bold">R$ 24,82/mês</span>)
                 </div>
 
                 <button

@@ -296,7 +296,7 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
           <div>
             <h1 className="text-xl md:text-2xl font-display font-bold text-text-main flex items-center gap-2 italic uppercase">
               <Award className="w-5 h-5 text-indigo-500 animate-pulse" />
-              Mentor MEPP
+              Revisão Stratis
             </h1>
             <p className="text-xs text-text-sub font-semibold mt-1">
               Guia de revisões espaçadas para vencer a curva do esquecimento
@@ -326,7 +326,7 @@ const MentorMepp: React.FC<MentorMeppProps> = ({ contest, onUpdate }) => {
               </div>
               <div>
                 <h5 className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1">
-                  ⚠️ Alerta do Mentor MEPP: Curva do Esquecimento Ativada!
+                  ⚠️ Alerta de Revisão Stratis: Curva do Esquecimento Ativada!
                 </h5>
                 <p className="text-[10px] md:text-xs font-semibold text-amber-900/80 leading-relaxed max-w-3xl mt-0.5">
                   Você tem <strong>{dueReviews.length} revisões de matérias pendentes ou programadas para hoje</strong>. O segredo da aprovação inteligente é revisar ativamente antes de iniciar um bloco de teoria nova.

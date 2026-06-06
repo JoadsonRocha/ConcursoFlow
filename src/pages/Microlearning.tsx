@@ -24,7 +24,8 @@ import {
   BookOpen,
   Globe,
   Layers,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -38,10 +39,13 @@ import SVGMapViewer from '../components/SVGMapViewer';
 import { Node, Edge } from 'reactflow';
 import { useAuth } from '../contexts/AuthContext';
 import NotebookSources from '../components/NotebookSources';
+import ProModal from '../components/ProModal';
 
 export default function Microlearning({ contest, onUpdate }: { contest?: Contest | null, onUpdate?: (contest: Contest) => void }) {
   const { user, profile, isPro } = useAuth();
   const navigate = useNavigate();
+  const [showProModal, setShowProModal] = useState(false);
+  const [proFeatureName, setProFeatureName] = useState('Notebook Stratis (Caderno Inteligente)');
 
   const saveStudySession = (totalSeconds: number, questionsCount: number = 0) => {
     if (totalSeconds < 5 && questionsCount === 0) return; // Ignore very short/empty sessions
@@ -111,6 +115,15 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
     }
   }, [location.search]);
 
+  useEffect(() => {
+    if (activeTab === 'notebook' && !isPro) {
+      setActiveTab('selection');
+      navigate('/microaprendizado?tab=selection');
+      setProFeatureName("Notebook Stratis (Caderno Inteligente)");
+      setShowProModal(true);
+    }
+  }, [activeTab, isPro, navigate]);
+
   const [loading, setLoading] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -157,7 +170,12 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       const now = new Date();
       const due = cards.filter((card: any) => {
         if (!card.nextReview) return true;
-        const reviewDate = card.nextReview.toDate();
+        let reviewDate;
+        if (typeof card.nextReview.toDate === 'function') {
+          reviewDate = card.nextReview.toDate();
+        } else {
+          reviewDate = new Date(card.nextReview);
+        }
         return reviewDate <= now;
       });
       // Shuffle due cards to avoid predictable sequence
@@ -633,6 +651,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       {deleteConfirmationModal}
       {publishModal}
       {studyModeModal}
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} featureName={proFeatureName} />
     </>
   );
 
@@ -1116,13 +1135,27 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                 <div className="flex gap-2 mt-2">
                   <button 
                     onClick={() => {
+                      if (!isPro) {
+                        setProFeatureName("Notebook Stratis (Caderno Inteligente)");
+                        setShowProModal(true);
+                        return;
+                      }
                       setActiveTab('notebook');
                       navigate('/microaprendizado?tab=notebook');
                     }}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer"
                   >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    Criar Caderno de Estudo
+                    {isPro ? (
+                      <>
+                        <BookOpen className="w-3.5 h-3.5" />
+                        Criar Caderno de Estudo
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3.5 h-3.5 text-yellow-300" />
+                        Acessar Caderno de Trabalho (PRO)
+                      </>
+                    )}
                   </button>
                </div>
             </div>

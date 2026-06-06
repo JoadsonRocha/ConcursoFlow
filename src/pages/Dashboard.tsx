@@ -839,7 +839,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     2
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Revisão MEPP</h4>
+                    <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Revisão Stratis</h4>
                     <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest pl-0.5">Fixação Ativa</p>
                   </div>
                 </div>
@@ -879,7 +879,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                     to="/microaprendizado"
                     className="py-2 bg-slate-50 border border-border hover:bg-slate-100 text-text-main rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
                   >
-                    <Brain className="w-3.5 h-3.5 text-indigo-500" /> Caderno Stratis
+                    <Brain className="w-3.5 h-3.5 text-indigo-500" /> Notebook Stratis
                   </Link>
                 </div>
               </div>

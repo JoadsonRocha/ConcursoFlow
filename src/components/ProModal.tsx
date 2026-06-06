@@ -23,9 +23,9 @@ export default function ProModal({ isOpen, onClose, featureName }: ProModalProps
     'AI Flashcards Ilimitados',
     'Mapas Mentais Dinâmicos',
     'Mentor Stratis (AI Coach 24/7)',
+    'Notebook Stratis (Caderno)',
     'Grade de Similaridades',
     'Estatísticas Detalhadas',
-    'Resumos & Microlearning',
     'Cronogramas até 12 Semanas',
     'Exportações completas em PDF'
   ];

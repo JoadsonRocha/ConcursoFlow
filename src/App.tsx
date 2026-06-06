@@ -215,9 +215,14 @@ export default function App() {
     }
   }, [navigate]);
 
+  const unauthRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
+    }
+    if (unauthRef.current) {
+      unauthRef.current.scrollTop = 0;
     }
     // Track de visualização de página no Analytics
     if (logPageView) {
@@ -603,7 +608,7 @@ export default function App() {
 
   if (location.pathname === '/reset-password') {
     return (
-      <div className="h-[100dvh] w-full overflow-y-auto bg-bg">
+      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto bg-bg">
         <Routes>
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
@@ -624,7 +629,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="h-[100dvh] w-full overflow-y-auto bg-bg">
+      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto bg-bg">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
@@ -685,8 +690,8 @@ export default function App() {
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Caderno Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Mentor MEPP" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão Stratis" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
@@ -768,7 +773,7 @@ export default function App() {
                     setIsUserMenuOpen(false); // Close user menu if open
                   }}
                   className="p-2 bg-slate-50 border border-border hover:bg-slate-100 rounded-xl transition-all relative text-text-sub hover:text-indigo-600 flex items-center justify-center cursor-pointer"
-                  title="Notificações do Mentor MEPP"
+                  title="Notificações de Revisão Stratis"
                 >
                   <Bell className={cn("w-5 h-5", dueReviewsCount > 0 ? "text-indigo-600" : "")} />
                   {dueReviewsCount > 0 && (
@@ -791,7 +796,7 @@ export default function App() {
                         <div className="flex items-center gap-2 pb-3 border-b border-border mb-3">
                           <Award className="w-4 h-4 text-indigo-500 animate-pulse" />
                           <h4 className="text-xs font-black text-text-main uppercase tracking-wider">
-                            Mentor MEPP
+                            Revisão Stratis
                           </h4>
                         </div>
 
@@ -826,7 +831,7 @@ export default function App() {
                               ✓
                             </div>
                             <p className="text-[11px] font-semibold">
-                              Tudo em dia com o Mentor MEPP! Nenhuma revisão programada para hoje. Continue firme nos seus estudos teóricos!
+                              Tudo em dia com a Revisão Stratis! Nenhuma revisão programada para hoje. Continue firme nos seus estudos teóricos!
                             </p>
                           </div>
                         )}

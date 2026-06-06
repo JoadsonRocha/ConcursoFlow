@@ -5,6 +5,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { PLANS } from '../constants/plans';
 import * as GeminiService from '../services/gemini';
 import { DATABASE_ID } from '../constants/config';
+import { YoutubeTranscript } from 'youtube-transcript';
 
 const router = Router();
 
@@ -286,20 +287,63 @@ router.post('/scrape-youtube', authenticate, async (req, res) => {
       }
     }
 
-    // Step 3: If description is empty or very generic, use Gemini to generate a highly detailed educational summary based on the title!
-    if (!description || description.length < 50) {
-      console.log(`[YouTube Scraper] Generating AI educational summary for: ${title}`);
+    // Step 2.5: Try to retrieve the video transcript/subtitles using youtube-transcript package
+    let transcriptText = '';
+    let hasTranscript = false;
+    try {
+      console.log(`[YouTube Scraper] Fetching transcript for videoId: ${videoId}`);
+      // Try Portuguese first, then fallback to default (any) language
+      let transcriptList;
       try {
+        transcriptList = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'pt' });
+      } catch (ptErr) {
+        console.warn('⚠️ PT transcript not found, trying default transcript fetch:', ptErr);
+        transcriptList = await YoutubeTranscript.fetchTranscript(videoId);
+      }
+
+      if (transcriptList && transcriptList.length > 0) {
+        transcriptText = transcriptList.map((t: any) => t.text).join(' ');
+        hasTranscript = true;
+        console.log(`[YouTube Scraper] Successfully fetched transcript of ${transcriptText.length} characters.`);
+      }
+    } catch (transcriptErr: any) {
+      console.warn('⚠️ Could not obtain automatic transcript from YouTube:', transcriptErr?.message || transcriptErr);
+    }
+
+    // Step 3: If we have a transcript, ALWAYS generate a highly detailed educational summary based on the spoken content!
+    // Otherwise, generate an educational study summary based on the title!
+    let aiSummaryGenerated = false;
+    try {
+      if (hasTranscript) {
+        console.log(`[YouTube Scraper] Generating AI educational summary with TRANSCRIPT for: ${title}`);
+        const aiSummary = await GeminiService.generateVideoDescription(title, authorName, transcriptText);
+        if (aiSummary) {
+          description = aiSummary;
+          aiSummaryGenerated = true;
+        }
+      } else if (!description || description.length < 50) {
+        console.log(`[YouTube Scraper] Generating AI educational summary based only on title: ${title}`);
         const aiSummary = await GeminiService.generateVideoDescription(title, authorName);
         if (aiSummary) {
           description = aiSummary;
+          aiSummaryGenerated = true;
         }
-      } catch (aiErr) {
-        console.error('⚠️ Failed to generate AI description:', aiErr);
       }
+    } catch (aiErr) {
+      console.error('⚠️ Failed to generate AI description:', aiErr);
     }
 
-    const content = `Título do Vídeo: ${title}\nCanal: ${authorName || 'Especialista em Concursos'}\nURL: ${url}\nID do Vídeo: ${videoId}\n\nResumo e Conteúdo Didático:\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n[Nota: Conteúdo de vídeo importado para o Notebook Stratis. Use seu tutor de IA para aprofundar ou gerar mapas e flashcards deste assunto.]`;
+    let footerNote = `\n\n[Nota: Conteúdo de vídeo importado para o Notebook Stratis. Use seu tutor de IA para aprofundar ou gerar mapas e flashcards deste assunto.]`;
+    let content = `Título do Vídeo: ${title}\nCanal: ${authorName || 'Especialista em Concursos'}\nURL: ${url}\nID do Vídeo: ${videoId}\n\n`;
+
+    if (hasTranscript) {
+      content += `Resumo e Conteúdo Didático Analisado por IA (Baseado no Áudio/Legenda):\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n`;
+      content += `Transcrição Completa do Vídeo:\n${transcriptText}\n\n`;
+    } else {
+      content += `Resumo e Conteúdo Didático:\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n`;
+    }
+
+    content += footerNote;
 
     res.json({
       title,

@@ -204,14 +204,21 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   return parseJsonResponse(text || "[]", []);
 }
 
-export async function generateVideoDescription(videoTitle: string, channelName: string = ""): Promise<string> {
-  const params = { videoTitle, channelName };
+export async function generateVideoDescription(videoTitle: string, channelName: string = "", transcriptText: string = ""): Promise<string> {
+  const params = { videoTitle, channelName, hasTranscript: !!transcriptText, transcriptLength: transcriptText.length };
   const prompt = `Aja como um professor especialista em concursos públicos e preparação de alto rendimento.
-Com base no título do vídeo do YouTube abaixo:
+${transcriptText ? `Com base no vídeo do YouTube e sua transcrição (legenda) abaixo:
 Título: "${videoTitle}"
 ${channelName ? `Canal: "${channelName}"` : ""}
 
-Gere uma descrição pedagógica, sumário estruturado e uma lista de tópicos chaves didáticos e táticos sobre o assunto deste vídeo para o aluno estudar para o seu edital. Use português formal, adote um tom animador, claro e extremamente didático. Use markdown clássico para estruturar os tópicos e sub-tópicos de estudo.`;
+Informações e Transcrição Falada do Vídeo:
+"""
+${transcriptText.substring(0, 30000)}
+"""` : `Com base no título do vídeo do YouTube abaixo:
+Título: "${videoTitle}"
+${channelName ? `Canal: "${channelName}"` : ""}`}
+
+Gere uma descrição pedagógica detalhada baseada no conteúdo, sumário estruturado e uma lista de tópicos chaves didáticos e táticos sobre o assunto deste vídeo para o aluno estudar para o seu edital. Use português formal, adote um tom animador, claro e extremamente didático. Use markdown clássico para estruturar os tópicos e sub-tópicos de estudo.`;
 
   try {
     const result = await generateContentWithCache("generateVideoDescription", params, prompt, GEMINI_MODEL);

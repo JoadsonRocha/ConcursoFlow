@@ -21,7 +21,8 @@ import {
   Laptop,
   Youtube,
   Loader2,
-  Crown
+  Crown,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -44,6 +45,10 @@ const Landing = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   React.useEffect(() => {
     const el = scrollRef.current?.parentElement;
@@ -122,11 +127,11 @@ const Landing = () => {
   const premiumFeatures = [
     { name: 'Edital Verticalizado Inteligente', desc: 'Organização e Checklist completo para controle de tópicos' },
     { name: 'Análise de Pareto de Recorrência (80/20)', desc: 'Identificação preditiva dos temas mais prioritários de cada banca' },
-    { name: 'AI Flashcards & Mapas Mentais Ilimitados', desc: 'Criação ilimitada com revisão ativa e repetição espaçada' },
+    { name: 'Notebook Stratis (Caderno Inteligente)', desc: 'Geração 10x mais rápida de Flashcards, Mapas Mentais e Quizzes via PDF/Texto' },
     { name: 'Mentor Stratis Inteligente (Coaching 24/7)', desc: 'Tutor de inteligência artificial de plantão para tirar qualquer dúvida' },
     { name: 'Grade de Similaridade entre Editais', desc: 'Mapeamento instantâneo de disciplinas para conciliar múltiplos concursos' },
     { name: 'Estatísticas & Analytics Avançados', desc: 'Acompanhamento profundo de horas líquidas, simulados e metas' },
-    { name: 'Aulas Rápidas e Resumos por IA', desc: 'Módulo de microlearning com resumos gerados sob demanda' },
+    { name: 'Flashcards & Mapas Dinâmicos Ilimitados', desc: 'Módulo de microlearning focado na retenção e repetição espaçada' },
     { name: 'Cronogramas Adaptativos até 12 Semanas', desc: 'Planejamento dinâmico focado no seu tempo disponível real' },
     { name: 'Exportação Premium de Planos (PDF)', desc: 'Geração e download de cronogramas e editais em alta qualidade para impressão' },
     { name: 'Modo Foco Imersivo com Lofi & Pomodoro', desc: 'Simulador mental com efeitos binaurais para concentração máxima' },
@@ -135,7 +140,7 @@ const Landing = () => {
 
   const plans = [
     { id: 'monthly_plan', name: 'Mensal PRO', price: 'R$ 29,90', period: 'mês' },
-    { id: 'annual_plan', name: 'Anual PRO', price: 'R$ 197,90', period: 'ano' }
+    { id: 'annual_plan', name: 'Anual PRO', price: 'R$ 297,90', period: 'ano' }
   ];
 
   const isMonthlyCurrent = 
@@ -225,139 +230,179 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-16 md:pt-24 md:pb-24 px-6 animate-fade-in">
-        <div className="max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 md:space-y-8 animate-fade-in">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-4 md:space-y-6"
-          >
-            <h1 className="text-4xl md:text-6xl font-display text-text-main leading-[1.05] tracking-tight font-black max-w-4xl mx-auto">
-              Estude exatamente o que <br className="hidden md:block" />
-              vai cair na sua prova com <br className="hidden md:block" />
-              <span className="text-secondary italic relative inline-block px-1">
-                estratégia inteligente.
-                <svg className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-2 md:h-3 text-secondary/40" viewBox="0 0 200 10" preserveAspectRatio="none">
-                  <path d="M0,5 Q100,10 200,5" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-                </svg>
-              </span>
-            </h1>
-            <p className="text-base md:text-lg text-text-sub font-semibold leading-relaxed max-w-3xl mx-auto pt-4 md:pt-2">
-              Transforme editais gigantescos em uma rota de aprovação de alta performance. O <strong>Stratis Planner</strong> descobre os assuntos prioritários de cada banca através da Lei de Pareto, monta seu plano diário baseado no seu tempo real e acelera sua memorização.
-            </p>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-col sm:flex-row gap-4 md:gap-6 w-full max-w-xl justify-center"
-          >
-            <Link 
-               to="/auth"
-               className="flex-1 bg-secondary text-white flex items-center justify-center gap-2 rounded-xl py-4.5 px-8 text-xs md:text-sm font-black tracking-widest uppercase shadow-xl hover:shadow-secondary/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all"
+      <section className="relative pt-24 pb-16 md:pt-32 md:pb-32 px-6 animate-fade-in bg-white border-b border-slate-100 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center animate-fade-in">
+          
+          {/* Text and CTA */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 md:space-y-8 z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-4 md:space-y-6"
             >
-              Começar Grátis Agora
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Link>
-            <button 
-               onClick={() => document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' })}
-               className="flex-1 bg-white border border-slate-200/90 text-text-main py-4.5 px-8 rounded-xl text-xs md:text-sm font-black uppercase tracking-widest hover:bg-slate-50 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all shadow-sm"
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display text-slate-900 leading-[1.15] tracking-tight font-black">
+                Da bagunça à organização. <br className="hidden lg:block" />
+                Transforme seus estudos em conquistas.
+              </h1>
+              <p className="text-base md:text-lg lg:text-xl text-slate-600 font-medium leading-relaxed max-w-2xl pt-2">
+                O <strong>Stratis Planner</strong> transforma seu edital em um plano de estudos completo, organiza a sua semana, programa suas revisões automaticamente e mostra seu progresso real. Matéria por matéria, dia após dia.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-4 w-full md:max-w-md lg:max-w-none justify-center lg:justify-start"
             >
-               Ver Planos PRO
-            </button>
-          </motion.div>
+              <Link 
+                 to="/auth"
+                 className="flex-1 lg:flex-none uppercase bg-secondary text-white flex items-center justify-center gap-2 rounded-xl py-4 md:py-5 px-8 text-sm md:text-base font-black tracking-widest shadow-xl hover:shadow-secondary/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all"
+              >
+                Começar Grátis Agora
+                <ArrowRight className="w-5 h-5 ml-1" />
+              </Link>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+               <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 justify-center lg:justify-start">
+                 <div className="flex -space-x-3">
+                   <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" alt="User 1" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                   <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop" alt="User 2" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                   <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="User 3" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                   <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop" alt="User 4" className="w-10 h-10 rounded-full border-2 border-white shadow-sm object-cover" />
+                   <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-600 shadow-sm z-10">+10k</div>
+                 </div>
+                 <div className="text-sm font-semibold text-slate-600 text-center sm:text-left">Assinantes reais</div>
+              </div>
+            </motion.div>
+          </div>
 
+          {/* Right Column: Image and Floating Card */}
           <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-            className="w-full max-w-sm mx-auto mt-12"
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="w-full relative z-10 flex justify-center lg:justify-end"
           >
-           {/* Compact Card Style */}
-           <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
-             {/* Title Bar */}
-             <div className="h-6 border-b border-slate-100 flex items-center px-3 justify-between bg-slate-50/50">
-                <div className="flex gap-1">
-                   <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                   <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                </div>
-                <div className="text-[9px] text-slate-500 font-semibold tracking-widest uppercase">Stratis Planner — Cronograma Hoje</div>
-                <div className="w-6" />
-             </div>
-
-             {/* Content */}
-             <div className="p-4 space-y-3">
-               <div className="flex justify-between items-end">
-                 <div>
-                    <div className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Progresso Semanal</div>
-                    <div className="text-2xl font-black text-slate-900 tracking-tight">68%</div>
-                 </div>
-                 <div className="text-right">
-                    <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Meta da semana</div>
-                    <div className="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[9px] font-bold border border-emerald-100 italic">No prazo</div>
-                 </div>
-               </div>
-               
-               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                 <div className="h-full bg-blue-500 w-[68%]" />
-               </div>
-
-               <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { sub: 'Const.', cat: 'Alta', color: 'bg-blue-500', pct: '85%' },
-                    { sub: 'Port.', cat: 'Média', color: 'bg-amber-400', pct: '42%' },
-                    { sub: 'Rac.', cat: 'Alta', color: 'bg-purple-500', pct: '60%' },
-                  ].map((item, i) => (
-                    <div key={i} className="p-2 bg-slate-50 rounded-md border border-slate-100 space-y-1">
-                      <div className="flex justify-between items-center text-[8px] font-bold text-slate-700 uppercase tracking-tight">
-                         <span>{item.sub}</span>
-                         <span>{item.pct}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                         <span className="text-[7px] font-bold text-slate-500 uppercase px-1 py-0.5 bg-white rounded border border-slate-100">{item.cat}</span>
-                      </div>
-                      <div className="w-full h-0.5 bg-slate-200 rounded-full overflow-hidden">
-                         <div className={`h-full ${item.color}`} style={{ width: item.pct }} />
-                      </div>
+           <div className="w-full max-w-[480px] bg-white rounded-xl md:rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-20 mx-auto lg:mr-0">
+                 {/* Title Bar */}
+                 <div className="h-8 md:h-10 border-b border-slate-100 flex items-center px-4 md:px-5 justify-between bg-slate-50">
+                    <div className="flex gap-1.5 md:gap-2">
+                       <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-red-400" />
+                       <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-amber-400" />
+                       <div className="w-2 md:w-2.5 h-2 md:h-2.5 rounded-full bg-emerald-400" />
                     </div>
-                  ))}
-               </div>
-             </div>
-           </div>
+                    <div className="text-[9px] md:text-xs text-slate-500 font-bold tracking-widest uppercase">Stratis Planner — Hoje</div>
+                    <div className="w-6 md:w-10" />
+                 </div>
+
+                 {/* Content */}
+                 <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+                   <div className="flex justify-between items-end">
+                     <div>
+                        <div className="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Progresso Semanal</div>
+                        <div className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">68%</div>
+                     </div>
+                     <div className="text-right">
+                        <div className="text-[9px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Meta da semana</div>
+                        <div className="px-2 md:px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] md:text-xs font-bold border border-emerald-100 italic">No prazo</div>
+                     </div>
+                   </div>
+                   
+                   <div className="w-full h-2 md:h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-blue-500 w-[68%]" />
+                   </div>
+
+                   <div className="grid grid-cols-3 gap-2 md:gap-4">
+                      {[
+                        { sub: 'Const.', cat: 'Alta', color: 'bg-blue-500', pct: '85%' },
+                        { sub: 'Port.', cat: 'Média', color: 'bg-amber-400', pct: '42%' },
+                        { sub: 'Rac.', cat: 'Alta', color: 'bg-purple-500', pct: '60%' },
+                      ].map((item, i) => (
+                        <div key={i} className="p-2 md:p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2">
+                          <div className="flex justify-between items-center text-[9px] md:text-xs font-bold text-slate-700 uppercase tracking-tight">
+                             <span>{item.sub}</span>
+                             <span>{item.pct}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                             <span className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase px-1.5 md:px-2 py-0.5 bg-white rounded border border-slate-200">{item.cat}</span>
+                          </div>
+                          <div className="w-full h-1 md:h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                             <div className={`h-full ${item.color}`} style={{ width: item.pct }} />
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                 </div>
+              </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Benefícios */}
-      <section id="beneficios" className="py-24 md:py-32 px-6 bg-white border-t border-slate-200/50 relative">
+      {/* Como funciona / Método Simples */}
+      <section id="beneficios" className="py-24 md:py-32 px-6 bg-slate-50 relative border-t border-slate-200/50">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16 space-y-4 max-w-2xl mx-auto">
-             <div className="text-secondary font-black text-xs uppercase tracking-widest">O Método Estratégico</div>
-             <h2 className="text-3xl md:text-5xl font-display font-black text-text-main leading-tight tracking-tight">O fim do caos e da procrastinação nos estudos</h2>
-             <p className="text-text-sub font-semibold text-sm md:text-base leading-relaxed">
-               97% dos candidatos desistem de seus cronogramas porque são complexos demais para manter. Veja como a <strong>Stratis Planner</strong> resolve os maiores gargalos da sua preparação:
-             </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
-               <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-8 shadow-inner"><Zap className="w-6 h-6"/></div>
-               <h3 className="text-xl font-black text-text-main mb-3 font-display">Economia de 15h Semanais</h3>
-               <p className="text-slate-600 text-sm leading-relaxed font-medium">Poupe dezenas de horas que você costumava gastar criando planilhas manuais ou editais verticais no Word. Nosso sistema divide as matérias em tarefas diárias prontas instantaneamente.</p>
-             </div>
-             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
-               <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600 mb-8 shadow-inner"><ShieldCheck className="w-6 h-6"/></div>
-               <h3 className="text-xl font-black text-text-main mb-3 font-display">Cronograma Sem Medo</h3>
-               <p className="text-slate-600 text-sm leading-relaxed font-medium">A vida acontece. Se você não conseguiu bater a meta hoje por causa do trabalho ou cansaço, a plataforma reorganiza automaticamente seus dias futuros de forma suave, sem causar acúmulo opressor de matérias.</p>
-             </div>
-             <div className="bg-slate-50/75 p-10 rounded-3xl border border-slate-200/50 hover:border-slate-300 hover:bg-slate-50 transition-all shadow-sm">
-               <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 mb-8 shadow-inner"><Target className="w-6 h-6"/></div>
-               <h3 className="text-xl font-black text-text-main mb-3 font-display">Estudo Inteligente 80/20</h3>
-               <p className="text-slate-600 text-sm leading-relaxed font-medium">Não estude tudo com a mesma intensidade. De forma cirúrgica, saiba quais são os 20% do conteúdo programático que representam 80% das questões históricas de acordo com a sua banca de concurso.</p>
-             </div>
-          </div>
+           <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-5xl font-display font-black text-slate-900 tracking-tight">Método Simples</h2>
+              <p className="text-lg text-slate-600 font-semibold max-w-2xl mx-auto">Um método que nasceu da experiência real. Esqueça planilhas complexas, nós guiamos você até a aprovação.</p>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4 relative">
+              {/* Connector Line (Desktop Only) */}
+              <div className="hidden md:block absolute top-[100px] lg:top-[120px] left-12 right-12 h-1 bg-slate-200 z-0"></div>
+
+              {[
+                { 
+                  num: '1', 
+                  title: 'Escolha seu edital', 
+                  desc: 'Selecione ou importe o edital do seu concurso. A IA lista tudo o que importa.', 
+                  img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&h=300&fit=crop',
+                  color: 'text-blue-500' 
+                },
+                { 
+                  num: '2', 
+                  title: 'Planejamento inteligente', 
+                  desc: 'Defina suas horas disponíveis e crie um cronograma automático e flexível.', 
+                  img: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=300&fit=crop',
+                  color: 'text-indigo-500' 
+                },
+                { 
+                  num: '3', 
+                  title: 'Registre e estude', 
+                  desc: 'Use os Notebooks e AI Flashcards para estudar de forma ativa. Dê check nas metas.', 
+                  img: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=500&h=300&fit=crop',
+                  color: 'text-secondary' 
+                },
+                { 
+                  num: '4', 
+                  title: 'Acompanhe e ajuste', 
+                  desc: 'Veja estatísticas completas e saiba quando precisa acelerar ou revisar.', 
+                  img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop',
+                  color: 'text-emerald-500' 
+                }
+              ].map((step, i) => (
+                <div key={i} className="relative z-10 flex flex-col items-center text-center group">
+                   <div className="w-full relative mb-8">
+                     <div className="w-full h-48 md:h-40 lg:h-52 bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden group-hover:-translate-y-2 group-hover:shadow-xl transition-all duration-300">
+                        <img src={step.img} alt={step.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                     </div>
+                     <div className="w-12 h-12 bg-white border-4 border-slate-50 flex items-center justify-center rounded-full text-xl font-black shadow-lg absolute -bottom-6 left-1/2 -translate-x-1/2 group-hover:-translate-y-2 transition-transform duration-300">
+                        <span className={step.color}>{step.num}</span>
+                     </div>
+                   </div>
+                   <div>
+                     <h3 className="text-xl font-black text-slate-900 mb-2 font-display">{step.title}</h3>
+                     <p className="text-slate-600 text-sm font-medium leading-relaxed px-4">{step.desc}</p>
+                   </div>
+                </div>
+              ))}
+           </div>
         </div>
       </section>
       <section id="funcionalidades" className="py-24 md:py-32 px-6 bg-slate-50/50 relative">
@@ -374,43 +419,52 @@ const Landing = () => {
              </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-             <div className="md:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl shadow-sm hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-                <div className="relative z-10 space-y-4">
-                   <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary group-hover:scale-110 transition-transform duration-500 shadow-inner">
-                      <BrainCircuit className="w-5 h-5" />
+          <div className="space-y-24 md:space-y-32">
+             {/* Feature 1 */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+                <div className="space-y-6 order-2 md:order-1">
+                   <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary shadow-inner">
+                      <BrainCircuit className="w-6 h-6" />
                    </div>
-                   <h3 className="text-2xl font-display text-text-main font-black">Mapeamento e Filtro Cirúrgico de Editais</h3>
-                   <p className="text-slate-600 text-sm md:text-base font-medium max-w-2xl leading-relaxed">Nossa tecnologia analisa a estrutura do seu edital, agrupa por disciplinas fundamentais e traça quais tópicos merecem prioridade absoluta com base nos pesos atribuídos pela banca estudada.</p>
+                   <h3 className="text-3xl font-display text-slate-900 font-black tracking-tight">Filtro Cirúrgico de Editais</h3>
+                   <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                     Nossa tecnologia analisa a estrutura do seu edital, agrupa por disciplinas fundamentais e traça quais tópicos merecem prioridade absoluta com base nos pesos atribuídos pela banca e dados estatísticos.
+                   </p>
+                </div>
+                <div className="order-1 md:order-2 h-64 md:h-[400px] w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl relative border border-slate-200/60 transition-transform hover:-translate-y-1">
+                   <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&fit=crop" alt="Filtro de Editais" className="w-full h-full object-cover" />
                 </div>
              </div>
 
-             <div className="md:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-center hover:shadow-xl transition-all group overflow-hidden shadow-sm">
-                <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-6 group-hover:scale-110 transition-transform duration-500 text-center shadow-inner">
-                   <Calendar className="w-5 h-5" />
+             {/* Feature 2: Notebook Stratis */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+                <div className="order-1 md:order-1 h-64 md:h-[400px] w-full bg-indigo-50 rounded-3xl overflow-hidden shadow-2xl relative border border-indigo-100 transition-transform hover:-translate-y-1">
+                   <img src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&fit=crop" alt="Notebook Inteligente" className="w-full h-full object-cover" />
                 </div>
-                <h3 className="text-xl font-display text-text-main font-black mb-3">Flexibilidade sem Culpa</h3>
-                <p className="text-slate-600 text-sm leading-relaxed font-semibold">Tire folgas planejadas ou recupere dias perdidos de forma transparente. Nosso cronograma inteligente reprograma tudo com apenas um clique.</p>
-             </div>
-
-             <div className="md:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-center hover:shadow-xl transition-all group shadow-sm">
-                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
-                   <Target className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl font-display text-text-main font-black mb-3">Revisão Espaçada e Microlearning</h3>
-                <p className="text-slate-600 text-sm leading-relaxed font-semibold">Crie flashcards dinâmicos com IA e monitore sua curva de esquecimento automaticamente. Memorize fórmulas, leis e conceitos chaves brincando.</p>
-             </div>
-
-             {/* Feature 4: Wide */}
-             <div className="md:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-3xl flex flex-col justify-between hover:shadow-xl transition-all group relative overflow-hidden shadow-sm">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4"></div>
-                <div className="relative z-10 space-y-4">
-                   <div className="w-10 h-10 bg-indigo-500/10 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform duration-500 shadow-inner">
-                      <Users className="w-5 h-5" />
+                <div className="space-y-6 order-2 md:order-2">
+                   <div className="inline-flex items-center gap-1.5 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                     <Zap className="w-3.5 h-3.5" /> Inteligência Artificial
                    </div>
-                   <h3 className="text-2xl font-display font-black text-text-main">Comunidade de Aprovados</h3>
-                   <p className="text-slate-600 text-sm leading-relaxed font-semibold max-w-xl">Aproveite cronogramas prontos que já foram validados e compartilhados pela comunidade. Importe caminhos vitoriosos de aprovados reais de forma imediata.</p>
+                   <h3 className="text-3xl font-display text-slate-900 font-black tracking-tight">Notebook Stratis (Caderno 10x Mais Rápido)</h3>
+                   <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                     Pare de perder horas resumindo aulas e apostilas manualmente. Com o Notebook Inteligente, você extrai instantaneamente <b>Mapas Mentais, Flashcards e Quizzes</b> a partir de qualquer PDF. Estudo ativo automatizado no nível máximo.
+                   </p>
+                </div>
+             </div>
+
+             {/* Feature 3 */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
+                <div className="space-y-6 order-2 md:order-1">
+                   <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600 shadow-inner">
+                      <Target className="w-6 h-6" />
+                   </div>
+                   <h3 className="text-3xl font-display text-slate-900 font-black tracking-tight">Revisão Espaçada Integrada</h3>
+                   <p className="text-slate-600 text-lg font-medium leading-relaxed">
+                     Crie flashcards dinâmicos e monitore sua curva de esquecimento. Memorize fórmulas, leis e conceitos de forma perene sem se perder em ciclos de revisão complexos. Tudo integrado no seu fluxo principal de estudo.
+                   </p>
+                </div>
+                <div className="order-1 md:order-2 h-64 md:h-[400px] w-full bg-emerald-50 rounded-3xl overflow-hidden shadow-2xl relative border border-emerald-100 transition-transform hover:-translate-y-1">
+                   <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&fit=crop" alt="Revisão Estratégica" className="w-full h-full object-cover" />
                 </div>
              </div>
           </div>
@@ -528,11 +582,11 @@ const Landing = () => {
                   </div>
                   
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-2xl font-black text-slate-900">R$ 197,90</span>
+                    <span className="text-2xl font-black text-slate-900">R$ 297,90</span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase">/ano</span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-medium mb-4">
-                    (Equivale a apenas <span className="text-slate-800 font-bold">R$ 16,49/mês</span>)
+                    (Equivale a apenas <span className="text-slate-800 font-bold">R$ 24,82/mês</span>)
                   </div>
 
                   <button
@@ -663,30 +717,36 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 md:py-40 px-6 bg-slate-900 text-white relative overflow-hidden border-t border-slate-800">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl -z-10">
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-secondary/15 blur-[150px] rounded-full animate-pulse"></div>
+      <section className="py-32 md:py-40 px-6 bg-slate-50 relative overflow-hidden border-t border-slate-200/60">
+        <div className="absolute inset-0 bg-white/50 z-0"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-5xl z-0">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-secondary/10 blur-[150px] rounded-full animate-pulse"></div>
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-8">
-           <div className="w-16 h-16 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-8 shadow-md">
-              <Zap className="w-8 h-8 text-semibold text-secondary shadow-sm" />
+           <div className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-10 border border-slate-100">
+              <BrandLogo className="w-10 h-10 text-secondary" />
            </div>
-           <h2 className="text-4xl md:text-6xl font-display leading-[1.05] tracking-tight font-black text-white">
-             Dê o passo definitivo rumo ao seu <br />
-             nome na lista de <span className="text-secondary italic underline decoration-wavy decoration-3">aprovados</span>!
+           
+           <h2 className="text-5xl md:text-7xl font-display leading-[1.05] tracking-tight font-black text-slate-900">
+             Sua aprovação <br />
+             <span className="text-primary underline decoration-wavy decoration-3 underline-offset-8">começa agora</span>.
            </h2>
-           <p className="text-slate-300 text-base md:text-lg font-semibold max-w-2xl mx-auto leading-relaxed">
-             Junte-se à nova onda de candidatos que pararam de tentar estudar editais gigantes de forma linear e passaram a estudar com inteligência e engenharia de dados.
+           <p className="text-slate-600 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed pt-2">
+             Junte-se a concurseiros que pararam de perder horas fazendo cronogramas no Excel e já estudam com inteligência artificial hoje.
            </p>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
+           
+           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
               <Link 
                 to="/auth"
-                className="w-full sm:w-auto bg-secondary text-white hover:bg-secondary/95 px-10 py-5 text-xs tracking-widest uppercase shadow-xl shadow-secondary/25 hover:shadow-secondary/40 rounded-xl font-black hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                className="w-full sm:w-auto bg-secondary text-white hover:bg-secondary/95 px-12 py-6 text-sm md:text-base tracking-widest uppercase shadow-2xl shadow-secondary/25 hover:shadow-secondary/40 rounded-2xl font-black hover:-translate-y-1 active:translate-y-0 transition-all flex items-center justify-center gap-3 group"
                >
                  Criar Meu Cronograma Grátis
+                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                </Link>
             </div>
+            
+            <p className="text-slate-500 font-bold text-sm tracking-wider uppercase mt-6 p-2">Sem custo escondido. Não pedimos cartão de crédito.</p>
          </div>
        </section>
 
