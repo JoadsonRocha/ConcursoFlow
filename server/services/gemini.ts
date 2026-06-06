@@ -180,7 +180,7 @@ export async function generateMindMap(subject: string) {
 
 export async function generateQuizQuestions(topic: string, subject: string) {
   const params = { topic, subject };
-  const prompt = `Gere 3 questões de múltipla escolha sobre "${topic}" (${subject}).
+  const prompt = `Gere exatamente 5 questões de múltipla escolha sobre "${topic}" (${subject}). Use o material fornecido se houver.
   Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
 
   const text = await generateContentWithCache("generateQuizQuestions", params, prompt, GEMINI_MODEL, {
@@ -202,6 +202,24 @@ export async function generateQuizQuestions(topic: string, subject: string) {
   });
 
   return parseJsonResponse(text || "[]", []);
+}
+
+export async function generateVideoDescription(videoTitle: string, channelName: string = ""): Promise<string> {
+  const params = { videoTitle, channelName };
+  const prompt = `Aja como um professor especialista em concursos públicos e preparação de alto rendimento.
+Com base no título do vídeo do YouTube abaixo:
+Título: "${videoTitle}"
+${channelName ? `Canal: "${channelName}"` : ""}
+
+Gere uma descrição pedagógica, sumário estruturado e uma lista de tópicos chaves didáticos e táticos sobre o assunto deste vídeo para o aluno estudar para o seu edital. Use português formal, adote um tom animador, claro e extremamente didático. Use markdown clássico para estruturar os tópicos e sub-tópicos de estudo.`;
+
+  try {
+    const result = await generateContentWithCache("generateVideoDescription", params, prompt, GEMINI_MODEL);
+    return result || "";
+  } catch (err) {
+    console.error("Erro ao gerar descrição do vídeo via Gemini:", err);
+    return "";
+  }
 }
 
 export async function parseEdital(rawText: string) {
@@ -335,7 +353,7 @@ export async function chatWithTutor(chatHistory: any[], contextData: any) {
   DIRETRIZES DE COMUNICAÇÃO E COMPORTAMENTO:
   1. RESPONDA DE FORMA EXTREMAMENTE DIRETAS E CURTAS (MÁXIMO 3 PARÁGRAFOS CURTOS OU UMA LISTA CURTA DE BULLET POINTS). NUNCA envie textos longos ou prolixos. Vá direto à cereja do bolo.
   2. Seja humano, preciso, ultra pragmático e estratégico. Use o contexto para guiar a ação agora mesmo.
-  3. Entregue um texto super agradável e cirúrgico (use formatação Markdown limpa, listas pontuadas firmes, evite parágrafos de mais de 3 linhas).
+  3. Entregue um texto super agradável e cirúrgico (use formatação Markdown limpa, listas pontuadas firmes, evite parágrafos de mais de 3 linhas). NUNCA use tabelas markdown ou colunas estruturadas por pipes (|). Pontos chaves devem ser puro texto com negritos e marcadores.
   4. Sem enrolação. Respostas altamente focadas, assertivas e táticas. Se o aluno estiver perdendo tempo com teorias longas, relembre-o de focar no Pareto (probabilidade de incidência).
   5. SEU PAPEL É ESTRATÉGIA PURO SANGUE. Você não explica conteúdo de matérias nem gera resumos longos. Se o usuário pedir para explicar um conceito, seja super cirúrgico e direto e mostre COMO estudar isso de forma produtiva para a banca dele.
   
@@ -442,22 +460,29 @@ export async function analyzePareto(contestRole: string, banca: string, subjects
 }
 
 export async function chatWithDocument(message: string, chatHistory: any[], sourceContent: string, sourceTitle: string) {
-  const systemInstruction = `Você é um Tutor de Estudos especialista da plataforma StratisPlanner.
-  Você está fornecendo mentoria inteligente para o aluno com base na seguinte FONTE DE ESTUDO ATIVA.
-  
-  FONTE DE ESTUDO ATIVA:
-  - Título: "${sourceTitle}"
-  - Conteúdo da Fonte:
-  --- INÍCIO DO CONTEÚDO ---
-  ${sourceContent}
-  --- FIM DO CONTEÚDO ---
-  
-  DIRETRIZES DE RESPOSTA CRÍTICAS:
-  1. Responda diretamente e didaticamente à dúvida do aluno, preferindo sempre utilizar o CONTEÚDO da fonte fornecida acima.
-  2. Se a explicação exigir fatos táticos, cite as partes relevantes do texto.
-  3. Se a informação NÃO estiver de modo algum descrita ou sugerida no texto da fonte, informe educadamente que essa informação específica não está contida nesta fonte, mas dê um direcionamento estratégico confiável do que você sabe a respeito, se for útil para o concurso.
-  4. Mantenha respostas altamente estruturadas, pragmáticas, fáceis de ler no celular, usando Markdown (parágrafos curtos, bullets táticos, termos chaves em negrito).
-  5. Estimule o aprendizado ativo. Incentive o usuário a testar o conhecimento em flashcards ou mapas mentais baseados na matéria estudada.`;
+  const systemInstruction = `Você é o "Analista de Pesquisa Stratis", um sistema de inteligência especializado em análise profunda de documentos, inspirado no funcionamento do NotebookLM.
+
+Sua tarefa é ser um ESPELHO ANALÍTICO das fontes fornecidas. Você não deve agir como um mentor motivacional, mas como um analista de dados e textos.
+
+FONTE DE REFERÊNCIA ATIVA:
+Título: "${sourceTitle}"
+--- INÍCIO DO CONTEÚDO ---
+${sourceContent}
+--- FIM DO CONTEÚDO ---
+
+REGRAS DE OURO DA ANÁLISE:
+1. GROUNDEDNESS (ANCORAGEM): Responda EXCLUSIVAMENTE com base nas informações contidas na fonte acima. Se o usuário perguntar algo que não está no texto, diga claramente: "Esta informação não consta na fonte analisada".
+2. ESTILO ANALÍTICO SEM TABELAS: NUNCA use tabelas em markdown ou colunas separadas por barras verticais e traços (ex: | Coluna 1 | Coluna 2 |). Em dispositivos móveis e layouts estreitos, as tabelas markdown quebram e ficam ilegíveis. Em vez de tabelas, use textos estruturados de alta legibilidade: listas de tópicos com marcadores (bullet points), cabeçalhos claros (ex: ### Título), parágrafos bem espaçados e negritos para destaque tático.
+3. SEM "CONVERSEIRO": Vá direto ao ponto. Não use frases de efeito ou saudações excessivas. 
+4. CONTEXTO DE CONCURSOS: Quando encontrar prazos, leis, valores ou regras, destaque-os como "Pontos de Atenção Crítica".
+
+MISSÃO DO PROMPT:
+Transforme prompts vagos do usuário em análises estruturadas. Se o usuário for genérico, você deve ser específico e técnico.
+
+DIRETRIZES TÉCNICAS:
+- Use Markdown limpo e amigável para mobile (sem tabelas).
+- Mantenha o foco técnico e acadêmico.
+- Idioma: Português (PT-BR).`;
 
   const formattedHistory = chatHistory.map(msg => ({
     role: msg.role === "user" ? "user" : "model",

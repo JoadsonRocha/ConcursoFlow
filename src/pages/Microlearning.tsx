@@ -117,6 +117,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
   
   const [studyModeCards, setStudyModeCards] = useState<any[] | null>(null);
   const [showCreator, setShowCreator] = useState(false);
@@ -348,6 +349,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
       setCurrentQuestion(0);
       setScore(0);
       setShowResult(false);
+      setQuizStartTime(Date.now());
     } catch (err) {
       toast.error("Erro ao carregar quiz. Tente novamente.");
       setActiveTab('selection');
@@ -367,6 +369,12 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
         setCurrentQuestion(c => c + 1);
         setSelectedOption(null);
       } else {
+        if (quizStartTime) {
+          const elapsedSeconds = Math.round((Date.now() - quizStartTime) / 1000);
+          saveStudySession(elapsedSeconds > 5 ? elapsedSeconds : 15, quizData.length);
+        } else {
+          saveStudySession(30, quizData.length); // fallback
+        }
         setShowResult(true);
       }
     }, 2000);
@@ -474,7 +482,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
               </div>
             </div>
             <div className="flex-1 bg-slate-50 border border-border rounded-xl flex flex-col overflow-y-auto min-h-[400px]">
-              <SVGMapViewer svgData={previewMindMap.svgData || []} />
+              <SVGMapViewer svgData={previewMindMap.svgData || (previewMindMap.rawSvg ? [previewMindMap.rawSvg] : [])} />
             </div>
           </motion.div>
         </div>
@@ -630,7 +638,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
   if (activeTab === 'flashcards') {
     return (
-      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20">
+      <div className="w-screen h-screen flex flex-col bg-slate-50 p-4 md:p-8 overflow-y-auto animate-in fade-in duration-500 pb-20">
         {allModals}
         <header className="flex items-center justify-between gap-4 mb-2">
           <button 
@@ -646,7 +654,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
           <div className="w-10" />
         </header>
 
-        {dueCards.length > 0 ? (
+        {dueCards.length > 0 && !studyModeCards ? (
           <FlashcardDeck cards={dueCards} onFinish={(time, count) => {
             saveStudySession(time, count);
             setActiveTab('selection');
@@ -784,7 +792,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
           <div className="rise-card w-full bg-white border border-border flex flex-col shadow-sm overflow-hidden h-[75vh]">
             <div className="flex-1 bg-slate-50 relative overflow-hidden">
-               <SVGMapViewer svgData={previewMindMap.svgData || []} />
+               <SVGMapViewer svgData={previewMindMap.svgData || (previewMindMap.rawSvg ? [previewMindMap.rawSvg] : [])} />
             </div>
           </div>
           
@@ -954,11 +962,11 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                   className="p-3 bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all group cursor-pointer"
                 >
                   <div className="aspect-square bg-white rounded-lg mb-3 overflow-hidden relative group-hover:brightness-95 transition-all flex items-center justify-center border border-slate-100 shadow-inner">
-                    {m.svgData?.[0] ? (
+                    {(m.svgData?.[0] || m.rawSvg) ? (
                       <div className="w-full h-full flex items-center justify-center p-1 opacity-80 group-hover:opacity-100 transition-opacity overflow-hidden">
                          <div 
                            className="w-[800px] h-[1131px] scale-[0.08] sm:scale-[0.1] origin-center pointer-events-none [&>svg]:w-full [&>svg]:h-full" 
-                           dangerouslySetInnerHTML={{ __html: m.svgData[0] }} 
+                           dangerouslySetInnerHTML={{ __html: m.svgData?.[0] || m.rawSvg }} 
                          />
                       </div>
                     ) : (
@@ -1011,7 +1019,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
   if (activeTab === 'notebook') {
     return (
-      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-20 select-none">
+      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-2 md:pb-20 select-none">
         {allModals}
         <NotebookSources 
           onBack={() => {
@@ -1020,6 +1028,21 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
           }} 
           subjects={contest?.subjects || []}
           contestId={contest?.id}
+          onOpenFlashcards={(cards) => {
+            setStudyModeCards(cards);
+          }}
+          onOpenMindmap={(mapData) => {
+            setPreviewMindMap(mapData);
+            setActiveTab('library');
+          }}
+          onOpenQuiz={(quiz) => {
+            setQuizData(quiz);
+            setCurrentQuestion(0);
+            setScore(0);
+            setShowResult(false);
+            setQuizStartTime(Date.now());
+            setActiveTab('quiz');
+          }}
         />
       </div>
     );
@@ -1042,29 +1065,69 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
             }}
           />
         )}
-        <header className="space-y-2">
-          <div className="flex items-center gap-3 text-primary font-bold text-[9px] uppercase tracking-widest">
-            <div className="w-1 h-1 rounded-full bg-primary shadow-sm"></div>
-            Treinamento e Prática
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5 text-primary font-bold text-[8px] md:text-[9px] uppercase tracking-widest">
+              <div className="w-1 h-1 rounded-full bg-primary shadow-sm"></div>
+              Treinamento e Prática
+            </div>
+            <h1 className="text-xl md:text-2xl font-display text-text-main tracking-tight font-bold italic">
+              Notebook Stratis
+            </h1>
           </div>
-          <h1 className="text-2xl md:text-3xl font-display text-text-main tracking-tight font-bold italic">
-            Notebook Stratis
-          </h1>
-          <div className="flex items-center gap-4 mt-2">
-            <p className="text-text-sub text-[10px] md:text-sm max-w-2xl border-l-2 border-primary/30 pl-4 leading-relaxed font-medium italic flex-1">
-              Ferramentas para consolidar o edital e acelerar sua retenção através de questões e repetição espaçada.
-            </p>
-            <button 
-              onClick={() => setActiveTab('library')}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-text-main rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-200"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Ver Biblioteca
-            </button>
-          </div>
+          <button 
+            onClick={() => setActiveTab('library')}
+            className="self-start sm:self-center px-4 py-2 sm:px-6 sm:py-3 bg-slate-50 hover:bg-slate-100 text-text-main rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-widest transition-all flex items-center gap-1.5 border border-slate-200 shadow-sm shrink-0"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Ver na Biblioteca
+          </button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {/* Caderno de Estudos Sector */}
+          <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
+               <MessageSquare className="w-24 h-24 text-emerald-500" />
+            </div>
+            
+            <div className="space-y-4 relative z-10">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-emerald-500 shadow-sm">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-display text-text-main font-bold">Caderno de Estudos</h3>
+                <p className="text-text-sub text-xs leading-relaxed italic">Crie cadernos inteligentes para estudar com PDF, Web e YouTube.</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-4 relative z-10">
+               <div className="flex gap-2">
+                  <div className="p-3 bg-slate-50 border border-border rounded-xl text-center flex-1">
+                    <div className="text-xl font-display font-bold text-text-main">{sources.length}</div>
+                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-1">Materiais</div>
+                  </div>
+                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center flex-1 flex flex-col justify-center items-center">
+                    <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
+                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Inteligente</div>
+                  </div>
+               </div>
+
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={() => {
+                      setActiveTab('notebook');
+                      navigate('/microaprendizado?tab=notebook');
+                    }}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    Criar Caderno de Estudo
+                  </button>
+               </div>
+            </div>
+          </div>
+
           {/* Flashcards Sector */}
           <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
@@ -1128,49 +1191,6 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                    Criar Novo Mapa
                   </button>
              </div>
-          </div>
-
-          {/* Sources & AI Chat Sector */}
-          <div className="rise-card p-6 group relative overflow-hidden flex flex-col justify-between min-h-[300px] bg-white border border-border shadow-sm">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform duration-1000">
-               <MessageSquare className="w-24 h-24 text-emerald-500" />
-            </div>
-            
-            <div className="space-y-4 relative z-10">
-              <div className="bg-emerald-500/10 border border-emerald-500/20 w-12 h-12 rounded-xl flex items-center justify-center text-emerald-500 shadow-sm">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-xl font-display text-text-main font-bold">Fontes & Chat</h3>
-                <p className="text-text-sub text-xs leading-relaxed italic">Estude perguntando diretamente para as suas fontes (PDF, Web, YouTube).</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4 relative z-10">
-               <div className="flex gap-2">
-                  <div className="p-3 bg-slate-50 border border-border rounded-xl text-center flex-1">
-                    <div className="text-xl font-display font-bold text-text-main">{sources.length}</div>
-                    <div className="text-[10px] font-bold text-text-sub uppercase tracking-widest mt-1">Fontes</div>
-                  </div>
-                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center flex-1 flex flex-col justify-center items-center">
-                    <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
-                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Ativo</div>
-                  </div>
-               </div>
-
-                <div className="flex gap-2 mt-2">
-                  <button 
-                    onClick={() => {
-                      setActiveTab('notebook');
-                      navigate('/microaprendizado?tab=notebook');
-                    }}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    Entrar no Notebook
-                  </button>
-               </div>
-            </div>
           </div>
 
         </div>
@@ -1266,12 +1286,12 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
             <div className="text-xs font-black text-primary uppercase tracking-wider bg-primary/10 border border-primary/20 px-6 py-3 rounded-full shadow-2xl animate-pulse">Monitoramento Ativo</div>
         </header>
 
-        <div className="rise-card p-10 md:p-16 space-y-14">
-            <h2 className="text-xl md:text-3xl font-display leading-[1.4] text-text-main italic font-bold tracking-tight">
+        <div className="rise-card p-6 md:p-10 space-y-8 md:space-y-12">
+            <h2 className="text-lg md:text-2xl font-display leading-[1.4] text-text-main italic font-bold tracking-tight">
                 {quizData[currentQuestion]?.question}
             </h2>
 
-            <div className="grid grid-cols-1 gap-5">
+            <div className="grid grid-cols-1 gap-3 md:gap-4">
                 {quizData[currentQuestion]?.options.map((opt: string, idx: number) => {
                     const isCorrect = selectedOption !== null && idx === quizData[currentQuestion].correctAnswerIndex;
                     const isWrong = selectedOption === idx && idx !== quizData[currentQuestion].correctAnswerIndex;
@@ -1282,23 +1302,23 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                             disabled={selectedOption !== null}
                             onClick={() => handleAnswer(idx)}
                             className={cn(
-                                "w-full text-left p-7 md:p-10 rounded-[2rem] border-2 transition-all flex justify-between items-center group relative overflow-hidden",
+                                "w-full text-left p-4 md:p-6 rounded-2xl border-2 transition-all flex justify-between items-center group relative overflow-hidden",
                                 selectedOption === null 
                                   ? "bg-slate-50 border-border hover:border-primary/50 hover:bg-slate-100 text-slate-500" 
                                   : isCorrect 
-                                    ? "bg-accent/10 border-accent text-text-main shadow-[0_0_30px_rgba(245,158,11,0.3)] scale-105 z-10" 
+                                    ? "bg-accent/10 border-accent text-text-main shadow-[0_0_20px_rgba(245,158,11,0.2)] md:scale-105 scale-[1.02] z-10" 
                                     : isWrong 
-                                      ? "bg-red-500/10 border-red-500 text-text-main shadow-[0_0_30px_rgba(239,68,68,0.3)] scale-105 z-10" 
+                                      ? "bg-red-500/10 border-red-500 text-text-main shadow-[0_0_20px_rgba(239,68,68,0.2)] md:scale-105 scale-[1.02] z-10" 
                                       : "bg-slate-100 border-border opacity-50 text-slate-400"
                             )}
                         >
-                            <span className="text-base font-bold pr-10 leading-relaxed italic">{opt}</span>
+                            <span className="text-sm md:text-base font-bold pr-4 md:pr-8 leading-relaxed italic">{opt}</span>
                             <div className="shrink-0">
-                              {isCorrect && <CheckCircle2 className="w-8 h-8 text-accent animate-in zoom-in duration-500" />}
-                              {isWrong && <XCircle className="w-8 h-8 text-red-500 animate-in zoom-in duration-500" />}
+                              {isCorrect && <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-accent animate-in zoom-in duration-500" />}
+                              {isWrong && <XCircle className="w-6 h-6 md:w-8 md:h-8 text-red-500 animate-in zoom-in duration-500" />}
                               {!selectedOption && (
-                                <div className="w-10 h-10 rounded-xl bg-slate-100 border border-border flex items-center justify-center group-hover:border-primary group-hover:bg-primary transition-all shadow-sm">
-                                  <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-slate-100 border border-border flex items-center justify-center group-hover:border-primary group-hover:bg-primary transition-all shadow-sm">
+                                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-white" />
                                 </div>
                               )}
                             </div>
@@ -1312,7 +1332,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-primary/5 p-10 rounded-2xl border-2 border-primary/20 relative overflow-hidden shadow-inner"
+                        className="bg-primary/5 p-6 md:p-10 rounded-2xl border-2 border-primary/20 relative overflow-hidden shadow-inner"
                     >
                         <Notebook className="absolute -right-6 -bottom-6 w-32 h-32 text-primary/5 rotate-12" />
                         <div className="flex items-center gap-4 mb-6 relative z-10">

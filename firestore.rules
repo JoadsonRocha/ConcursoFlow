@@ -2,51 +2,110 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-    }
-
-    match /mindmaps/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    match /shared_contests/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    match /shared_decks/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    match /shared_flashcards/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    match /support_tickets/{document=**} {
-      allow create: if true;
-      allow read, write: if request.auth != null;
-    }
-
-    match /feedbacks/{document=**} {
-      allow create: if true;
-      allow read, write: if request.auth != null;
-    }
-
-    match /mail/{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
     // Default fallback - allow nothing
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+    // --- Collections ---
+
+    // Feedbacks
+    match /feedbacks/{feedbackId} {
+      allow read: if false; // only admin can read
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Support Tickets (Adding this as it was in my previous draft)
+    match /support_tickets/{ticketId} {
+      allow create: if true; // anyone can send a ticket
+      allow read, write: if isSignedIn(); // but only signed in users/admins (needs refining for real prod)
+    }
+
+    // User Data
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+      
+      // Legacy/Existing Subcollections
+      match /contests/{contestId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && incoming().ownerId == userId;
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+      
+      match /flashcards/{flashcardId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && incoming().ownerId == userId;
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
+
+      // --- NEW: Study Sources and Chat ---
+      match /sources/{sourceId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
+
+        match /messages/{messageId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId);
+          allow update: if isOwner(userId);
+          allow delete: if isOwner(userId);
+        }
+      }
+    }
+
+    // Shared / Community Content
+    match /shared_contests/{sharedId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])) ||
+        (existing().ownerId == request.auth.uid)
+      );
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+    
+    match /shared_flashcards/{sharedId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])) ||
+        (existing().ownerId == request.auth.uid)
+      );
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    match /shared_decks/{deckId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'clonesCount'])) ||
+        (existing().ownerId == request.auth.uid)
+      );
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    // MindMaps
+    match /mindmaps/{mindmapId} {
+      allow read: if (resource.data.isPublic == true) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (resource.data.isPublic == true && incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'clonesCount'])) ||
+        (existing().ownerId == request.auth.uid)
+      ) || (isOwner(resource.data.ownerId));
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
     }
   }
 }

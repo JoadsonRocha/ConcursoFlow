@@ -685,7 +685,7 @@ export default function App() {
               <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Caderno Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Mentor MEPP" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
               <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
@@ -938,7 +938,7 @@ export default function App() {
         </header>
 
         {/* Floating Mentor Stratis - Apenas para PRO */}
-        {isPro && location.pathname !== '/tutor' && location.pathname !== '/auth' && (
+        {isPro && location.pathname !== '/tutor' && location.pathname !== '/auth' && location.pathname !== '/microaprendizado' && (
           <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 pointer-events-none">
             <button 
               onClick={() => navigate('/tutor')}

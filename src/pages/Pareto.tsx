@@ -390,52 +390,54 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           className="space-y-6"
         >
           {/* Main Hero Summary */}
-          <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl transition-all border border-slate-800">
+          <div className="bg-slate-900 text-white rounded-2xl p-5 md:p-7 relative overflow-hidden shadow-xl transition-all border border-slate-800">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent"></div>
-            <div className="absolute top-0 right-0 p-8 opacity-10">
-              <Sparkles className="w-40 h-40" />
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <Sparkles className="w-24 h-24 md:w-32 md:h-32" />
             </div>
             
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-              <div className="w-24 h-24 rounded-full bg-primary/20 border-4 border-primary/30 flex items-center justify-center shrink-0">
-                <Target className="w-10 h-10 text-primary" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-4 md:gap-6">
+              <div className="w-14 h-14 md:w-18 md:h-18 rounded-full bg-primary/20 border-4 border-primary/30 flex items-center justify-center shrink-0">
+                <Target className="w-6 h-6 md:w-8 md:h-8 text-primary" />
               </div>
-              <div className="text-center md:text-left space-y-2">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                  <span className="px-3 py-1 bg-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20">Análise Inteligente</span>
+              <div className="text-center md:text-left space-y-1 my-1 md:my-0">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-0.5">
+                  <span className="px-2 py-0.5 bg-primary/20 rounded-full text-[9px] font-black uppercase tracking-widest text-primary border border-primary/20">Análise Inteligente</span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-display font-bold uppercase tracking-tight">
+                <h2 className="text-lg md:text-2xl font-display font-bold uppercase tracking-tight">
                   Sua Estratégia <span className="text-primary italic">{contest.banca || banca}</span>
                 </h2>
-                <p className="text-slate-400 font-medium max-w-2xl leading-relaxed">
+                <p className="text-slate-400 font-semibold max-w-xl text-xs md:text-sm leading-relaxed">
                   Compilamos {processedData.topTopics.length} tópicos críticos que historicamente decidem a aprovação neste concurso. 
                   Focar neles agora é a sua maior vantagem competitiva.
                 </p>
               </div>
               
-              <div className="md:ml-auto shrink-0 flex flex-col gap-3 w-full md:w-auto">
+              <div className="md:ml-auto shrink-0 flex flex-col gap-2 w-full md:w-auto">
                 <button 
                   onClick={() => handleAnalyze(true)}
                   disabled={isAnalyzing}
-                  className="px-6 py-3 bg-primary text-white border border-primary/20 rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest active:scale-95 group shadow-lg shadow-primary/20"
+                  className="px-5 py-2.5 bg-primary text-white border border-primary/20 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest active:scale-95 group shadow-lg shadow-primary/20"
                 >
-                  <Sparkles className="w-4 h-4 text-white group-hover:rotate-12 transition-transform" />
+                  <Sparkles className="w-3.5 h-3.5 text-white group-hover:rotate-12 transition-transform" />
                   Performance Elite (Refinar)
                 </button>
-                <button 
-                  onClick={() => onUpdate && onUpdate({ ...contest, paretoAnalyzed: false })}
-                  className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-                >
-                  <Building2 className="w-3 h-3" />
-                  Trocar Banca
-                </button>
-                <button 
-                  onClick={() => setIsEditingManual(!isEditingManual)}
-                  className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-400"
-                >
-                  <BookOpen className="w-3 h-3" />
-                  {isEditingManual ? 'Salvar Edição' : 'Pareto Manual (Editar)'}
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => onUpdate && onUpdate({ ...contest, paretoAnalyzed: false })}
+                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400"
+                  >
+                    <Building2 className="w-3 h-3" />
+                    Trocar Banca
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingManual(!isEditingManual)}
+                    className="flex-1 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all flex items-center justify-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    {isEditingManual ? 'Salvar' : 'Editar'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

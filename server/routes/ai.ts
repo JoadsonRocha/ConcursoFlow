@@ -243,27 +243,63 @@ router.post('/scrape-youtube', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'ID do vídeo não identificado. Certifique-se de usar um link válido do YouTube.' });
     }
 
-    const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-      }
-    });
+    let title = 'Vídeo do YouTube';
+    let description = '';
+    let authorName = '';
 
-    if (!response.ok) {
-      return res.status(400).json({ error: 'Falha ao acessar os dados do YouTube.' });
+    // Step 1: Try YouTube oEmbed API. This is extremely reliable, officially supported and does not catch 403 blocks.
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const oembedRes = await fetch(oembedUrl);
+      if (oembedRes.ok) {
+        const oembedData: any = await oembedRes.json();
+        title = oembedData.title || title;
+        authorName = oembedData.author_name || '';
+      }
+    } catch (oembedErr) {
+      console.warn('⚠️ oEmbed fetch failed, falling back to raw scraping:', oembedErr);
     }
 
-    const html = await response.text();
-    
-    // Extract title
-    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].replace('- YouTube', '').trim() : 'Vídeo do YouTube';
+    // Step 2: Try scraping watch page only if title is still default, or description is empty
+    if (title === 'Vídeo do YouTube' || !description) {
+      try {
+        const response = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+          }
+        });
+        if (response.ok) {
+          const html = await response.text();
+          if (title === 'Vídeo do YouTube') {
+            const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+            if (titleMatch) {
+              title = titleMatch[1].replace('- YouTube', '').trim();
+            }
+          }
+          const descMatch = html.match(/<meta\s+name="description"\s+content="([\s\S]*?)"/i) || html.match(/<meta\s+property="og:description"\s+content="([\s\S]*?)"/i);
+          if (descMatch) {
+            description = descMatch[1].trim();
+          }
+        }
+      } catch (scrapeErr) {
+        console.warn('⚠️ Raw scraping failed:', scrapeErr);
+      }
+    }
 
-    // Extract description from meta tag
-    const descMatch = html.match(/<meta\s+name="description"\s+content="([\s\S]*?)"/i) || html.match(/<meta\s+property="og:description"\s+content="([\s\S]*?)"/i);
-    const description = descMatch ? descMatch[1].trim() : '';
+    // Step 3: If description is empty or very generic, use Gemini to generate a highly detailed educational summary based on the title!
+    if (!description || description.length < 50) {
+      console.log(`[YouTube Scraper] Generating AI educational summary for: ${title}`);
+      try {
+        const aiSummary = await GeminiService.generateVideoDescription(title, authorName);
+        if (aiSummary) {
+          description = aiSummary;
+        }
+      } catch (aiErr) {
+        console.error('⚠️ Failed to generate AI description:', aiErr);
+      }
+    }
 
-    const content = `Vídeo do YouTube: ${title}\nURL: ${url}\nID do Vídeo: ${videoId}\n\nDescrição do Vídeo:\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n[Nota: Conteúdo de vídeo importado para o Notebook Stratis. Use seu conhecimento de IA associado para responder dúvidas táticas adicionais sobre este tema.]`;
+    const content = `Título do Vídeo: ${title}\nCanal: ${authorName || 'Especialista em Concursos'}\nURL: ${url}\nID do Vídeo: ${videoId}\n\nResumo e Conteúdo Didático:\n${description || 'Nenhuma descrição detalhada disponível.'}\n\n[Nota: Conteúdo de vídeo importado para o Notebook Stratis. Use seu tutor de IA para aprofundar ou gerar mapas e flashcards deste assunto.]`;
 
     res.json({
       title,

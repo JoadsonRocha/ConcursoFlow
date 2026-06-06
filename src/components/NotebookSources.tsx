@@ -1,26 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { 
-  Plus, 
-  Search, 
-  FileText, 
-  Youtube, 
-  Globe, 
-  Trash2, 
-  Send, 
-  ChevronRight, 
-  BookOpen, 
-  Sparkles, 
-  Lightbulb, 
-  Share2, 
-  X, 
+  Plus,
+  Search,
+  Play,
+  Globe,
+  Youtube,
+  Trash2,
+  Send,
+  ChevronRight,
+  BookOpen,
+  Sparkles,
+  X,
   ArrowLeft,
   FileUp,
   MessageSquare,
   HelpCircle,
-  FileCheck
+  FileCheck,
+  ChevronDown,
+  ArrowUp,
+  MoreHorizontal,
+  Brain,
+  Layout,
+  FileQuestion,
+  ListChecks,
+  Table2,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -33,6 +40,7 @@ interface Source {
   content: string;
   url?: string;
   fileName?: string;
+  quizQuestions?: any[];
 }
 
 interface Message {
@@ -46,9 +54,12 @@ interface NotebookSourcesProps {
   onBack: () => void;
   subjects: any[];
   contestId?: string;
+  onOpenFlashcards?: (cards: any[]) => void;
+  onOpenMindmap?: (mapData: any) => void;
+  onOpenQuiz?: (quiz: any[]) => void;
 }
 
-export default function NotebookSources({ onBack, subjects, contestId }: NotebookSourcesProps) {
+export default function NotebookSources({ onBack, subjects, contestId, onOpenFlashcards, onOpenMindmap, onOpenQuiz }: NotebookSourcesProps) {
   const { user } = useAuth();
   // Sources state
   const [sources, setSources] = useState<Source[]>([]);
@@ -57,6 +68,8 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
   
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sourceFlashcards, setSourceFlashcards] = useState<any[]>([]);
+  const [sourceMindmaps, setSourceMindmaps] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [subTab, setSubTab] = useState<'chat' | 'content'>('chat');
@@ -64,6 +77,7 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
 
   // New Source Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
   const [newSourceType, setNewSourceType] = useState<'text' | 'file' | 'youtube' | 'web'>('text');
   const [newSourceForm, setNewSourceForm] = useState({
     title: '',
@@ -80,6 +94,15 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
   // AI Generation states
   const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
   const [isGeneratingMindmap, setIsGeneratingMindmap] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+
+  // Estado de bloqueio removido (funcionalidade liberada)
+  const [isLockedForMaintenance, setIsLockedForMaintenance] = useState(false);
+  
+  // State for panels
+  const [isSourcesPanelOpen, setIsSourcesPanelOpen] = useState(true);
+  const [isStudioPanelOpen, setIsStudioPanelOpen] = useState(true);
+  const [activeMobileTab, setActiveMobileTab] = useState<'fonts' | 'chat' | 'studio'>('chat');
 
   // 1. Subscribe to study sources
   useEffect(() => {
@@ -98,11 +121,7 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
     }, (err: any) => {
       console.warn('Error fetching sources:', err);
       if (auth.currentUser) {
-        if (err?.code === 'permission-denied') {
-          toast.error('Erro de Permissão (Produção): Para rodar essas novas funcionalidades no seu Firebase Oficial, você precisa atualizar as regras (firestore.rules) do seu projeto para permitir acesso às novas sub-coleções (ex: users/{userId}/{document=**})', { duration: 10000 });
-        } else {
-          toast.error(`Erro ao sincronizar fontes: ${err?.code || 'Código Indisponível'} - ${err?.message || 'Desconhecido'}`);
-        }
+        toast.error(`Erro ao sincronizar fontes: ${err?.code || 'Desconhecido'}`);
       }
     });
 
@@ -131,12 +150,35 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
       setMessages(msgs);
     }, (err: any) => {
       console.warn('Realtime messages load error:', err);
-      if (err?.code === 'permission-denied') {
-         toast.error('Erro de permissão no Firebase para carregar o chat. Atualize firestore.rules em produção.');
+      if (err?.code === 'permission-denied' && auth.currentUser) {
+        toast.error('Sem permissão para ler o chat. Verifique se as regras oficiais foram atualizadas no seu projeto Firebase.');
       }
     });
 
-    return () => unsubscribeMsgs();
+    // Sub to flashcards
+    const qCards = query(
+      collection(db, 'users', user.uid, 'flashcards'),
+      where('sourceId', '==', activeSource.id)
+    );
+    const unsubCards = onSnapshot(qCards, (snap) => {
+      setSourceFlashcards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    // Sub to mindmaps
+    const qMaps = query(
+      collection(db, 'mindmaps'),
+      where('ownerId', '==', user.uid)
+    );
+    const unsubMaps = onSnapshot(qMaps, (snap) => {
+      const allMaps = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSourceMindmaps(allMaps.filter((m: any) => m.sourceId === activeSource.id));
+    });
+
+    return () => {
+      unsubscribeMsgs();
+      unsubCards();
+      unsubMaps();
+    };
   }, [user, activeSource?.id]);
 
   // Scroll to bottom of chat
@@ -193,8 +235,10 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
     // Strategy 1: Try bundled modern pdfjs-dist
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      // Use unpkg instead of cdnjs for modern versions of pdfjs-dist
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      // For version 5+, use unpkg with correct versioning and extension (.mjs)
+      const version = pdfjsLib.version || '5.7.284';
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+      
       const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
       
@@ -208,10 +252,10 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
       }
       return fullText;
     } catch (importErr) {
-      console.warn('Strategy 1 PDF extraction failed. Trying highly-compatible Strategy 2 (CDN)...', importErr);
+      console.warn('Strategy 1 PDF extraction failed. Trying Strategy 2 (Legacy CDN)...', importErr);
     }
 
-    // Strategy 2: Fallback to highly compatible, stable v3 CDN
+    // Strategy 2: Fallback to highly compatible v2 version from CDN
     try {
       const pdfjsLib = await new Promise<any>((resolve, reject) => {
         if ((window as any).pdfjsLib) {
@@ -219,17 +263,17 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
           return;
         }
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
         script.onload = () => {
           const lib = (window as any).pdfjsLib;
           if (lib) {
-            lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
             resolve(lib);
           } else {
-            reject(new Error('pdfjsLib not found on window after CDN load'));
+            reject(new Error('pdfjsLib v2 not found on window after CDN load'));
           }
         };
-        script.onerror = (e) => reject(new Error('Failed to load pdf.js from CDN'));
+        script.onerror = (e) => reject(new Error('Failed to load pdf.js v2 from CDN'));
         document.body.appendChild(script);
       });
 
@@ -247,7 +291,7 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
       return fullText;
     } catch (cdnErr) {
       console.error('All PDF text extraction strategies failed:', cdnErr);
-      throw new Error('Falha tática ao extrair conteúdo do arquivo PDF. Certifique-se de que ele não possui senha de proteção ou é imagem escaneada pura (sem texto selecionável).');
+      throw new Error('Não foi possível extrair o texto do PDF. Certifique-se de que o arquivo tem texto selecionável e não está protegido por senha.');
     }
   };
 
@@ -380,7 +424,6 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
 
   const handleDeleteSource = async (sourceId: string) => {
     if (!user) return;
-    if (!window.confirm('Tem certeza de que deseja excluir esta fonte e todas as conversas?')) return;
 
     try {
       await deleteDoc(doc(db, 'users', user.uid, 'sources', sourceId));
@@ -388,6 +431,7 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
       if (activeSource?.id === sourceId) {
         setActiveSource(null);
       }
+      setSourceToDelete(null);
     } catch (err) {
       console.error(err);
       toast.error('Erro ao remover fonte.');
@@ -395,11 +439,11 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
   };
 
   // Chat Q&A sending
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim() || !activeSource || isChatLoading || !user) return;
+  const handleSendMessage = async (text?: string) => {
+    const finalMsg = typeof text === 'string' ? text : inputText;
+    if (!finalMsg.trim() || !activeSource || isChatLoading || !user) return;
 
-    const userMsg = inputText.trim();
+    const userMsg = finalMsg.trim();
     setInputText('');
     setIsChatLoading(true);
 
@@ -458,6 +502,52 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
     }
   };
 
+  const handleGenerateQuestionsFromSource = async () => {
+    if (!activeSource || !user) return;
+    if (isGeneratingQuestions) return;
+
+    setIsGeneratingQuestions(true);
+    toast.info('Formulando questões de teste a partir do documento...');
+
+    try {
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/ai/quiz', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          topic: `Gere exatamente 5 questões de múltipla escolha difíceis e focadas. Baseie-se apenas neste material:\n\n${activeSource.content.substring(0, 10000)}`,
+          subject: activeSource.title
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar questões.');
+      }
+
+      const questions = await response.json();
+      if (!Array.isArray(questions) || questions.length === 0) {
+        throw new Error('Nenhuma questão retornada.');
+      }
+
+      // Save directly into the active StudySource document in Firestore
+      await updateDoc(doc(db, 'users', user.uid, 'sources', activeSource.id), {
+        quizQuestions: questions,
+        updatedAt: serverTimestamp()
+      });
+      
+      toast.success('Sucesso! Simulado com 5 questões de teste montado na sua lista do Estúdio.');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Falha ao gerar questões: ${err.message || err}`);
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
+
   // Integration: Generate Flashcards from current document's exact context
   const handleGenerateFlashcardsFromSource = async () => {
     if (!activeSource || !user) return;
@@ -506,6 +596,7 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
           subjectId: defaultSubjectId,
           subjectName: defaultSubjectName,
           ownerId: user.uid,
+          sourceId: activeSource.id,
           ownerName: user.displayName || 'Estudante',
           isPublic: false,
           interval: 1,
@@ -566,8 +657,10 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
         title: `Mapa: ${activeSource.title}`,
         nodes: [], // Custom SVGMaps handles rendering cleanly with raw SVGs injected inside SVGMapViewer or directly stored
         rawSvg: generatedMaps[0], // SvgMapViewer handles rendering rawSvg natively
+        svgData: generatedMaps,
         isPublic: false,
         ownerId: user.uid,
+        sourceId: activeSource.id,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -586,553 +679,525 @@ export default function NotebookSources({ onBack, subjects, contestId }: Noteboo
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="flex flex-col relative overflow-hidden bg-slate-50 animate-in fade-in duration-700 pb-safe w-full h-[calc(100vh-90px)] sm:h-[calc(100vh-140px)] rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200">
       
-      {/* 2. Top Header action rail */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={onBack}
-            className="p-2 hover:bg-slate-100 rounded-xl transition-all border border-slate-200"
-            id="btn_back_selection"
-          >
-            <ArrowLeft className="w-4 h-4 text-text-main" />
-          </button>
-          <div>
-            <h2 className="text-xl md:text-2xl font-display text-text-main font-bold italic tracking-tight">
-              Fontes & Chat Inteligente
-            </h2>
-            <p className="text-text-sub text-[10px] md:text-xs">
-              Mapeie conteúdos, cole textos ou traga links externos e estude de forma bidirecional.
-            </p>
+      {/* ⚠️ BLOQUEIO "EM BREVE" / MANUTENÇÃO */}
+      {isLockedForMaintenance && (
+        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/70 backdrop-blur-[12px] rounded-3xl border-2 border-dashed border-primary/30 m-[-2px]">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center text-center max-w-md space-y-5 animate-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-2">
+              <Sparkles className="w-10 h-10 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-display font-black italic text-text-main tracking-tight">Criação de Cadernos</h2>
+              <p className="text-sm text-text-sub leading-relaxed font-medium">
+                Estamos finalizando a integração dos Cadernos de Estudo para que você possa centralizar seus PDFs, vídeos e links com inteligência artificial.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-sub">
+              <div className="w-2 h-2 bg-amber-500 rounded-full animate-ping" />
+              Desenvolvimento em 95%
+            </div>
+            <button 
+              onClick={onBack}
+              className="px-6 py-3 bg-text-main text-white rounded-2xl font-bold text-xs hover:brightness-110 transition-all flex items-center gap-2 group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Voltar por enquanto
+            </button>
           </div>
         </div>
+      )}
 
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 bg-primary text-white font-bold text-xs rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-start sm:self-auto"
-          id="btn_open_add_source"
-        >
-          <Plus className="w-4 h-4" />
-          Adicionar Fonte de Estudo
-        </button>
+
+      {/* Mobile Tab Navigation */}
+      <div className="md:hidden flex border-b bg-white border-slate-100">
+        <button onClick={() => setActiveMobileTab('fonts')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'fonts' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Fontes</button>
+        <button onClick={() => setActiveMobileTab('chat')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'chat' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Conversa</button>
+        <button onClick={() => setActiveMobileTab('studio')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'studio' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Estúdio</button>
       </div>
 
-      {/* 3. Primary Two-Pane Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[550px]">
+      <div className="flex-1 flex w-full max-w-[1600px] mx-auto overflow-hidden p-2 gap-2 sm:p-4 sm:gap-4">
         
-        {/* Left Side: Sources directory manager (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col h-full min-h-[400px]">
-            
-            {/* Search Input */}
-            <div className="relative mb-4">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                <Search className="w-4 h-4" />
-              </span>
-              <input 
-                type="text"
-                placeholder="Buscar fontes de estudo..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 text-text-main text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all font-medium"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        {/* LEFT PANEL: FONTES */}
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isSourcesPanelOpen ? 'md:w-48' : 'md:w-16'} flex-shrink-0 ${activeMobileTab === 'fonts' ? 'flex' : 'hidden'} md:flex`}>
+          <div className="p-4 flex items-center justify-between">
+            {isSourcesPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-[11px]">Fontes</h3>}
+            <button 
+              onClick={() => setIsSourcesPanelOpen(!isSourcesPanelOpen)}
+              className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
+            >
+              <Layout className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-            {/* List View */}
-            <div className="space-y-2 overflow-y-auto max-h-[450px] flex-1 pr-1 custom-scrollbar">
-              {filteredSources.length === 0 ? (
-                <div className="text-center py-12 px-4 space-y-3">
-                  <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
-                  <p className="text-xs text-text-sub italic font-medium">Nenhuma fonte cadastrada.</p>
-                </div>
-              ) : (
-                filteredSources.map((source) => {
-                  const isActive = activeSource?.id === source.id;
-                  return (
-                    <div 
-                      key={source.id}
-                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
-                        isActive 
-                          ? 'bg-primary/5 border-primary/20 ring-1 ring-primary/10' 
-                          : 'bg-slate-50 border-slate-100 hover:bg-slate-100/60'
-                      }`}
-                      onClick={() => {
-                        setActiveSource(source);
-                        setSubTab('chat');
-                      }}
-                    >
-                      <div className="flex items-center gap-3 min-w-0 pr-3">
-                        <div className={`p-2 rounded-lg ${
-                          source.type === 'youtube' ? 'bg-red-50 text-red-500' :
-                          source.type === 'web' ? 'bg-blue-50 text-blue-500' :
-                          source.type === 'file' ? 'bg-teal-50 text-teal-600' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {source.type === 'youtube' && <Youtube className="w-4 h-4" />}
-                          {source.type === 'web' && <Globe className="w-4 h-4" />}
-                          {source.type === 'file' && <FileText className="w-4 h-4" />}
-                          {source.type === 'text' && <FileText className="w-4 h-4" />}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-text-main truncate">{source.title}</h4>
-                          <span className="text-[9px] uppercase tracking-wider text-text-sub font-bold block mt-0.5">
-                            {source.type === 'youtube' ? 'YouTube Video' :
-                             source.type === 'web' ? 'Web Link' :
-                             source.type === 'file' ? 'Arquivo Upload' : 'Coleção de Texto'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSource(source.id);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+          <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
+            {isSourcesPanelOpen ? (
+              <>
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="w-full py-2 px-3 bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-main group mb-3"
+                >
+                  <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-125 transition-transform" />
+                  Adicionar
+                </button>
+                <div className="space-y-1.5">
+                  {sources.map(source => (
+                     <div 
+                        key={source.id}
+                        onClick={() => { setActiveSource(source); setActiveMobileTab('chat'); }}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between ${
+                          activeSource?.id === source.id 
+                            ? 'bg-primary/5 border-primary/20' 
+                            : 'bg-slate-50/50 border-transparent hover:border-slate-200'
+                        }`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="border-t border-slate-100 pt-3 mt-4 text-[10px] text-text-sub font-semibold flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              <span>Dica: Use fontes para turbinar revisões.</span>
-            </div>
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          <div className={`p-1.5 rounded-lg shrink-0 ${
+                            source.type === 'youtube' ? 'bg-red-50 text-red-500' :
+                            source.type === 'web' ? 'bg-blue-50 text-blue-500' : 'bg-teal-50 text-teal-600'
+                          }`}>
+                            {source.type === 'youtube' ? <Youtube className="w-3 h-3" /> : 
+                             source.type === 'web' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold text-text-main truncate">{source.title}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSourceToDelete(source.id);
+                          }}
+                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded-md transition-all shrink-0 ml-2"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+                <div className="flex flex-col items-center pt-2 space-y-3">
+                    <button onClick={() => setIsSourcesPanelOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"><Plus className='w-3.5 h-3.5'/></button>
+                    {sources.map(s => <div key={s.id} className='w-6 h-6 rounded-full bg-slate-100'/>)}
+                </div>
+            )}
           </div>
         </div>
 
-        {/* Right Side: Primary Active Workspace Window (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col h-full bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-          {!activeSource ? (
-            <div className="flex flex-col items-center justify-center text-center p-12 h-full min-h-[450px]">
-              <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center text-slate-400 mb-5 shadow-inner">
-                <Sparkles className="w-8 h-8" />
+        {/* CENTER PANEL: CONVERSA / CHAT */}
+        <div className={`flex flex-col bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden relative transition-all duration-300 min-w-0 w-full md:w-auto md:flex-1 ${activeMobileTab === 'chat' ? 'flex' : 'hidden'} md:flex`}>
+          <div className="hidden md:flex p-4 border-b border-slate-50 items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+            <h3 className="font-bold text-text-main text-sm">Conversa</h3>
+            
+            <button 
+              onClick={() => setMessages([])}
+              className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-text-main transition-all"
+              title="Limpar Histórico"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Absolute Trash Button for Mobile */}
+          <div className="md:hidden absolute top-2 right-2 z-20">
+            <button 
+              onClick={() => setMessages([])}
+              className="p-2 text-slate-300 hover:text-red-500 hover:bg-slate-50 rounded-full transition-all"
+              title="Limpar Histórico"
+            >
+              <Trash2 className="w-4 h-4 opacity-50" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 md:py-6 custom-scrollbar">
+            <div className="space-y-6 max-w-3xl mx-auto pb-4">
+              {messages.length === 0 && (
+                <div className="flex w-full justify-start">
+                  <div className="p-4 sm:p-5 rounded-[28px] text-[13px] leading-relaxed break-words shadow-sm bg-slate-50 text-text-main border border-slate-100 max-w-[95%] sm:max-w-[90%] rounded-tl-none">
+                    <div className="prose prose-sm max-w-none prose-slate select-text marker:text-primary prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-strong:text-text-main">
+                      <h3 className="text-xl font-display font-black text-text-main tracking-tight mt-0 mb-3">Vamos iniciar seu notebook… 🔍</h3>
+                      <p>Esta é sua tela em branco para entender, criar ou progredir em algo novo. Posso te ajudar a começar ou você pode adicionar as próprias fontes.</p>
+                      <p className="font-bold">O que você quer fazer com este notebook?</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {messages.map((m) => (
+                <div key={m.id} className={`flex w-full ${m.role === 'model' ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`p-4 sm:p-5 rounded-[28px] text-[13px] leading-relaxed break-words shadow-sm ${
+                    m.role === 'model' 
+                      ? 'bg-slate-50 text-text-main border border-slate-100 max-w-[95%] sm:max-w-[90%] rounded-tl-none' 
+                      : 'bg-primary text-white max-w-[88%] sm:max-w-[80%] shadow-md shadow-primary/10 rounded-tr-none'
+                  }`}>
+                    {m.role === 'model' ? (
+                      <div className="prose prose-sm max-w-none prose-slate select-text marker:text-primary prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-strong:text-text-main">
+                        <Markdown>{m.content}</Markdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap font-medium">
+                        {m.content}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {isChatLoading && (
+                <div className="flex items-center gap-2 text-[10px] font-bold text-text-sub animate-pulse ml-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-full w-fit">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                  Analista Stratis processando material...
+                </div>
+              )}
+              <div ref={chatEndRef} className="h-4" />
+            </div>
+          </div>
+
+          {/* INPUT AREA with Quick Prompts */}
+          <div className="p-2 pb-2 sm:p-4 bg-white border-t border-slate-50 relative z-20">
+            {activeSource && messages.length === 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+                {[
+                  { label: "Resumir em Tabela", icon: Table2, prompt: "Crie um resumo analítico desta fonte formatado em uma tabela técnica, destacando os pontos mais importantes para concursos." },
+                  { label: "Checklist de Pontos Críticos", icon: ListChecks, prompt: "Extraia desta fonte um checklist de pontos críticos, prazos e regras que costumam ser pegadinhas em provas." },
+                  { label: "Explicar Termos Técnicos", icon: HelpCircle, prompt: "Identifique todos os termos técnicos e jurídicos desta fonte e crie um glossário simplificado." }
+                ].map((qp, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => handleSendMessage(qp.prompt)}
+                    disabled={isChatLoading}
+                    className="w-full px-3 py-2.5 bg-slate-50 hover:bg-primary/5 border border-slate-100 hover:border-primary/20 rounded-2xl text-[10px] font-black text-text-sub hover:text-primary uppercase tracking-tight transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <qp.icon className="w-3 h-3" />
+                    {qp.label}
+                  </button>
+                ))}
               </div>
-              <h3 className="text-base font-display text-text-main font-bold italic">Estruture sua Fonte Tática</h3>
-              <p className="text-xs text-text-sub max-w-sm mt-2 leading-relaxed">
-                Selecione uma fonte existente no menu lateral ou adicione um novo recurso para começar a debater conteúdo com inteligência artificial.
-              </p>
-              
-              <div className="mt-8 flex flex-wrap justify-center gap-4 max-w-md">
-                <div onClick={() => { setNewSourceType('text'); setShowAddModal(true); }} className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 hover:border-slate-200 hover:bg-slate-100/40 rounded-xl cursor-pointer transition-all text-xs font-semibold text-text-main">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                  <span>Texto Puro</span>
-                </div>
-                <div onClick={() => { setNewSourceType('file'); setShowAddModal(true); }} className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 hover:border-slate-200 hover:bg-slate-100/40 rounded-xl cursor-pointer transition-all text-xs font-semibold text-text-main">
-                  <FileUp className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Arraste PDFs / TXT</span>
-                </div>
-                <div onClick={() => { setNewSourceType('youtube'); setShowAddModal(true); }} className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 hover:border-slate-200 hover:bg-slate-100/40 rounded-xl cursor-pointer transition-all text-xs font-semibold text-text-main">
-                  <Youtube className="w-3.5 h-3.5 text-red-500" />
-                  <span>Vídeo YouTube</span>
-                </div>
-                <div onClick={() => { setNewSourceType('web'); setShowAddModal(true); }} className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-100 hover:border-slate-200 hover:bg-slate-100/40 rounded-xl cursor-pointer transition-all text-xs font-semibold text-text-main">
-                  <Globe className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Artigo da Web</span>
-                </div>
+            )}
+
+            <div className="max-w-2xl mx-auto flex items-center gap-2 p-1.5 bg-slate-50 border border-slate-200 rounded-[32px] focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white transition-all shadow-sm">
+              <input 
+                type="text" 
+                placeholder={activeSource ? "Pergunte ao analista sobre esta fonte..." : "Selecione uma fonte para analisar..."}
+                disabled={!activeSource || isChatLoading}
+                className="flex-1 bg-transparent border-none focus:outline-none px-4 py-2.5 text-[13px] font-medium text-text-main placeholder:text-slate-400"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              />
+              <div className="flex items-center gap-1.5 pr-2">
+                 <button 
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputText.trim() || isChatLoading || !activeSource}
+                  className="p-3 bg-text-main hover:brightness-125 disabled:opacity-20 rounded-full transition-all text-white"
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col h-full min-h-[480px]">
-              
-              {/* Header Action rail */}
-              <div className="bg-slate-50/80 border-b border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="text-sm font-bold text-text-main tracking-tight line-clamp-1">{activeSource.title}</h3>
-                    <span className="text-[9px] px-2 py-0.5 bg-slate-200 rounded-full text-text-sub font-black uppercase tracking-wider">
-                      {activeSource.type}
-                    </span>
-                  </div>
-                  
-                  {activeSource.url && (
-                    <a 
-                      href={activeSource.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-[10px] text-primary hover:underline font-bold tracking-tight line-clamp-1 flex items-center gap-1"
-                    >
-                      <Globe className="w-3 h-3" />
-                      {activeSource.url}
-                    </a>
-                  )}
-                </div>
+            
+            {!activeSource && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-b-3xl">
+                <button 
+                  onClick={() => {
+                    setActiveMobileTab('fonts');
+                    setIsSourcesPanelOpen(true);
+                  }}
+                  className="text-[10px] font-black text-text-main uppercase tracking-[0.2em] bg-white px-6 py-3 rounded-full border border-slate-200 shadow-sm hover:border-primary hover:text-primary transition-all cursor-pointer">
+                  Selecione uma Fonte
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* Generate Flashcards */}
-                  <button 
-                    onClick={handleGenerateFlashcardsFromSource}
-                    disabled={isGeneratingFlashcards}
-                    className="flex items-center justify-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 hover:text-amber-800 disabled:opacity-50 text-[10px] font-black uppercase tracking-wider.5 rounded-xl transition-all"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5 animate-pulse" />
-                    {isGeneratingFlashcards ? 'Construindo...' : 'Gerar Flashcards'}
-                  </button>
+        {/* RIGHT PANEL: ESTUDIO */}
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isStudioPanelOpen ? 'md:w-48' : 'md:w-16'} flex-shrink-0 ${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex`}>
+          <div className="p-5 flex items-center justify-between">
+            {isStudioPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-sm">Estúdio</h3>}
+            <button 
+              onClick={() => setIsStudioPanelOpen(!isStudioPanelOpen)}
+              className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
+            >
+              <Layout className="w-4 h-4" />
+            </button>
+          </div>
 
-                  {/* Generate Mind Map */}
+            {isStudioPanelOpen ? (
+            <div className="flex-1 flex flex-col p-4 overflow-hidden">
+                <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
                   <button 
                     onClick={handleGenerateMindmapFromSource}
-                    disabled={isGeneratingMindmap}
-                    className="flex items-center justify-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 hover:text-indigo-800 disabled:opacity-50 text-[10px] font-black uppercase tracking-wider.5 rounded-xl transition-all"
+                    disabled={!activeSource || isGeneratingMindmap}
+                    className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-fuchsia-50/50"
                   >
-                    <Share2 className="w-3.5 h-3.5" />
-                    {isGeneratingMindmap ? 'Gerando...' : 'Gerar Mapa'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Tab Selector bar */}
-              <div className="flex border-b border-slate-200">
-                <button 
-                  onClick={() => setSubTab('chat')}
-                  className={`flex-1 py-2.5 text-[11px] font-black tracking-widest uppercase border-b-2 text-center transition-all ${
-                    subTab === 'chat' 
-                      ? 'border-primary text-primary bg-slate-50/20' 
-                      : 'border-transparent text-text-sub hover:text-text-main'
-                  }`}
-                >
-                  Chat com IA
-                </button>
-                <button 
-                  onClick={() => setSubTab('content')}
-                  className={`flex-1 py-2.5 text-[11px] font-black tracking-widest uppercase border-b-2 text-center transition-all ${
-                    subTab === 'content' 
-                      ? 'border-primary text-primary bg-slate-50/20' 
-                      : 'border-transparent text-text-sub hover:text-text-main'
-                  }`}
-                >
-                  Texto Escaneado ({Math.ceil(activeSource.content.length / 5)} palavras)
-                </button>
-              </div>
-
-              {/* Sub Tab View contents */}
-              <div className="flex-1 flex flex-col min-h-[300px]">
-                {subTab === 'chat' ? (
-                  <div className="flex-1 flex flex-col justify-between">
-                    
-                    {/* Chat dialog logs */}
-                    <div className="flex-1 p-4 overflow-y-auto max-h-[330px] space-y-4 custom-scrollbar">
-                      {messages.length === 0 ? (
-                        <div className="text-center py-10 px-4 space-y-4">
-                          <MessageSquare className="w-10 h-10 text-primary/30 mx-auto" />
-                          <div className="space-y-1">
-                            <h4 className="text-xs font-bold text-text-main">Mesa redonda sobre sua Fonte</h4>
-                            <p className="text-[11px] text-text-sub max-w-xs mx-auto leading-relaxed italic">
-                              A inteligência artificial está sincronizada com o texto. Pergunte livremente ou selecione uma sugestão abaixo:
-                            </p>
-                          </div>
-
-                          <div className="flex flex-col gap-2 max-w-sm mx-auto pt-2">
-                            <button 
-                              onClick={() => setInputText('Faça um resumo cirúrgico de 5 pontos-chave táticos sobre este material.')}
-                              className="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl text-[10px] font-medium text-text-main transition-all italic line-clamp-1"
-                            >
-                              📌 "Faça um resumo de 5 pontos-chave..."
-                            </button>
-                            <button 
-                              onClick={() => setInputText('Quais os tópicos e termos mais cobrados em prova com base neste conteúdo?')}
-                              className="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl text-[10px] font-medium text-text-main transition-all italic line-clamp-1"
-                            >
-                              💡 "Quais os tópicos mais cobrados..."
-                            </button>
-                            <button 
-                              onClick={() => setInputText('Crie 3 perguntas com pegadinhas táticas da banca sobre esta fonte.')}
-                              className="w-full text-left p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl text-[10px] font-medium text-text-main transition-all italic line-clamp-1"
-                            >
-                              🎯 "Crie 3 perguntas com pegadinhas..."
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        messages.map((m) => {
-                          const isModel = m.role === 'model';
-                          return (
-                            <div 
-                              key={m.id}
-                              className={`flex ${isModel ? 'justify-start' : 'justify-end'} animate-in fade-in slide-in-from-bottom-1 duration-300`}
-                            >
-                              <div className={`p-3.5 max-w-[85%] rounded-2xl text-xs leading-relaxed shadow-sm ${
-                                isModel 
-                                  ? 'bg-slate-100 text-text-main border border-slate-100' 
-                                  : 'bg-primary text-white font-medium'
-                              }`}>
-                                {isModel ? (
-                                  <div className="markdown-body select-text">
-                                    <Markdown>{m.content}</Markdown>
-                                  </div>
-                                ) : (
-                                  <p className="whitespace-pre-wrap select-text">{m.content}</p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-
-                      {/* Gemini answering loading indicator */}
-                      {isChatLoading && (
-                        <div className="flex justify-start animate-pulse">
-                          <div className="bg-slate-50 border border-slate-100 p-3.5 rounded-2xl flex items-center gap-2 text-xs text-text-sub font-semibold">
-                            <div className="flex gap-1">
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                            </div>
-                            <span>Tutor analisando e redigindo resposta...</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div ref={chatEndRef} />
+                    <div className="flex items-center gap-2.5">
+                      <Brain className={`w-3.5 h-3.5 text-fuchsia-500 ${isGeneratingMindmap ? 'animate-pulse' : ''}`} />
+                      <span className="text-[10px] font-bold text-text-main">
+                        {isGeneratingMindmap ? 'Gerando...' : 'Mapa mental'}
+                      </span>
                     </div>
+                  </button>
 
-                    {/* Chat Text area input */}
-                    <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 bg-slate-50/40 flex items-center gap-2">
-                      <input 
-                        type="text"
-                        placeholder="Pergunte sobre as regras, conceitos ou pegadinhas desta fonte..."
-                        className="flex-1 px-4 py-3 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-text-main"
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        disabled={isChatLoading}
-                      />
-                      <button 
-                        type="submit"
-                        disabled={!inputText.trim() || isChatLoading}
-                        className="p-3 bg-primary hover:brightness-110 disabled:opacity-45 text-white rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </form>
+                  <button 
+                    onClick={handleGenerateFlashcardsFromSource}
+                    disabled={!activeSource || isGeneratingFlashcards}
+                    className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-orange-50/50"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Layout className={`w-3.5 h-3.5 text-orange-500 ${isGeneratingFlashcards ? 'animate-pulse' : ''}`} />
+                      <span className="text-[10px] font-bold text-text-main">
+                        {isGeneratingFlashcards ? 'Gerando...' : 'Flashcards'}
+                      </span>
+                    </div>
+                  </button>
 
+
+                  <button 
+                    onClick={handleGenerateQuestionsFromSource}
+                    disabled={!activeSource || isGeneratingQuestions}
+                    className="w-full flex items-center justify-between p-3 border border-transparent hover:border-slate-200 rounded-2xl transition-all group disabled:opacity-30 bg-sky-50/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileQuestion className={`w-4 h-4 text-sky-500 ${isGeneratingQuestions ? 'animate-pulse' : ''}`} />
+                      <span className="text-[11px] font-bold text-text-main">
+                        {isGeneratingQuestions ? 'Gerando...' : 'Questões de Teste'}
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="pt-6 border-t border-slate-100 mt-4 space-y-4">
+                    {sourceMindmaps.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Mapas Mentais</h4>
+                        {sourceMindmaps.map(map => (
+                          <button 
+                            key={map.id} 
+                            onClick={() => onOpenMindmap && onOpenMindmap(map)}
+                            className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-fuchsia-300 hover:shadow-sm"
+                          >
+                            <div className="absolute top-0 right-0 p-1.5 opacity-50"><Brain className="w-6 h-6 text-fuchsia-100" /></div>
+                            <span className="text-xs font-bold text-text-main line-clamp-1">{map.title}</span>
+                            <span className="text-[10px] text-text-sub font-medium">Abrir visualizador</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {sourceFlashcards.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Decks Criados</h4>
+                        <button 
+                          onClick={() => onOpenFlashcards && onOpenFlashcards(sourceFlashcards)}
+                          className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-orange-300 hover:shadow-sm"
+                        >
+                          <div className="absolute top-0 right-0 p-1.5 opacity-50"><Layout className="w-6 h-6 text-orange-100" /></div>
+                          <span className="text-xs font-bold text-text-main line-clamp-1">Cartões de Estudo ({sourceFlashcards.length})</span>
+                          <span className="text-[10px] text-text-sub font-medium">Abrir modo revisão</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {activeSource?.quizQuestions && activeSource.quizQuestions.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Simulado Salvo</h4>
+                        <div className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-sky-300 hover:shadow-sm group">
+                          <div className="absolute top-1 right-2 flex items-center gap-1 opacity-50"><FileQuestion className="w-6 h-6 text-sky-100" /></div>
+                          <span className="text-xs font-bold text-text-main line-clamp-1">Simulado ({activeSource.quizQuestions.length} questões)</span>
+                          <div className="flex gap-2 z-10 mt-1">
+                            <button 
+                              onClick={() => onOpenQuiz && onOpenQuiz(activeSource.quizQuestions || [])}
+                              className="flex-1 py-1.5 px-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[9px] uppercase tracking-widest rounded-lg transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Play className="w-2.5 h-2.5 fill-current" />
+                              Treinar
+                            </button>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (window.confirm("Deseja apagar este simulado?")) {
+                                  try {
+                                    await updateDoc(doc(db, 'users', user.uid, 'sources', activeSource.id), {
+                                      quizQuestions: []
+                                    });
+                                    toast.success("Simulado removido!");
+                                  } catch (err) {
+                                    console.error(err);
+                                    toast.error("Erro ao remover simulado.");
+                                  }
+                                }
+                              }}
+                              className="p-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100 rounded-lg text-slate-400 transition-all shrink-0 cursor-pointer"
+                              title="Excluir simulado"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex-1 p-5 overflow-y-auto max-h-[380px] bg-slate-50/50 block text-xs leading-relaxed text-text-main select-text font-mono whitespace-pre-wrap rounded-b-3xl border-t border-slate-100">
-                    {activeSource.content}
-                  </div>
-                )}
-              </div>
-
+                </div>
+            </div>
+          ) : (
+            <div className='flex flex-col items-center pt-2 space-y-4'>
+                <button onClick={handleGenerateMindmapFromSource} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><Brain className='w-4 h-4'/></button>
+                <button onClick={handleGenerateFlashcardsFromSource} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><Layout className='w-4 h-4'/></button>
             </div>
           )}
         </div>
 
       </div>
 
-      {/* 4. Modular Create Source Side Dialog (Modal) */}
+      {/* MODAL: ADICIONAR FONTE */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden"
-              id="modal_add_study_source"
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl p-10 relative overflow-hidden"
             >
-              <div className="bg-slate-50 border-b border-slate-100 p-5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <h3 className="text-base font-bold text-text-main tracking-tight">Nova Fonte de Estudo</h3>
-                </div>
-                <button 
-                  onClick={() => setShowAddModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-text-main transition-all"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <button 
+                onClick={() => setShowAddModal(false)} 
+                className="absolute top-8 right-8 p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="text-center space-y-3 mb-8">
+                <h2 className="text-2xl font-display font-black italic text-text-main tracking-tight">
+                  Importar <span className="text-primary italic font-serif">Conhecimento</span> para o Caderno
+                </h2>
               </div>
 
-              <form onSubmit={handleSaveSource} className="p-6 space-y-5">
-                
-                {/* Method selector tab */}
-                <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl">
-                  <button 
-                    type="button" 
-                    onClick={() => { setNewSourceType('text'); setSelectedFile(null); }}
-                    className={`py-2 text-[10px] font-black tracking-wider uppercase rounded-lg text-center transition-all ${
-                      newSourceType === 'text' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'
-                    }`}
-                  >
-                    Texto
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setNewSourceType('file'); }}
-                    className={`py-2 text-[10px] font-black tracking-wider uppercase rounded-lg text-center transition-all ${
-                      newSourceType === 'file' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'
-                    }`}
-                  >
-                    PDF/TXT
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setNewSourceType('web'); setSelectedFile(null); }}
-                    className={`py-2 text-[10px] font-black tracking-wider uppercase rounded-lg text-center transition-all ${
-                      newSourceType === 'web' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'
-                    }`}
-                  >
-                    Link Web
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setNewSourceType('youtube'); setSelectedFile(null); }}
-                    className={`py-2 text-[10px] font-black tracking-wider uppercase rounded-lg text-center transition-all ${
-                      newSourceType === 'youtube' ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'
-                    }`}
-                  >
-                    YouTube
-                  </button>
+              <form onSubmit={handleSaveSource} className="space-y-6">
+                <div className="flex items-center justify-center gap-2 p-1 bg-slate-100 rounded-2xl">
+                  {[{id: 'text', label: 'Texto'}, {id: 'file', label: 'PDF'}, {id: 'web', label: 'Link'}, {id: 'youtube', label: 'YouTube'}].map((type) => (
+                    <button 
+                      key={type.id}
+                      type="button"
+                      onClick={() => setNewSourceType(type.id as any)}
+                      className={`flex-1 py-2 text-[10px] font-black tracking-widest uppercase rounded-xl transition-all ${
+                        newSourceType === type.id ? 'bg-white text-primary shadow-sm' : 'text-text-sub hover:text-text-main'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Form Fields input */}
                 <div className="space-y-4">
-                  
-                  {/* Standard title input */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Título Amigável da Fonte</label>
-                    <input 
-                      type="text"
-                      required
-                      placeholder="Ex: Lei 8.112 - Agente Administrativo"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-text-main"
-                      value={newSourceForm.title}
-                      onChange={(e) => setNewSourceForm(p => ({ ...p, title: e.target.value }))}
-                    />
-                  </div>
+                   <input 
+                    type="text" 
+                    required
+                    placeholder="Título da fonte"
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-primary/40 focus:bg-white transition-all text-text-main"
+                    value={newSourceForm.title}
+                    onChange={(e) => setNewSourceForm(p => ({ ...p, title: e.target.value }))}
+                  />
 
-                  {/* If text input */}
                   {newSourceType === 'text' && (
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Conteúdo do Material</label>
-                      <textarea 
-                        rows={6}
-                        required
-                        placeholder="Cole aqui apostilas, resumos, leis compiladas ou notas de aula..."
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-text-main"
-                        value={newSourceForm.text}
-                        onChange={(e) => setNewSourceForm(p => ({ ...p, text: e.target.value }))}
-                      />
-                    </div>
+                    <textarea 
+                      placeholder="Cole seu texto aqui..."
+                      required
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium focus:outline-none focus:border-primary/40 focus:bg-white transition-all min-h-[150px] resize-none text-text-main custom-scrollbar"
+                      value={newSourceForm.text}
+                      onChange={(e) => setNewSourceForm(p => ({ ...p, text: e.target.value }))}
+                    />
                   )}
 
-                  {/* If File drag & drop input */}
+                  {(newSourceType === 'web' || newSourceType === 'youtube') && (
+                    <input 
+                      type="url" 
+                      required
+                      placeholder={newSourceType === 'youtube' ? "Link do vídeo do YouTube..." : "Link do site..."}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-semibold focus:outline-none focus:border-primary/40 focus:bg-white transition-all text-text-main"
+                      value={newSourceForm.url}
+                      onChange={(e) => setNewSourceForm(p => ({ ...p, url: e.target.value }))}
+                    />
+                  )}
+
                   {newSourceType === 'file' && (
-                    <div className="space-y-2">
-                      <label className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Arraste seu Documento</label>
-                      <div 
-                        onDragEnter={handleDrag}
-                        onDragOver={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-                          dragActive 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
-                        }`}
-                      >
-                        <input 
-                          type="file" 
-                          ref={fileInputRef}
-                          className="hidden" 
-                          accept=".pdf,.txt,.md"
-                          onChange={handleFileChange}
-                        />
-                        {selectedFile ? (
-                          <div className="space-y-2">
-                            <FileCheck className="w-10 h-10 text-teal-600 mx-auto" />
-                            <p className="text-xs font-bold text-text-main">{selectedFile.name}</p>
-                            <p className="text-[10px] text-text-sub">({Math.ceil(selectedFile.size / 1024)} KB) - Clique para alterar.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <FileUp className="w-10 h-10 text-slate-400 mx-auto" />
-                            <div className="space-y-1">
-                              <p className="text-xs font-semibold text-text-main">
-                                Arraste e solte o arquivo aqui, ou <span className="text-primary font-bold">navegue localmente</span>
-                              </p>
-                              <p className="text-[10px] text-text-sub">Formatos aceitos: PDF, TXT ou Markdown (.md)</p>
-                            </div>
-                          </div>
-                        )}
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-[32px] p-10 flex flex-col items-center justify-center space-y-4 transition-all cursor-pointer ${
+                        dragActive ? 'border-primary bg-primary/5' : 'border-slate-100 bg-slate-50/50 hover:bg-white hover:border-primary/20'
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <FileUp className="w-10 h-10 text-slate-300" />
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-text-main">
+                          {selectedFile ? selectedFile.name : 'Escolher arquivo PDF ou TXT'}
+                        </p>
+                        <p className="text-[10px] text-text-sub font-medium mt-1">Máximo 10MB</p>
                       </div>
+                      <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} accept=".pdf,.txt,.md" />
                     </div>
                   )}
-
-                  {/* If Web link input */}
-                  {newSourceType === 'web' && (
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Endereço do Site (URL completa)</label>
-                      <input 
-                        type="url"
-                        required
-                        placeholder="https://g1.globo.com/politica/noticia/..."
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-text-main"
-                        value={newSourceForm.url}
-                        onChange={(e) => setNewSourceForm(p => ({ ...p, url: e.target.value }))}
-                      />
-                      <p className="text-[10px] text-text-sub italic mt-2 leading-relaxed">
-                        A plataforma fará a varredura do site, removendo menus ou propagandas e filtrando o texto acadêmico principal.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* If YouTube video input */}
-                  {newSourceType === 'youtube' && (
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-sub uppercase tracking-wider mb-1">Link do Vídeo do YouTube</label>
-                      <input 
-                        type="url"
-                        required
-                        placeholder="https://www.youtube.com/watch?v=..."
-                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium text-text-main"
-                        value={newSourceForm.url}
-                        onChange={(e) => setNewSourceForm(p => ({ ...p, url: e.target.value }))}
-                      />
-                      <p className="text-[10px] text-text-sub italic mt-2 leading-relaxed">
-                        Mapearemos dinamicamente os dados, índice de tópicos e informações detalhadas do vídeo do YouTube para contextualizar o chat de estudos.
-                      </p>
-                    </div>
-                  )}
-
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                <div className="flex gap-4">
                   <button 
-                    type="button" 
+                    type="button"
                     onClick={() => { setShowAddModal(false); resetAddForm(); }}
-                    className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-text-main uppercase tracking-wider transition-all"
+                    className="flex-1 py-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[32px] text-xs font-black uppercase tracking-widest text-text-sub transition-all"
                   >
                     Cancelar
                   </button>
                   <button 
-                    type="submit" 
+                    type="submit"
                     disabled={isImporting}
-                    className="flex-grow py-3 bg-primary hover:brightness-110 disabled:opacity-50 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                    className="flex-[2] py-4 bg-primary text-white rounded-[32px] text-xs font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
-                    {isImporting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        Importar Material
-                      </>
-                    )}
+                    {isImporting ? 'Extraindo...' : 'Sincronizar'}
                   </button>
                 </div>
-
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL: EXCLUIR FONTE */}
+      <AnimatePresence>
+        {sourceToDelete && (
+          <div className="fixed inset-0 z-[210] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-[40px] w-full max-w-sm shadow-2xl p-8 text-center"
+            >
+              <Trash2 className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-display font-black text-slate-800 mb-2 uppercase tracking-wide">
+                Excluir Fonte
+              </h3>
+              <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                Tem certeza de que deseja excluir esta fonte de estudo permanentemente? Todas as mensagens e interações deste canal de chat serão perdidas.
+              </p>
+              
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setSourceToDelete(null)}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteSource(sourceToDelete)}
+                  className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-red-500/30"
+                >
+                  Confirmar Exclusão
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
