@@ -608,7 +608,7 @@ export default function App() {
 
   if (location.pathname === '/reset-password') {
     return (
-      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto bg-bg">
+      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-bg">
         <Routes>
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
@@ -618,7 +618,7 @@ export default function App() {
 
   if (authLoading || (user && dataLoading) || (user && !currentContest && contests.length > 0)) {
     return (
-      <div className="h-[100dvh] w-screen flex flex-col items-center justify-center bg-bg gap-4">
+      <div className="h-[100dvh] w-screen flex flex-col items-center justify-center overflow-x-hidden bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
         <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">
           {authLoading ? "Autenticando..." : "Sincronizando seus Dados..."}
@@ -629,7 +629,7 @@ export default function App() {
 
   if (!user) {
     return (
-      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto bg-bg">
+      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-bg">
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />

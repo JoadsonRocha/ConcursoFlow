@@ -77,10 +77,10 @@ export default function Planos() {
           </div>
 
           {/* Unified Compact Row with Features Left and Purchases Right */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start max-w-4xl mx-auto pt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-4xl mx-auto pt-4">
             
             {/* Left Column: All Features included in Premium plan */}
-            <div className="md:col-span-7 space-y-5">
+            <div className="lg:col-span-7 space-y-5">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
                   <Zap className="w-4 h-4 fill-current" />
@@ -115,8 +115,8 @@ export default function Planos() {
             </div>
 
             {/* Right Column: Checkout choices */}
-            <div className="md:col-span-5 space-y-4">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center md:text-left mb-2">
+            <div className="lg:col-span-5 space-y-4">
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center lg:text-left mb-2">
                 Selecione o seu Ciclo de Estudo:
               </div>
 
@@ -216,7 +216,7 @@ export default function Planos() {
              <h2 className="text-3xl md:text-4xl font-display font-bold text-text-main tracking-tight">Produtividade no seu Estudo</h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
              <motion.div 
                id="card-bene-velocidade"
                initial={{ opacity: 0, y: 20 }}
@@ -266,13 +266,13 @@ export default function Planos() {
                </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                <motion.div 
                  id="bento-mapeamento"
                  initial={{ opacity: 0, y: 20 }}
                  whileInView={{ opacity: 1, y: 0 }}
                  viewport={{ once: true }}
-                 className="md:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden"
+                 className="lg:col-span-8 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group relative overflow-hidden"
                >
                   <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
                   <div className="relative z-10 space-y-3">
@@ -294,7 +294,7 @@ export default function Planos() {
                  whileInView={{ opacity: 1, y: 0 }}
                  viewport={{ once: true }}
                  transition={{ delay: 0.1 }}
-                 className="md:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-lg transition-all group"
+                 className="lg:col-span-4 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-lg transition-all group"
                >
                   <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 mb-6 group-hover:scale-110 transition-transform duration-500">
                      <Calendar className="w-5 h-5" />
@@ -311,7 +311,7 @@ export default function Planos() {
                  whileInView={{ opacity: 1, y: 0 }}
                  viewport={{ once: true }}
                  transition={{ delay: 0.2 }}
-                 className="md:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-lg transition-all group"
+                 className="lg:col-span-5 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-center hover:shadow-lg transition-all group"
                >
                   <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 mb-6 group-hover:scale-110 transition-transform duration-500">
                      <Target className="w-5 h-5" />
@@ -328,7 +328,7 @@ export default function Planos() {
                  whileInView={{ opacity: 1, y: 0 }}
                  viewport={{ once: true }}
                  transition={{ delay: 0.3 }}
-                 className="md:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all group relative overflow-hidden"
+                 className="lg:col-span-7 bg-white border border-slate-200 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:shadow-lg transition-all group relative overflow-hidden"
                >
                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl translate-x-1/4 -translate-y-1/4"></div>
                   <div className="relative z-10 space-y-3">
@@ -355,7 +355,7 @@ export default function Planos() {
              <p className="text-text-sub font-medium text-sm">Alcançar pontuações extraordinárias exige o melhor método.</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
              <motion.div 
                id="depoimento-mariana"
                initial={{ opacity: 0, y: 20 }}
@@ -438,7 +438,7 @@ export default function Planos() {
                <p className="text-text-sub font-medium">As perguntas mais comuns sobre os planos Stratis.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                <div className="space-y-3">
                   <h4 className="text-sm font-black text-text-main uppercase tracking-tight">Posso trocar de plano depois?</h4>
                   <p className="text-xs text-text-sub font-medium leading-relaxed">Sim! Você pode fazer o upgrade ou downgrade a qualquer momento na plataforma. Caso decida rebaixar seu plano, seus limites serão atualizados automaticamente sem perda de dados existentes.</p>

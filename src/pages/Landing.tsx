@@ -353,9 +353,9 @@ const Landing = () => {
               <p className="text-lg text-slate-600 font-semibold max-w-2xl mx-auto">Um método que nasceu da experiência real. Esqueça planilhas complexas, nós guiamos você até a aprovação.</p>
            </div>
            
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-4 relative">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 relative">
               {/* Connector Line (Desktop Only) */}
-              <div className="hidden md:block absolute top-[100px] lg:top-[120px] left-12 right-12 h-1 bg-slate-200 z-0"></div>
+              <div className="hidden lg:block absolute top-[100px] lg:top-[120px] left-12 right-12 h-1 bg-slate-200 z-0"></div>
 
               {[
                 { 
@@ -421,8 +421,8 @@ const Landing = () => {
 
           <div className="space-y-24 md:space-y-32">
              {/* Feature 1 */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-                <div className="space-y-6 order-2 md:order-1">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div className="space-y-6 order-2 lg:order-1">
                    <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary shadow-inner">
                       <BrainCircuit className="w-6 h-6" />
                    </div>
@@ -431,17 +431,17 @@ const Landing = () => {
                      Nossa tecnologia analisa a estrutura do seu edital, agrupa por disciplinas fundamentais e traça quais tópicos merecem prioridade absoluta com base nos pesos atribuídos pela banca e dados estatísticos.
                    </p>
                 </div>
-                <div className="order-1 md:order-2 h-64 md:h-[400px] w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl relative border border-slate-200/60 transition-transform hover:-translate-y-1">
+                <div className="order-1 lg:order-2 h-64 md:h-[400px] w-full bg-slate-100 rounded-3xl overflow-hidden shadow-2xl relative border border-slate-200/60 transition-transform hover:-translate-y-1">
                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&fit=crop" alt="Filtro de Editais" className="w-full h-full object-cover" />
                 </div>
              </div>
 
              {/* Feature 2: Notebook Stratis */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-                <div className="order-1 md:order-1 h-64 md:h-[400px] w-full bg-indigo-50 rounded-3xl overflow-hidden shadow-2xl relative border border-indigo-100 transition-transform hover:-translate-y-1">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div className="order-1 lg:order-1 h-64 md:h-[400px] w-full bg-indigo-50 rounded-3xl overflow-hidden shadow-2xl relative border border-indigo-100 transition-transform hover:-translate-y-1">
                    <img src="https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&fit=crop" alt="Notebook Inteligente" className="w-full h-full object-cover" />
                 </div>
-                <div className="space-y-6 order-2 md:order-2">
+                <div className="space-y-6 order-2 lg:order-2">
                    <div className="inline-flex items-center gap-1.5 bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
                      <Zap className="w-3.5 h-3.5" /> Inteligência Artificial
                    </div>
@@ -453,8 +453,8 @@ const Landing = () => {
              </div>
 
              {/* Feature 3 */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center">
-                <div className="space-y-6 order-2 md:order-1">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                <div className="space-y-6 order-2 lg:order-1">
                    <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-600 shadow-inner">
                       <Target className="w-6 h-6" />
                    </div>
@@ -463,7 +463,7 @@ const Landing = () => {
                      Crie flashcards dinâmicos e monitore sua curva de esquecimento. Memorize fórmulas, leis e conceitos de forma perene sem se perder em ciclos de revisão complexos. Tudo integrado no seu fluxo principal de estudo.
                    </p>
                 </div>
-                <div className="order-1 md:order-2 h-64 md:h-[400px] w-full bg-emerald-50 rounded-3xl overflow-hidden shadow-2xl relative border border-emerald-100 transition-transform hover:-translate-y-1">
+                <div className="order-1 lg:order-2 h-64 md:h-[400px] w-full bg-emerald-50 rounded-3xl overflow-hidden shadow-2xl relative border border-emerald-100 transition-transform hover:-translate-y-1">
                    <img src="https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&fit=crop" alt="Revisão Estratégica" className="w-full h-full object-cover" />
                 </div>
              </div>
@@ -494,10 +494,10 @@ const Landing = () => {
             </div>
 
             {/* Unified Compact Row with Features Left and Purchases Right */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start max-w-4xl mx-auto pt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-4xl mx-auto pt-4">
               
               {/* Left Column: All Features included in Premium plan */}
-              <div className="md:col-span-7 space-y-5">
+              <div className="lg:col-span-7 space-y-5">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
                     <Zap className="w-4 h-4 fill-current" />
@@ -532,8 +532,8 @@ const Landing = () => {
               </div>
 
               {/* Right Column: Checkout choices */}
-              <div className="md:col-span-5 space-y-4">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center md:text-left mb-2">
+              <div className="lg:col-span-5 space-y-4">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center lg:text-left mb-2">
                   Selecione o seu Ciclo de Estudo:
                 </div>
 
@@ -627,7 +627,7 @@ const Landing = () => {
       {/* Depoimentos / Aprovados Reais */}
       <section className="py-12 md:py-16 px-6 bg-white border-t border-border/50 relative">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
              <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-border/50 flex flex-col justify-between hover:shadow-xl transition-shadow rise-card">
                <div>
                   <div className="flex text-amber-400 mb-6 font-bold space-x-1">
