@@ -739,7 +739,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main ref={mainRef} className={cn("flex-1 bg-bg relative scroll-smooth flex flex-col", location.pathname === '/tutor' ? "overflow-hidden" : "overflow-y-auto")}>
+      <main ref={mainRef} className={cn("flex-1 min-w-0 overflow-x-hidden bg-bg relative scroll-smooth flex flex-col", location.pathname === '/tutor' ? "overflow-hidden" : "overflow-y-auto")}>
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex shrink-0 items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 

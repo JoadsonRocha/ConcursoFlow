@@ -27,7 +27,9 @@ import {
   FileQuestion,
   ListChecks,
   Table2,
-  FileText
+  FileText,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
@@ -70,6 +72,8 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
   const [messages, setMessages] = useState<Message[]>([]);
   const [sourceFlashcards, setSourceFlashcards] = useState<any[]>([]);
   const [sourceMindmaps, setSourceMindmaps] = useState<any[]>([]);
+  const [allFlashcards, setAllFlashcards] = useState<any[]>([]);
+  const [allMindmaps, setAllMindmaps] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [subTab, setSubTab] = useState<'chat' | 'content'>('chat');
@@ -155,31 +159,52 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
       }
     });
 
-    // Sub to flashcards
-    const qCards = query(
-      collection(db, 'users', user.uid, 'flashcards'),
-      where('sourceId', '==', activeSource.id)
-    );
+    return () => {
+      unsubscribeMsgs();
+    };
+  }, [user, activeSource?.id]);
+
+  // 3. Subscribe to all user flashcards and mindmaps to display indicators and details
+  useEffect(() => {
+    if (!user) {
+      setAllFlashcards([]);
+      setAllMindmaps([]);
+      return;
+    }
+
+    const qCards = query(collection(db, 'users', user.uid, 'flashcards'));
     const unsubCards = onSnapshot(qCards, (snap) => {
-      setSourceFlashcards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setAllFlashcards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.warn('Error fetching all user flashcards:', err);
     });
 
-    // Sub to mindmaps
     const qMaps = query(
       collection(db, 'mindmaps'),
       where('ownerId', '==', user.uid)
     );
     const unsubMaps = onSnapshot(qMaps, (snap) => {
-      const allMaps = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSourceMindmaps(allMaps.filter((m: any) => m.sourceId === activeSource.id));
+      setAllMindmaps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      console.warn('Error fetching all user mindmaps:', err);
     });
 
     return () => {
-      unsubscribeMsgs();
       unsubCards();
       unsubMaps();
     };
-  }, [user, activeSource?.id]);
+  }, [user]);
+
+  // 4. Derive specific Lists for activeSource from all loaded items (reactive, prevents race conditions)
+  useEffect(() => {
+    if (!activeSource) {
+      setSourceFlashcards([]);
+      setSourceMindmaps([]);
+      return;
+    }
+    setSourceFlashcards(allFlashcards.filter((c: any) => c.sourceId === activeSource.id));
+    setSourceMindmaps(allMindmaps.filter((m: any) => m.sourceId === activeSource.id));
+  }, [allFlashcards, allMindmaps, activeSource?.id]);
 
   // Scroll to bottom of chat
   useEffect(() => {
@@ -628,6 +653,27 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
     try {
       const idToken = await user.getIdToken();
       
+      // Calculate depth and quantity based on content length (up to 5 mind maps)
+      const contentLength = activeSource.content?.length || 0;
+      let quantity = 1;
+      let textLimit = 10000;
+      
+      if (contentLength > 30000) {
+        quantity = 5;
+        textLimit = 35000;
+      } else if (contentLength > 20000) {
+        quantity = 4;
+        textLimit = 25000;
+      } else if (contentLength > 10000) {
+        quantity = 3;
+        textLimit = 18000;
+      } else if (contentLength > 4000) {
+        quantity = 2;
+        textLimit = 10000;
+      }
+
+      toast.info(`Fonte com ${contentLength} caracteres. Preparando ${quantity} ${quantity === 1 ? 'mapa mental' : 'mapas mentais'} em lote...`);
+
       // Step 1: Request SVG maps structured prompt from endpoint
       const response = await fetch('/api/ai/svg-map', {
         method: 'POST',
@@ -637,8 +683,8 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
         },
         body: JSON.stringify({
           title: activeSource.title,
-          prompt: `Gere um mapa conceitual hierárquico extremamente didático usando este texto:\n\n${activeSource.content.substring(0, 10000)}`,
-          quantity: 1
+          prompt: `Gere um mapa conceitual hierárquico extremamente didático usando este texto:\n\n${activeSource.content.substring(0, textLimit)}`,
+          quantity: quantity
         })
       });
 
@@ -665,7 +711,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
         updatedAt: serverTimestamp()
       });
 
-      toast.success('Mapa mental gerado com sucesso! Já está salvo na sua Biblioteca.');
+      toast.success(`${quantity === 1 ? 'Mapa mental gerado' : `${quantity} mapas mentais gerados`} com sucesso! Já está salvo na sua Biblioteca.`);
     } catch (err: any) {
       console.error(err);
       toast.error(`Falha no mapa mental: ${err.message || err}`);
@@ -678,8 +724,8 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <div className="flex flex-col relative overflow-hidden bg-slate-50 animate-in fade-in duration-700 pb-safe w-full h-[calc(100vh-90px)] sm:h-[calc(100vh-140px)] rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200">
+  const element = (
+    <div className="flex flex-col relative overflow-hidden animate-in fade-in duration-700 pb-safe w-full h-[calc(100vh-90px)] sm:h-[calc(100vh-140px)] rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200 bg-slate-50">
       
       {/* ⚠️ BLOQUEIO "EM BREVE" / MANUTENÇÃO */}
       {isLockedForMaintenance && (
@@ -711,104 +757,169 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
 
 
       {/* Mobile Tab Navigation */}
-      <div className="md:hidden flex border-b bg-white border-slate-100">
+      <div className="lg:hidden flex border-b bg-white border-slate-100">
         <button onClick={() => setActiveMobileTab('fonts')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'fonts' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Fontes</button>
         <button onClick={() => setActiveMobileTab('chat')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'chat' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Conversa</button>
         <button onClick={() => setActiveMobileTab('studio')} className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest ${activeMobileTab === 'studio' ? 'text-primary border-b-2 border-primary' : 'text-slate-400'}`}>Estúdio</button>
       </div>
 
-      <div className="flex-1 flex w-full max-w-[1600px] mx-auto overflow-hidden p-2 gap-2 sm:p-4 sm:gap-4">
+      <div className="flex-1 flex w-full max-w-[1600px] p-2 gap-2 sm:p-4 sm:gap-4 mx-auto overflow-hidden">
         
         {/* LEFT PANEL: FONTES */}
-        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isSourcesPanelOpen ? 'md:w-48' : 'md:w-16'} flex-shrink-0 ${activeMobileTab === 'fonts' ? 'flex' : 'hidden'} md:flex`}>
-          <div className="p-4 flex items-center justify-between">
-            {isSourcesPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-[11px]">Fontes</h3>}
-            <button 
-              onClick={() => setIsSourcesPanelOpen(!isSourcesPanelOpen)}
-              className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
-            >
-              <Layout className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isSourcesPanelOpen ? 'lg:w-48' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'fonts' ? 'flex' : 'hidden'} lg:flex`}>
+            <div className="p-4 flex items-center justify-between">
+              {isSourcesPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-[11px]">Fontes</h3>}
+              <button 
+                onClick={() => setIsSourcesPanelOpen(!isSourcesPanelOpen)}
+                className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
+              >
+                <Layout className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
-          <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
-            {isSourcesPanelOpen ? (
-              <>
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="w-full py-2 px-3 bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-main group mb-3"
-                >
-                  <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-125 transition-transform" />
-                  Adicionar
-                </button>
-                <div className="space-y-1.5">
-                  {sources.map(source => (
-                     <div 
-                        key={source.id}
-                        onClick={() => { setActiveSource(source); setActiveMobileTab('chat'); }}
-                        className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between ${
-                          activeSource?.id === source.id 
-                            ? 'bg-primary/5 border-primary/20' 
-                            : 'bg-slate-50/50 border-transparent hover:border-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          <div className={`p-1.5 rounded-lg shrink-0 ${
-                            source.type === 'youtube' ? 'bg-red-50 text-red-500' :
-                            source.type === 'web' ? 'bg-blue-50 text-blue-500' : 'bg-teal-50 text-teal-600'
-                          }`}>
-                            {source.type === 'youtube' ? <Youtube className="w-3 h-3" /> : 
-                             source.type === 'web' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold text-text-main truncate">{source.title}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSourceToDelete(source.id);
-                          }}
-                          className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded-md transition-all shrink-0 ml-2"
+            <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
+              {isSourcesPanelOpen ? (
+                <>
+                  <button 
+                    onClick={() => setShowAddModal(true)}
+                    className="w-full py-2 px-3 bg-white border border-slate-200 rounded-[20px] shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-main group mb-3"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-primary group-hover:scale-125 transition-transform" />
+                    Adicionar
+                  </button>
+                  <div className="space-y-1.5">
+                    {sources.map(source => (
+                       <div 
+                          key={source.id}
+                          onClick={() => { setActiveSource(source); setActiveMobileTab('chat'); }}
+                          className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between ${
+                            activeSource?.id === source.id 
+                              ? 'bg-primary/5 border-primary/20' 
+                              : 'bg-slate-50/50 border-transparent hover:border-slate-200'
+                          }`}
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
-                        </button>
-                      </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-                <div className="flex flex-col items-center pt-2 space-y-3">
-                    <button onClick={() => setIsSourcesPanelOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"><Plus className='w-3.5 h-3.5'/></button>
-                    {sources.map(s => <div key={s.id} className='w-6 h-6 rounded-full bg-slate-100'/>)}
-                </div>
-            )}
+                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                            <div className={`p-1.5 rounded-lg shrink-0 ${
+                              source.type === 'youtube' ? 'bg-red-50 text-red-500' :
+                              source.type === 'web' ? 'bg-blue-50 text-blue-500' : 'bg-teal-50 text-teal-600'
+                            }`}>
+                              {source.type === 'youtube' ? <Youtube className="w-3 h-3" /> : 
+                               source.type === 'web' ? <Globe className="w-3 h-3" /> : <FileText className="w-3 h-3" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[10px] font-bold text-text-main truncate leading-tight">{source.title}</p>
+                              {/* Indicators of generated material */}
+                              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                                {allMindmaps.some((m: any) => m.sourceId === source.id) && (
+                                  <span className="flex items-center gap-0.5 text-[7px] font-black uppercase text-fuchsia-600 bg-fuchsia-50/80 px-1 border border-fuchsia-100 rounded" title="Mapa mental criado">
+                                    <Brain className="w-1.5 h-1.5" />
+                                    <span>Mapa</span>
+                                  </span>
+                                )}
+                                {allFlashcards.some((c: any) => c.sourceId === source.id) && (
+                                  <span className="flex items-center gap-0.5 text-[7px] font-black uppercase text-orange-600 bg-orange-50/80 px-1 border border-orange-100 rounded" title="Flashcards criados">
+                                    <Layout className="w-1.5 h-1.5" />
+                                    <span>Cards</span>
+                                  </span>
+                                )}
+                                {Array.isArray(source.quizQuestions) && source.quizQuestions.length > 0 && (
+                                  <span className="flex items-center gap-0.5 text-[7px] font-black uppercase text-sky-600 bg-sky-50/80 px-1 border border-sky-100 rounded" title="Simulado gerado">
+                                    <FileQuestion className="w-1.5 h-1.5" />
+                                    <span>Quiz</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSourceToDelete(source.id);
+                            }}
+                            className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded-md transition-all shrink-0 ml-2"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                  <div className="flex flex-col items-center pt-2 space-y-3">
+                      <button 
+                        onClick={() => setIsSourcesPanelOpen(true)} 
+                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 mb-1"
+                        title="Adicionar Fonte"
+                      >
+                        <Plus className='w-3.5 h-3.5'/>
+                      </button>
+                      {sources.map(source => {
+                        const hasMap = allMindmaps.some((m: any) => m.sourceId === source.id);
+                        const hasCards = allFlashcards.some((c: any) => c.sourceId === source.id);
+                        const hasQuiz = Array.isArray(source.quizQuestions) && source.quizQuestions.length > 0;
+
+                        return (
+                          <div key={source.id} className="relative shrink-0">
+                            <button
+                              onClick={() => { setActiveSource(source); setActiveMobileTab('chat'); }}
+                              className={`p-2 rounded-xl shrink-0 transition-all border ${
+                                activeSource?.id === source.id 
+                                  ? 'ring-2 ring-primary ring-offset-2 scale-105' 
+                                  : 'border-transparent hover:scale-105'
+                              } ${
+                                source.type === 'youtube' ? 'bg-red-50 text-red-500 hover:bg-red-100' :
+                                source.type === 'web' ? 'bg-blue-50 text-blue-500 hover:bg-blue-100' : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                              }`}
+                              title={source.title}
+                            >
+                              {source.type === 'youtube' ? <Youtube className="w-3.5 h-3.5" /> : 
+                               source.type === 'web' ? <Globe className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+                            </button>
+                            
+                            {/* Combined dot indicator badges for generated materials */}
+                            <div className="absolute -top-1 -right-1 flex gap-0.5">
+                              {hasMap && <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 border border-white shrink-0" title="Contém Mapa Mental" />}
+                              {hasCards && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 border border-white shrink-0" title="Contém Flashcards" />}
+                              {hasQuiz && <span className="w-1.5 h-1.5 rounded-full bg-sky-500 border border-white shrink-0" title="Contém Questões de Teste" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+              )}
+            </div>
           </div>
-        </div>
 
         {/* CENTER PANEL: CONVERSA / CHAT */}
-        <div className={`flex flex-col bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden relative transition-all duration-300 min-w-0 w-full md:w-auto md:flex-1 ${activeMobileTab === 'chat' ? 'flex' : 'hidden'} md:flex`}>
-          <div className="hidden md:flex p-4 border-b border-slate-50 items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
-            <h3 className="font-bold text-text-main text-sm">Conversa</h3>
+        <div className={`flex flex-col bg-white overflow-hidden relative transition-all duration-300 min-w-0 w-full border border-slate-200 rounded-3xl shadow-sm lg:w-auto lg:flex-1 ${activeMobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex`}>
+          <div className="flex p-3 px-4 border-b border-slate-100 items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+            <div className="flex items-center gap-2">
+              <div>
+                <h3 className="font-bold text-text-main text-xs sm:text-sm flex items-center gap-1.5 leading-none">
+                  <span>Conversação Inteligente</span>
+                  {activeSource && (
+                    <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                      Fonte: {activeSource.title}
+                    </span>
+                  )}
+                </h3>
+                {activeSource && (
+                  <p className="sm:hidden text-[9px] font-medium text-slate-400 mt-1 line-clamp-1">
+                    {activeSource.title}
+                  </p>
+                )}
+              </div>
+            </div>
             
-            <button 
-              onClick={() => setMessages([])}
-              className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-text-main transition-all"
-              title="Limpar Histórico"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Absolute Trash Button for Mobile */}
-          <div className="md:hidden absolute top-2 right-2 z-20">
-            <button 
-              onClick={() => setMessages([])}
-              className="p-2 text-slate-300 hover:text-red-500 hover:bg-slate-50 rounded-full transition-all"
-              title="Limpar Histórico"
-            >
-              <Trash2 className="w-4 h-4 opacity-50" />
-            </button>
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <button 
+                onClick={() => setMessages([])}
+                className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 hover:text-red-500 transition-all border border-transparent"
+                title="Limpar Histórico"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 md:py-6 custom-scrollbar">
@@ -912,140 +1023,164 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
         </div>
 
         {/* RIGHT PANEL: ESTUDIO */}
-        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isStudioPanelOpen ? 'md:w-48' : 'md:w-16'} flex-shrink-0 ${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex`}>
-          <div className="p-5 flex items-center justify-between">
-            {isStudioPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-sm">Estúdio</h3>}
-            <button 
-              onClick={() => setIsStudioPanelOpen(!isStudioPanelOpen)}
-              className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
-            >
-              <Layout className="w-4 h-4" />
-            </button>
-          </div>
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isStudioPanelOpen ? 'lg:w-48' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'studio' ? 'flex' : 'hidden'} lg:flex`}>
+            <div className="p-5 flex items-center justify-between">
+              {isStudioPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-sm">Estúdio</h3>}
+              <button 
+                onClick={() => setIsStudioPanelOpen(!isStudioPanelOpen)}
+                className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"
+              >
+                <Layout className="w-4 h-4" />
+              </button>
+            </div>
 
-            {isStudioPanelOpen ? (
-            <div className="flex-1 flex flex-col p-4 overflow-hidden">
-                <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
-                  <button 
-                    onClick={handleGenerateMindmapFromSource}
-                    disabled={!activeSource || isGeneratingMindmap}
-                    className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-fuchsia-50/50"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Brain className={`w-3.5 h-3.5 text-fuchsia-500 ${isGeneratingMindmap ? 'animate-pulse' : ''}`} />
-                      <span className="text-[10px] font-bold text-text-main">
-                        {isGeneratingMindmap ? 'Gerando...' : 'Mapa mental'}
-                      </span>
-                    </div>
-                  </button>
-
-                  <button 
-                    onClick={handleGenerateFlashcardsFromSource}
-                    disabled={!activeSource || isGeneratingFlashcards}
-                    className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-orange-50/50"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Layout className={`w-3.5 h-3.5 text-orange-500 ${isGeneratingFlashcards ? 'animate-pulse' : ''}`} />
-                      <span className="text-[10px] font-bold text-text-main">
-                        {isGeneratingFlashcards ? 'Gerando...' : 'Flashcards'}
-                      </span>
-                    </div>
-                  </button>
-
-
-                  <button 
-                    onClick={handleGenerateQuestionsFromSource}
-                    disabled={!activeSource || isGeneratingQuestions}
-                    className="w-full flex items-center justify-between p-3 border border-transparent hover:border-slate-200 rounded-2xl transition-all group disabled:opacity-30 bg-sky-50/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileQuestion className={`w-4 h-4 text-sky-500 ${isGeneratingQuestions ? 'animate-pulse' : ''}`} />
-                      <span className="text-[11px] font-bold text-text-main">
-                        {isGeneratingQuestions ? 'Gerando...' : 'Questões de Teste'}
-                      </span>
-                    </div>
-                  </button>
-
-                  <div className="pt-6 border-t border-slate-100 mt-4 space-y-4">
-                    {sourceMindmaps.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Mapas Mentais</h4>
-                        {sourceMindmaps.map(map => (
-                          <button 
-                            key={map.id} 
-                            onClick={() => onOpenMindmap && onOpenMindmap(map)}
-                            className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-fuchsia-300 hover:shadow-sm"
-                          >
-                            <div className="absolute top-0 right-0 p-1.5 opacity-50"><Brain className="w-6 h-6 text-fuchsia-100" /></div>
-                            <span className="text-xs font-bold text-text-main line-clamp-1">{map.title}</span>
-                            <span className="text-[10px] text-text-sub font-medium">Abrir visualizador</span>
-                          </button>
-                        ))}
+              {isStudioPanelOpen ? (
+              <div className="flex-1 flex flex-col p-4 overflow-hidden">
+                  <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1">
+                    <button 
+                      onClick={handleGenerateMindmapFromSource}
+                      disabled={!activeSource || isGeneratingMindmap}
+                      className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-fuchsia-50/50"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Brain className={`w-3.5 h-3.5 text-fuchsia-500 ${isGeneratingMindmap ? 'animate-pulse' : ''}`} />
+                        <span className="text-[10px] font-bold text-text-main">
+                          {isGeneratingMindmap ? 'Gerando...' : 'Mapa mental'}
+                        </span>
                       </div>
-                    )}
+                    </button>
 
-                    {sourceFlashcards.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Decks Criados</h4>
-                        <button 
-                          onClick={() => onOpenFlashcards && onOpenFlashcards(sourceFlashcards)}
-                          className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-orange-300 hover:shadow-sm"
-                        >
-                          <div className="absolute top-0 right-0 p-1.5 opacity-50"><Layout className="w-6 h-6 text-orange-100" /></div>
-                          <span className="text-xs font-bold text-text-main line-clamp-1">Cartões de Estudo ({sourceFlashcards.length})</span>
-                          <span className="text-[10px] text-text-sub font-medium">Abrir modo revisão</span>
-                        </button>
+                    <button 
+                      onClick={handleGenerateFlashcardsFromSource}
+                      disabled={!activeSource || isGeneratingFlashcards}
+                      className="w-full flex items-center justify-between p-2.5 border border-transparent hover:border-slate-200 rounded-xl transition-all group disabled:opacity-30 bg-orange-50/50"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Layout className={`w-3.5 h-3.5 text-orange-500 ${isGeneratingFlashcards ? 'animate-pulse' : ''}`} />
+                        <span className="text-[10px] font-bold text-text-main">
+                          {isGeneratingFlashcards ? 'Gerando...' : 'Flashcards'}
+                        </span>
                       </div>
-                    )}
+                    </button>
 
-                    {activeSource?.quizQuestions && activeSource.quizQuestions.length > 0 && (
-                      <div className="space-y-2">
-                        <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Simulado Salvo</h4>
-                        <div className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-sky-300 hover:shadow-sm group">
-                          <div className="absolute top-1 right-2 flex items-center gap-1 opacity-50"><FileQuestion className="w-6 h-6 text-sky-100" /></div>
-                          <span className="text-xs font-bold text-text-main line-clamp-1">Simulado ({activeSource.quizQuestions.length} questões)</span>
-                          <div className="flex gap-2 z-10 mt-1">
+
+                    <button 
+                      onClick={handleGenerateQuestionsFromSource}
+                      disabled={!activeSource || isGeneratingQuestions}
+                      className="w-full flex items-center justify-between p-3 border border-transparent hover:border-slate-200 rounded-2xl transition-all group disabled:opacity-30 bg-sky-50/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileQuestion className={`w-4 h-4 text-sky-500 ${isGeneratingQuestions ? 'animate-pulse' : ''}`} />
+                        <span className="text-[11px] font-bold text-text-main">
+                          {isGeneratingQuestions ? 'Gerando...' : 'Questões de Teste'}
+                        </span>
+                      </div>
+                    </button>
+
+                    <div className="pt-6 border-t border-slate-100 mt-4 space-y-4">
+                      {sourceMindmaps.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Mapas Mentais</h4>
+                          {sourceMindmaps.map(map => (
                             <button 
-                              onClick={() => onOpenQuiz && onOpenQuiz(activeSource.quizQuestions || [])}
-                              className="flex-1 py-1.5 px-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[9px] uppercase tracking-widest rounded-lg transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
+                              key={map.id} 
+                              onClick={() => onOpenMindmap && onOpenMindmap(map)}
+                              className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-fuchsia-300 hover:shadow-sm"
                             >
-                              <Play className="w-2.5 h-2.5 fill-current" />
-                              Treinar
+                              <div className="absolute top-0 right-0 p-1.5 opacity-50"><Brain className="w-6 h-6 text-fuchsia-100" /></div>
+                              <span className="text-xs font-bold text-text-main line-clamp-1">{map.title}</span>
+                              <span className="text-[10px] text-text-sub font-medium">Abrir visualizador</span>
                             </button>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (window.confirm("Deseja apagar este simulado?")) {
-                                  try {
-                                    await updateDoc(doc(db, 'users', user.uid, 'sources', activeSource.id), {
-                                      quizQuestions: []
-                                    });
-                                    toast.success("Simulado removido!");
-                                  } catch (err) {
-                                    console.error(err);
-                                    toast.error("Erro ao remover simulado.");
+                          ))}
+                        </div>
+                      )}
+
+                      {sourceFlashcards.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Decks Criados</h4>
+                          <button 
+                            onClick={() => onOpenFlashcards && onOpenFlashcards(sourceFlashcards)}
+                            className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-orange-300 hover:shadow-sm"
+                          >
+                            <div className="absolute top-0 right-0 p-1.5 opacity-50"><Layout className="w-6 h-6 text-orange-100" /></div>
+                            <span className="text-xs font-bold text-text-main line-clamp-1">Cartões de Estudo ({sourceFlashcards.length})</span>
+                            <span className="text-[10px] text-text-sub font-medium">Abrir modo revisão</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {activeSource?.quizQuestions && activeSource.quizQuestions.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="text-[10px] uppercase font-black tracking-widest text-slate-400 px-1">Simulado Salvo</h4>
+                          <div className="w-full text-left p-3 border border-slate-200 bg-white rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-sky-300 hover:shadow-sm group">
+                            <div className="absolute top-1 right-2 flex items-center gap-1 opacity-50"><FileQuestion className="w-6 h-6 text-sky-100" /></div>
+                            <span className="text-xs font-bold text-text-main line-clamp-1">Simulado ({activeSource.quizQuestions.length} questões)</span>
+                            <div className="flex gap-2 z-10 mt-1">
+                              <button 
+                                onClick={() => onOpenQuiz && onOpenQuiz(activeSource.quizQuestions || [])}
+                                className="flex-1 py-1.5 px-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[9px] uppercase tracking-widest rounded-lg transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
+                              >
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                Treinar
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm("Deseja apagar este simulado?")) {
+                                    try {
+                                      await updateDoc(doc(db, 'users', user.uid, 'sources', activeSource.id), {
+                                        quizQuestions: []
+                                      });
+                                      toast.success("Simulado removido!");
+                                    } catch (err) {
+                                      console.error(err);
+                                      toast.error("Erro ao remover simulado.");
+                                    }
                                   }
-                                }
-                              }}
-                              className="p-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100 rounded-lg text-slate-400 transition-all shrink-0 cursor-pointer"
-                              title="Excluir simulado"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                                }}
+                                className="p-1.5 border border-slate-200 hover:bg-red-50 hover:text-red-500 hover:border-red-100 rounded-lg text-slate-400 transition-all shrink-0 cursor-pointer"
+                                title="Excluir simulado"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-            </div>
-          ) : (
-            <div className='flex flex-col items-center pt-2 space-y-4'>
-                <button onClick={handleGenerateMindmapFromSource} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><Brain className='w-4 h-4'/></button>
-                <button onClick={handleGenerateFlashcardsFromSource} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400"><Layout className='w-4 h-4'/></button>
-            </div>
-          )}
-        </div>
+              </div>
+            ) : (
+              <div className='flex flex-col items-center pt-2 space-y-4'>
+                  <button 
+                    onClick={handleGenerateMindmapFromSource} 
+                    disabled={!activeSource || isGeneratingMindmap}
+                    className={`p-2 rounded-xl transition-all disabled:opacity-30 ${isGeneratingMindmap ? 'animate-pulse bg-fuchsia-100' : 'hover:bg-fuchsia-50'}`}
+                    title="Gerar Mapa Mental"
+                  >
+                    <Brain className="w-4 h-4 text-fuchsia-500" />
+                  </button>
+
+                  <button 
+                    onClick={handleGenerateFlashcardsFromSource} 
+                    disabled={!activeSource || isGeneratingFlashcards}
+                    className={`p-2 rounded-xl transition-all disabled:opacity-30 ${isGeneratingFlashcards ? 'animate-pulse bg-orange-100' : 'hover:bg-orange-50'}`}
+                    title="Gerar Flashcards"
+                  >
+                    <Layout className="w-4 h-4 text-orange-500" />
+                  </button>
+
+                  <button 
+                    onClick={handleGenerateQuestionsFromSource} 
+                    disabled={!activeSource || isGeneratingQuestions}
+                    className={`p-2 rounded-xl transition-all disabled:opacity-30 ${isGeneratingQuestions ? 'animate-pulse bg-sky-100' : 'hover:bg-sky-50'}`}
+                    title="Gerar Questões de Teste"
+                  >
+                    <FileQuestion className="w-4 h-4 text-sky-500" />
+                  </button>
+              </div>
+            )}
+          </div>
 
       </div>
 
@@ -1205,4 +1340,6 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
 
     </div>
   );
+
+  return element;
 }

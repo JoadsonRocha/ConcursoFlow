@@ -657,7 +657,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
   if (activeTab === 'flashcards') {
     return (
-      <div className="w-screen h-screen flex flex-col bg-slate-50 p-4 md:p-8 overflow-y-auto animate-in fade-in duration-500 pb-20">
+      <div className="w-full min-h-[calc(100vh-140px)] flex flex-col bg-slate-50 p-4 md:p-8 rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200 overflow-y-auto animate-in fade-in duration-500 pb-20">
         {allModals}
         <header className="flex items-center justify-between gap-4 mb-2">
           <button 

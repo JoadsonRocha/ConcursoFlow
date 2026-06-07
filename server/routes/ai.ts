@@ -237,8 +237,28 @@ router.post('/scrape-youtube', authenticate, async (req, res) => {
   }
 
   try {
-    const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i);
-    const videoId = videoIdMatch ? videoIdMatch[1] : null;
+    let videoId: string | null = null;
+    try {
+      // 1. Try a robust regex that handles shorts, live, watch, embed, v, and youtu.be links
+      const regExp = /^.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]{11})/;
+      const match = url.match(regExp);
+      if (match && match[1]) {
+        videoId = match[1];
+      } else {
+        // 2. Strict fallback using URL API in case query parameters are in a different order
+        const parsedUrl = new URL(url);
+        if (parsedUrl.hostname.includes('youtube.com')) {
+          videoId = parsedUrl.searchParams.get('v');
+        } else if (parsedUrl.hostname.includes('youtu.be')) {
+          const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+          if (pathParts.length > 0) {
+            videoId = pathParts[0];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('URL parsing fallback error:', e);
+    }
 
     if (!videoId) {
       return res.status(400).json({ error: 'ID do vídeo não identificado. Certifique-se de usar um link válido do YouTube.' });
