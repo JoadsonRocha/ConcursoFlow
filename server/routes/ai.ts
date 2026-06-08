@@ -143,8 +143,8 @@ router.post('/mindmap', authenticate, (req, res) => {
 });
 
 router.post('/quiz', authenticate, (req, res) => {
-  const { topic, subject } = req.body;
-  handleAiRequest(req, res, 'quizUsage', 'quizLimit', () => GeminiService.generateQuizQuestions(topic, subject));
+  const { topic, subject, count } = req.body;
+  handleAiRequest(req, res, 'quizUsage', 'quizLimit', () => GeminiService.generateQuizQuestions(topic, subject, count));
 });
 
 router.post('/parse-edital', authenticate, (req, res) => {

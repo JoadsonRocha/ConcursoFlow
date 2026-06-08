@@ -7,6 +7,9 @@ import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import aiRoutes from './server/routes/ai';
 import fs from 'fs';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
 
 import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/config';
 
@@ -104,6 +107,27 @@ try {
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+
+// Basic Security Middlewares
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  frameguard: false, // Disabling frameguard to allow embedding in AI Studio iFrames
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Rate Limiting to prevent brute-force and bot spam
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: { error: 'Muitas requisições deste IP. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+// Prevent HTTP Parameter Pollution
+app.use(hpp());
 
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;

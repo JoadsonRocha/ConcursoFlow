@@ -20,7 +20,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
   };
 
   const addSvg = () => {
-    if (svgs.length < 5) {
+    if (svgs.length < 10) {
       // For now, add a placeholder SVG
       const newSvg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="indigo" /></svg>`;
       setSvgs([...svgs, newSvg]);
@@ -101,7 +101,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
                     className="p-1.5 bg-transparent text-center text-sm font-bold text-slate-700 outline-none cursor-pointer appearance-none"
                     style={{ textAlignLast: 'center' }}
                   >
-                    {[1, 2, 3, 4, 5].map(n => (
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>

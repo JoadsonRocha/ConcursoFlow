@@ -32,6 +32,7 @@ import BrandLogo from '../components/BrandLogo';
 import { contentData } from '../constants/content';
 import { createCheckoutSession } from '../services/stripe';
 import { toast } from 'sonner';
+import { validatePassword } from '../lib/password';
 
 const Landing = () => {
   const { login, loginEmail, signup, user, profile, planType } = useAuth();
@@ -69,6 +70,12 @@ const Landing = () => {
       if (isLogin) {
         await loginEmail(email, password);
       } else {
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+          setError(passwordError);
+          setLoading(false);
+          return;
+        }
         await signup(email, password, name);
       }
     } catch (err: any) {

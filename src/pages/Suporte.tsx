@@ -3,20 +3,12 @@ import {
   MessageCircle, 
   Mail, 
   Instagram, 
-  Search, 
   ChevronDown, 
-  Send, 
-  LifeBuoy, 
   ExternalLink,
-  ShieldCheck,
-  Zap,
-  HelpCircle
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { toast } from 'sonner';
-import { db, auth } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface FAQItemProps {
   question: string;
@@ -63,9 +55,6 @@ const FAQItem = ({ question, answer }: FAQItemProps) => {
 };
 
 export default function Suporte() {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
-  const [isSending, setIsSending] = useState(false);
-
   const faqs = [
     {
       question: "Como a inteligência artificial do Stratis otimiza meu tempo de estudo?",
@@ -101,36 +90,6 @@ export default function Suporte() {
     }
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      toast.error("Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-    
-    setIsSending(true);
-
-    try {
-      await addDoc(collection(db, 'support_tickets'), {
-        name: formData.name,
-        email: formData.email,
-        subject: formData.subject || 'Suporte - Geral',
-        message: formData.message,
-        userId: auth.currentUser?.uid || 'anonymous',
-        status: 'open',
-        createdAt: serverTimestamp()
-      });
-
-      toast.success("Mensagem enviada com sucesso! Responderemos em até 24h.");
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (error) {
-      console.error("Erro ao enviar ticket de suporte:", error);
-      toast.error("Erro ao enviar mensagem. Verifique sua conexão.");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -160,7 +119,7 @@ export default function Suporte() {
           
           <div className="space-y-3">
             <a 
-              href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20Stratis%20Planner." 
+              href="https://wa.me/5595984195211?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20Stratis%20Planner." 
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 p-4 md:p-5 bg-white border border-border rounded-2xl hover:border-green-500/50 hover:shadow-lg hover:shadow-green-500/5 transition-all group active:scale-[0.98]"
@@ -226,78 +185,6 @@ export default function Suporte() {
                 <FAQItem key={idx} question={faq.question} answer={faq.answer} />
               ))}
             </div>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="space-y-6">
-            <div className="flex items-center gap-2 px-1">
-              <Send className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-display text-text-main font-bold uppercase tracking-tight">Envie uma Mensagem</h3>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="rise-card rounded-3xl p-6 md:p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Nome Completo</label>
-                  <input 
-                    type="text" 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Seu nome"
-                    className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Seu E-mail</label>
-                  <input 
-                    type="email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="exemplo@email.com"
-                    className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Assunto</label>
-                <input 
-                  type="text" 
-                  value={formData.subject}
-                  onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                  placeholder="No que podemos ajudar?"
-                  className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-text-sub uppercase tracking-widest ml-1">Mensagem</label>
-                <textarea 
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({...formData, message: e.target.value})}
-                  placeholder="Descreva detalhadamente sua dúvida ou problema..."
-                  className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium resize-none"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button 
-                  type="submit"
-                  disabled={isSending}
-                  className={cn(
-                    "w-full md:w-auto px-10 py-4 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-primary/20",
-                    isSending && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  {isSending ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Zap className="w-4 h-4 fill-white" />
-                  )}
-                  {isSending ? 'Enviando...' : 'Enviar Mensagem agora'}
-                </button>
-              </div>
-            </form>
           </motion.div>
         </div>
       </div>

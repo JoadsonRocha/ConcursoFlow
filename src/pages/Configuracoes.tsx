@@ -50,6 +50,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
   });
   const [examDate, setExamDate] = useState('2026-06-27');
   const [autoSchedule, setAutoSchedule] = useState(true);
+  const [scheduleMode, setScheduleMode] = useState<'weeks' | 'examDate'>('weeks');
   const [scheduleWeeks, setScheduleWeeks] = useState(4);
   const [loading, setLoading] = useState(false);
   const [extractingPdf, setExtractingPdf] = useState(false);
@@ -207,8 +208,23 @@ export default function Settings({ onImport, contests }: SettingsProps) {
        }
 
        let schedule: any[] | null = contestData.schedule || null;
-       // Non-pro users are restricted to 4 weeks
-       const finalWeeks = canUseAnalysis ? scheduleWeeks : 4;
+       
+       let finalWeeks = canUseAnalysis ? scheduleWeeks : 4;
+       if (autoSchedule && scheduleMode === 'examDate') {
+         if (!examDate) {
+           throw new Error("Data da prova é obrigatória no modo Até a Prova.");
+         }
+         const examTime = new Date(examDate).getTime();
+         const startTime = new Date(scheduleStartDate || new Date().toISOString().split('T')[0]).getTime();
+         const diff = examTime - startTime;
+         if (diff <= 0) {
+           throw new Error("A data da prova já passou ou é inválida comparada à data de início.");
+         }
+         finalWeeks = Math.ceil(diff / (1000 * 60 * 60 * 24 * 7));
+         if (!canUseAnalysis && finalWeeks > 4) {
+           finalWeeks = 4;
+         }
+       }
        
        if (autoSchedule && finalContestData.subjects) {
          const subjectsSummary = finalContestData.subjects.map(s => 
@@ -216,7 +232,9 @@ export default function Settings({ onImport, contests }: SettingsProps) {
          ).join('\n');
          
          if (!canUseAnalysis) {
-           toast.info("Gerando cronograma padrão de 4 semanas...");
+           toast.info("Gerando cronograma padrão de 4 semanas (limitado pelo plano Free)...");
+         } else {
+           toast.info(`Gerando cronograma de ${finalWeeks} semanas...`);
          }
          
          schedule = await generateSchedule(subjectsSummary, finalWeeks * 7);
@@ -644,38 +662,67 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                         </label>
 
                         {autoSchedule && (
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
-                              {[2, 4, 8, 12].map((w) => {
-                                const isWeekPro = w !== 4 && !isPro;
-                                return (
-                                  <button
-                                    key={w}
-                                    onClick={() => {
-                                      if (isWeekPro) {
-                                        setProFeatureName(`Cronograma de ${w} semanas`);
-                                        setShowProModal(true);
-                                        return;
-                                      }
-                                      setScheduleWeeks(w);
-                                    }}
-                                    className={cn(
-                                      "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center relative",
-                                      scheduleWeeks === w 
-                                        ? "bg-white text-text-main shadow-sm" 
-                                        : "text-text-sub hover:text-text-main",
-                                      isWeekPro && "opacity-60"
-                                    )}
-                                  >
-                                    {isWeekPro && (
-                                       <div className="absolute -top-1 -right-1 bg-accent text-white text-[6px] px-1 rounded shadow-sm scale-75 border border-white">PRO</div>
-                                    )}
-                                    {w} Sem.
-                                  </button>
-                                );
-                              })}
+                          <div className="space-y-4">
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                              <button
+                                onClick={() => setScheduleMode('weeks')}
+                                className={cn(
+                                  "flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all",
+                                  scheduleMode === 'weeks' ? "bg-white text-text-main shadow-sm" : "text-text-sub hover:text-text-main"
+                                )}
+                              >
+                                Definir Semanas
+                              </button>
+                              <button
+                                onClick={() => setScheduleMode('examDate')}
+                                className={cn(
+                                  "flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all",
+                                  scheduleMode === 'examDate' ? "bg-white text-text-main shadow-sm" : "text-text-sub hover:text-text-main"
+                                )}
+                              >
+                                Até a Prova
+                              </button>
                             </div>
-                            {!isPro && (
+
+                            {scheduleMode === 'examDate' && examDate && (
+                              <p className="text-[10px] text-text-main font-medium italic mt-2 text-left">
+                                A IA calculará o cronograma da data de início até a prova ({new Date(examDate).toLocaleDateString('pt-BR')}).
+                              </p>
+                            )}
+
+                            {scheduleMode === 'weeks' && (
+                              <div className="flex flex-wrap bg-slate-100 p-0.5 rounded-xl border border-border w-full">
+                                {[2, 4, 8, 12].map((w) => {
+                                  const isWeekPro = w !== 4 && !isPro;
+                                  return (
+                                    <button
+                                      key={w}
+                                      onClick={() => {
+                                        if (isWeekPro) {
+                                          setProFeatureName(`Cronograma de ${w} semanas`);
+                                          setShowProModal(true);
+                                          return;
+                                        }
+                                        setScheduleWeeks(w);
+                                      }}
+                                      className={cn(
+                                        "px-2 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all flex-1 text-center relative",
+                                        scheduleWeeks === w 
+                                          ? "bg-white text-text-main shadow-sm" 
+                                          : "text-text-sub hover:text-text-main",
+                                        isWeekPro && "opacity-60"
+                                      )}
+                                    >
+                                      {isWeekPro && (
+                                         <div className="absolute -top-1 -right-1 bg-accent text-white text-[6px] px-1 rounded shadow-sm scale-75 border border-white">PRO</div>
+                                      )}
+                                      {w} Sem.
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {!isPro && scheduleMode === 'weeks' && (
                               <p className="text-[8px] text-text-sub text-center font-bold tracking-tight uppercase">
                                 Plano Free inclui cronograma fixo de 4 semanas
                               </p>

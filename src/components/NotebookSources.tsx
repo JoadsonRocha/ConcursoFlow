@@ -544,8 +544,9 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
           'Authorization': `Bearer ${idToken}`
         },
         body: JSON.stringify({
-          topic: `Gere exatamente 5 questões de múltipla escolha difíceis e focadas. Baseie-se apenas neste material:\n\n${activeSource.content.substring(0, 10000)}`,
-          subject: activeSource.title
+          topic: `Gere exatamente 10 questões de múltipla escolha difíceis e focadas. Baseie-se apenas neste material:\n\n${activeSource.content.substring(0, 10000)}`,
+          subject: activeSource.title,
+          count: 10
         })
       });
 
@@ -564,7 +565,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
         updatedAt: serverTimestamp()
       });
       
-      toast.success('Sucesso! Simulado com 5 questões de teste montado na sua lista do Estúdio.');
+      toast.success('Sucesso! Simulado com 10 questões de teste montado na sua lista do Estúdio.');
     } catch (err: any) {
       console.error(err);
       toast.error(`Falha ao gerar questões: ${err.message || err}`);
@@ -585,7 +586,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
       const idToken = await user.getIdToken();
       
       // Step 1: Call flashcards API sending the document content as topic
-      const count = 5;
+      const count = 10;
       const response = await fetch('/api/ai/flashcards', {
         method: 'POST',
         headers: {
@@ -653,23 +654,38 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
     try {
       const idToken = await user.getIdToken();
       
-      // Calculate depth and quantity based on content length (up to 5 mind maps)
+      // Calculate depth and quantity based on content length (up to 10 mind maps)
       const contentLength = activeSource.content?.length || 0;
       let quantity = 1;
       let textLimit = 10000;
       
-      if (contentLength > 30000) {
-        quantity = 5;
-        textLimit = 35000;
+      if (contentLength > 36000) {
+        quantity = 10;
+        textLimit = 40000;
+      } else if (contentLength > 32000) {
+        quantity = 9;
+        textLimit = 36000;
+      } else if (contentLength > 28000) {
+        quantity = 8;
+        textLimit = 32000;
+      } else if (contentLength > 24000) {
+        quantity = 7;
+        textLimit = 28000;
       } else if (contentLength > 20000) {
+        quantity = 6;
+        textLimit = 24000;
+      } else if (contentLength > 16000) {
+        quantity = 5;
+        textLimit = 20000;
+      } else if (contentLength > 12000) {
         quantity = 4;
-        textLimit = 25000;
-      } else if (contentLength > 10000) {
+        textLimit = 16000;
+      } else if (contentLength > 8000) {
         quantity = 3;
-        textLimit = 18000;
+        textLimit = 12000;
       } else if (contentLength > 4000) {
         quantity = 2;
-        textLimit = 10000;
+        textLimit = 8000;
       }
 
       toast.info(`Fonte com ${contentLength} caracteres. Preparando ${quantity} ${quantity === 1 ? 'mapa mental' : 'mapas mentais'} em lote...`);

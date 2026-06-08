@@ -5,7 +5,7 @@ export interface GeneratedFlashcard {
   back: string;
 }
 
-export async function generateFlashcards(topic: string, count: number = 5): Promise<GeneratedFlashcard[]> {
+export async function generateFlashcards(topic: string, count: number = 10): Promise<GeneratedFlashcard[]> {
   try {
     const data = await fetchWithAuth("/api/ai/flashcards", {
       method: "POST",

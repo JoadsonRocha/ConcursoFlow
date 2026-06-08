@@ -53,11 +53,11 @@ export const generateSVGMap = async (title: string, prompt: string, quantity: nu
   }
 };
 
-export const generateQuizQuestions = async (subject: string, topic: string) => {
+export const generateQuizQuestions = async (subject: string, topic: string, count: number = 10) => {
   try {
     const data = await fetchWithAuth("/api/ai/quiz", {
       method: "POST",
-      body: JSON.stringify({ subject, topic }),
+      body: JSON.stringify({ subject, topic, count }),
     });
     if (Array.isArray(data)) {
       return data;

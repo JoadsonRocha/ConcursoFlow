@@ -103,7 +103,7 @@ async function generateContentWithCache(serviceName: string, params: any, prompt
   return result;
 }
 
-export async function generateFlashcards(topic: string, count: number = 5) {
+export async function generateFlashcards(topic: string, count: number = 10) {
   const params = { topic, count };
   const prompt = `VOCÊ É UM PROFESSOR DE CONCURSOS ESPECIALISTA EM REVISÕES ATIVAS E MEMORIZAÇÃO DE ALTO DESEMPENHO.
   Gere ${count} flashcards de estudo "NÍVEL ESPECIALISTA" para concurso público sobre o tema: "${topic}". 
@@ -178,9 +178,9 @@ export async function generateMindMap(subject: string) {
   return parseJsonResponse(text || "{}", {});
 }
 
-export async function generateQuizQuestions(topic: string, subject: string) {
-  const params = { topic, subject };
-  const prompt = `Gere exatamente 5 questões de múltipla escolha sobre "${topic}" (${subject}). Use o material fornecido se houver.
+export async function generateQuizQuestions(topic: string, subject: string, count: number = 10) {
+  const params = { topic, subject, count };
+  const prompt = `Gere exatamente ${count} questões de múltipla escolha sobre "${topic}" (${subject}). Use o material fornecido se houver.
   Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
 
   const text = await generateContentWithCache("generateQuizQuestions", params, prompt, GEMINI_MODEL, {

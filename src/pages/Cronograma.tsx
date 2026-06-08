@@ -45,6 +45,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [weeksCount, setWeeksCount] = useState(4);
+  const [scheduleMode, setScheduleMode] = useState<'weeks' | 'examDate'>('weeks');
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -232,7 +233,23 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   };
 
   const handleGenerate = async () => {
-    if (!isPro && weeksCount > 4) {
+    let weeksCountToUse = weeksCount;
+    if (scheduleMode === 'examDate') {
+      if (!contest.examDate) {
+        toast.error("Você precisa definir a data da prova em Configurações > Importar Edital primeiro.");
+        return;
+      }
+      const examTime = new Date(contest.examDate).getTime();
+      const startTime = getStartDate().getTime();
+      const diff = examTime - startTime;
+      if (diff <= 0) {
+        toast.error("A data da prova já passou ou é inválida.");
+        return;
+      }
+      weeksCountToUse = Math.ceil(diff / (1000 * 60 * 60 * 24 * 7));
+    }
+
+    if (!isPro && weeksCountToUse > 4) {
       setProFeatureName('Cronogramas de Longo Prazo (> 4 Semanas)');
       setShowProModal(true);
       return;
@@ -244,7 +261,7 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
         `${s.name} (${s.category}): ${s.topics?.map(t => t.name).join(', ')}`
       ).join('\n');
       
-      const newSchedule = await generateSchedule(subjectsSummary, weeksCount * 7);
+      const newSchedule = await generateSchedule(subjectsSummary, weeksCountToUse * 7);
       const todayStr = new Date().toISOString().split('T')[0];
       
       onUpdate({ 
@@ -486,35 +503,64 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
 
       <section className="rise-card p-8 md:p-12 space-y-10 text-center max-w-lg mx-auto border border-border bg-white shadow-sm">
         <div className="space-y-6">
-          <label className="text-xs font-bold text-text-sub uppercase tracking-wider">Alcance do Plano (Semanas)</label>
-          <div className="grid grid-cols-2 gap-3">
-             {[2, 4, 8, 12].map(w => {
-               const isDisabled = !isPro && w > 4;
-               return (
-                <button 
-                 key={w}
-                 onClick={() => {
-                   if (isDisabled) {
-                     setProFeatureName(`Cronogramas de ${w} Semanas`);
-                     setShowProModal(true);
-                   } else {
-                     setWeeksCount(w);
-                   }
-                 }}
-                 className={cn(
-                   "px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border relative flex items-center justify-center gap-2",
-                   weeksCount === w 
-                     ? "bg-primary border-primary text-white shadow-sm scale-105" 
-                     : "bg-slate-50 border-border text-text-sub hover:border-primary/30",
-                   isDisabled && "opacity-60 grayscale-[0.5]"
-                 )}
-                >
-                  {w} Semanas
-                  {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
-                </button>
-               );
-             })}
+          <label className="text-xs font-bold text-text-sub uppercase tracking-wider block text-left">Modo do Cronograma</label>
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setScheduleMode('weeks')}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
+                scheduleMode === 'weeks' ? "bg-white text-text-main shadow-sm" : "text-text-sub hover:text-text-main"
+              )}
+            >
+              Definir Semanas
+            </button>
+            <button
+              onClick={() => setScheduleMode('examDate')}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
+                scheduleMode === 'examDate' ? "bg-white text-text-main shadow-sm" : "text-text-sub hover:text-text-main"
+              )}
+            >
+              Até a Prova
+            </button>
           </div>
+
+          {scheduleMode === 'examDate' && contest.examDate && (
+             <p className="text-xs text-text-main font-medium italic mt-2 text-left">
+               A IA calculará automaticamente as semanas até a data oficial da prova ({new Date(contest.examDate).toLocaleDateString('pt-BR')}).
+             </p>
+          )}
+
+          {scheduleMode === 'weeks' && (
+            <div className="grid grid-cols-2 gap-3 mt-4">
+               {[2, 4, 8, 12].map(w => {
+                 const isDisabled = !isPro && w > 4;
+                 return (
+                  <button 
+                   key={w}
+                   onClick={() => {
+                     if (isDisabled) {
+                       setProFeatureName(`Cronogramas de ${w} Semanas`);
+                       setShowProModal(true);
+                     } else {
+                       setWeeksCount(w);
+                     }
+                   }}
+                   className={cn(
+                     "px-4 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border relative flex items-center justify-center gap-2",
+                     weeksCount === w 
+                       ? "bg-primary border-primary text-white shadow-sm scale-105" 
+                       : "bg-slate-50 border-border text-text-sub hover:border-primary/30",
+                     isDisabled && "opacity-60 grayscale-[0.5]"
+                   )}
+                  >
+                    {w} Semanas
+                    {isDisabled && <Lock className="w-3 h-3 text-slate-400" />}
+                  </button>
+                 );
+               })}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/50">

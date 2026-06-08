@@ -5,6 +5,7 @@ import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 import { ShieldCheck, Lock, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { validatePassword } from '../lib/password';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -42,8 +43,9 @@ export default function ResetPassword() {
       setError('As senhas não coincidem.');
       return;
     }
-    if (newPassword.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 

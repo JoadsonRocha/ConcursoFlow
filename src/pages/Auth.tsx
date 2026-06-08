@@ -12,6 +12,7 @@ import { cn } from '../lib/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import BrandLogo from '../components/BrandLogo';
+import { validatePassword } from '../lib/password';
 
 export default function Auth() {
   const { login, loginEmail, signup, resetPassword, user } = useAuth();
@@ -49,6 +50,12 @@ export default function Auth() {
         await loginEmail(email, password);
         navigate('/');
       } else if (authMode === 'signup') {
+        const passwordError = validatePassword(password);
+        if (passwordError) {
+          setError(passwordError);
+          setLoading(false);
+          return;
+        }
         await signup(email, password, name);
         navigate('/');
       } else if (authMode === 'recover') {
