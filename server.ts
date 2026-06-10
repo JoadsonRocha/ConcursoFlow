@@ -108,23 +108,28 @@ try {
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
+// Set trust proxy first so that middlewares like rate limiter can trust headers
+app.set('trust proxy', true);
+
 // Basic Security Middlewares
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
   frameguard: false, // Disabling frameguard to allow embedding in AI Studio iFrames
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  hsts: false // Disable HSTS to prevent iframe HTTPS issues in development/dev proxies
 }));
 
-// Rate Limiting to prevent brute-force and bot spam
+// Rate Limiting to prevent brute-force and bot spam - ONLY on API routes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
+  max: 2000, // limit each IP to 2000 requests per windowMs
   message: { error: 'Muitas requisições deste IP. Tente novamente mais tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
+app.use('/api', limiter);
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
@@ -154,7 +159,6 @@ const getDb = () => {
   }
 };
 
-app.set('trust proxy', true);
 app.use(cors());
 
 // Webhook
