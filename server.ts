@@ -109,7 +109,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 // Set trust proxy first so that middlewares like rate limiter can trust headers
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Basic Security Middlewares
 app.use(helmet({
@@ -128,6 +128,7 @@ const limiter = rateLimit({
   message: { error: 'Muitas requisições deste IP. Tente novamente mais tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false } // Disable trust proxy warning
 });
 app.use('/api', limiter);
 
