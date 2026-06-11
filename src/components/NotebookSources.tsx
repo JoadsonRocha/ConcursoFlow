@@ -29,11 +29,18 @@ import {
   Table2,
   FileText,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Wand2,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
+import * as pdfjs from 'pdfjs-dist';
+
+// Configure worker
+const PDFJS_VERSION = '5.7.284';
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
 
 interface Source {
   id: string;
@@ -255,68 +262,48 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
 
   // Helper: Client-side PDF Text Extraction
   const extractPdfText = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-
-    // Strategy 1: Try bundled modern pdfjs-dist
     try {
-      const pdfjsLib = await import('pdfjs-dist');
-      // For version 5+, use unpkg with correct versioning and extension (.mjs)
-      const version = pdfjsLib.version || '5.7.284';
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`;
+      let activePdfjs: any = pdfjs;
       
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      
-      let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 100);
-      for (let i = 1; i <= maxPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n';
-      }
-      return fullText;
-    } catch (importErr) {
-      console.warn('Strategy 1 PDF extraction failed. Trying Strategy 2 (Legacy CDN)...', importErr);
-    }
-
-    // Strategy 2: Fallback to highly compatible v2 version from CDN
-    try {
-      const pdfjsLib = await new Promise<any>((resolve, reject) => {
-        if ((window as any).pdfjsLib) {
-          resolve((window as any).pdfjsLib);
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
-        script.onload = () => {
-          const lib = (window as any).pdfjsLib;
-          if (lib) {
-            lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-            resolve(lib);
-          } else {
-            reject(new Error('pdfjsLib v2 not found on window after CDN load'));
+      // Verification if the imported pdfjs is fully functional, otherwise fallback
+      if (!activePdfjs || typeof activePdfjs.getDocument !== 'function') {
+        activePdfjs = await new Promise<any>((resolve, reject) => {
+          if ((window as any).pdfjsLib) {
+            resolve((window as any).pdfjsLib);
+            return;
           }
-        };
-        script.onerror = (e) => reject(new Error('Failed to load pdf.js v2 from CDN'));
-        document.body.appendChild(script);
-      });
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+          script.onload = () => {
+            const lib = (window as any).pdfjsLib;
+            if (lib) {
+              lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+              resolve(lib);
+            } else {
+              reject(new Error('pdfjsLib not found on window after CDN load'));
+            }
+          };
+          script.onerror = () => reject(new Error('Failed to load pdf.js from CDN'));
+          document.body.appendChild(script);
+        });
+      }
 
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await activePdfjs.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
       
-      let fullText = '';
-      const maxPages = Math.min(pdf.numPages, 100);
-      for (let i = 1; i <= maxPages; i++) {
+      const numPages = Math.min(pdf.numPages, 100); 
+      
+      for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n';
+        const pageText = textContent.items.map((item: any) => (item as any).str).join(" ");
+        fullText += pageText + "\n";
       }
       return fullText;
-    } catch (cdnErr) {
-      console.error('All PDF text extraction strategies failed:', cdnErr);
-      throw new Error('Não foi possível extrair o texto do PDF. Certifique-se de que o arquivo tem texto selecionável e não está protegido por senha.');
+    } catch (err) {
+      console.error("PDF Extraction error:", err);
+      throw new Error("Não foi possível ler o PDF. Certifique-se de que não possui senha, não é uma imagem escaneada, ou tente copiar e colar o texto manualmente.");
     }
   };
 
@@ -741,7 +728,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
   );
 
   const element = (
-    <div className="flex flex-col relative overflow-hidden animate-in fade-in duration-700 pb-safe w-full h-[calc(100vh-90px)] sm:h-[calc(100vh-140px)] rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200 bg-slate-50">
+    <div className="flex flex-col relative overflow-hidden animate-in fade-in duration-700 pb-safe w-full flex-1 rounded-[32px] md:rounded-[40px] shadow-sm border border-slate-200 bg-slate-50">
       
       {/* ⚠️ BLOQUEIO "EM BREVE" / MANUTENÇÃO */}
       {isLockedForMaintenance && (
@@ -782,7 +769,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
       <div className="flex-1 flex w-full max-w-[1600px] p-2 gap-2 sm:p-4 sm:gap-4 mx-auto overflow-hidden">
         
         {/* LEFT PANEL: FONTES */}
-        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isSourcesPanelOpen ? 'lg:w-48' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'fonts' ? 'flex' : 'hidden'} lg:flex`}>
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isSourcesPanelOpen ? 'lg:w-[190px]' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'fonts' ? 'flex' : 'hidden'} lg:flex`}>
             <div className="p-4 flex items-center justify-between">
               {isSourcesPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-[11px]">Fontes</h3>}
               <button 
@@ -907,7 +894,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
           </div>
 
         {/* CENTER PANEL: CONVERSA / CHAT */}
-        <div className={`flex flex-col bg-white overflow-hidden relative transition-all duration-300 min-w-0 w-full border border-slate-200 rounded-3xl shadow-sm lg:w-auto lg:flex-1 ${activeMobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex`}>
+        <div className={`flex flex-col bg-white overflow-hidden relative transition-all duration-300 min-w-0 w-full border border-slate-200 rounded-3xl shadow-sm lg:w-auto lg:flex-1 lg:mx-[2.5px] ${activeMobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex`}>
           <div className="flex p-3 px-4 border-b border-slate-100 items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <div>
@@ -938,42 +925,62 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 md:py-6 custom-scrollbar">
-            <div className="space-y-6 max-w-3xl mx-auto pb-4">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 custom-scrollbar">
+            <div className="space-y-8 max-w-4xl mx-auto pb-4">
               {messages.length === 0 && (
                 <div className="flex w-full justify-start">
-                  <div className="p-4 sm:p-5 rounded-[28px] text-[13px] leading-relaxed break-words shadow-sm bg-slate-50 text-text-main border border-slate-100 max-w-[95%] sm:max-w-[90%] rounded-tl-none">
-                    <div className="prose prose-sm max-w-none prose-slate select-text marker:text-primary prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-strong:text-text-main">
-                      <h3 className="text-xl font-display font-black text-text-main tracking-tight mt-0 mb-3">Vamos iniciar seu notebook… 🔍</h3>
-                      <p>Esta é sua tela em branco para entender, criar ou progredir em algo novo. Posso te ajudar a começar ou você pode adicionar as próprias fontes.</p>
-                      <p className="font-bold">O que você quer fazer com este notebook?</p>
+                  <div className="flex gap-4 max-w-[95%]">
+                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-[15px] leading-relaxed break-words text-slate-800">
+                      <div className="prose prose-slate max-w-none select-text marker:text-slate-900 prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-slate-900 prose-strong:text-slate-900">
+                        <h3 className="text-xl font-display font-medium text-slate-900 tracking-tight mt-0 mb-3">Estúdio Notebook</h3>
+                        <p className="text-slate-600">Esta é sua área de estudos interativa com <b>inteligência artificial</b>. Adicione documentos, PDFs ou textos soltos como Fontes.</p>
+                        <p className="text-slate-600">O Stratis se tornará um especialistaInstantaneamente no material importado, permitindo que você tire dúvidas, resuma partes complexas e estude de forma ativa.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
               {messages.map((m) => (
                 <div key={m.id} className={`flex w-full ${m.role === 'model' ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`p-4 sm:p-5 rounded-[28px] text-[13px] leading-relaxed break-words shadow-sm ${
-                    m.role === 'model' 
-                      ? 'bg-slate-50 text-text-main border border-slate-100 max-w-[95%] sm:max-w-[90%] rounded-tl-none' 
-                      : 'bg-primary text-white max-w-[88%] sm:max-w-[80%] shadow-md shadow-primary/10 rounded-tr-none'
-                  }`}>
-                    {m.role === 'model' ? (
-                      <div className="prose prose-sm max-w-none prose-slate select-text marker:text-primary prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary prose-strong:text-text-main">
-                        <Markdown>{m.content}</Markdown>
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-wrap font-medium">
-                        {m.content}
+                  <div className={`flex gap-3 sm:gap-4 ${m.role === 'model' ? 'max-w-[95%]' : 'max-w-[85%]'}`}>
+                    {m.role === 'model' && (
+                      <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                        <Sparkles className="w-4 h-4 text-white" />
                       </div>
                     )}
+                    <div className={`text-[15px] leading-relaxed break-words ${
+                      m.role === 'model' 
+                        ? 'text-slate-800 pt-1' 
+                        : 'bg-slate-100 py-3.5 px-6 rounded-3xl text-slate-800 font-medium'
+                    }`}>
+                      {m.role === 'model' ? (
+                        <div className="prose prose-slate max-w-none select-text marker:text-slate-900 prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-slate-900 prose-strong:text-slate-900">
+                          <Markdown>{m.content}</Markdown>
+                        </div>
+                      ) : (
+                        <div className="whitespace-pre-wrap">
+                          {m.content}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
               {isChatLoading && (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-text-sub animate-pulse ml-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-full w-fit">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                  Analista Stratis processando material...
+                <div className="flex w-full justify-start">
+                  <div className="flex gap-4 max-w-[95%]">
+                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                      <Sparkles className="w-4 h-4 text-white animate-pulse" />
+                    </div>
+                    <div className="flex items-center gap-2 pt-2.5">
+                      <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
                 </div>
               )}
               <div ref={chatEndRef} className="h-4" />
@@ -981,56 +988,71 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
           </div>
 
           {/* INPUT AREA with Quick Prompts */}
-          <div className="p-2 pb-2 sm:p-4 bg-white border-t border-slate-50 relative z-20">
+          <div className="px-3 pb-6 pt-2 bg-white relative z-20">
             {activeSource && messages.length === 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4 justify-center max-w-4xl mx-auto">
                 {[
                   { label: "Resumir em Tabela", icon: Table2, prompt: "Crie um resumo analítico desta fonte formatado em uma tabela técnica, destacando os pontos mais importantes para concursos." },
-                  { label: "Checklist de Pontos Críticos", icon: ListChecks, prompt: "Extraia desta fonte um checklist de pontos críticos, prazos e regras que costumam ser pegadinhas em provas." },
-                  { label: "Explicar Termos Técnicos", icon: HelpCircle, prompt: "Identifique todos os termos técnicos e jurídicos desta fonte e crie um glossário simplificado." }
+                  { label: "Pontos Críticos", icon: ListChecks, prompt: "Extraia desta fonte um checklist de pontos críticos, prazos e regras que costumam ser pegadinhas em provas." },
+                  { label: "Termos Técnicos", icon: HelpCircle, prompt: "Identifique todos os termos técnicos e jurídicos desta fonte e crie um glossário simplificado." }
                 ].map((qp, i) => (
                   <button 
                     key={i}
                     onClick={() => handleSendMessage(qp.prompt)}
                     disabled={isChatLoading}
-                    className="w-full px-3 py-2.5 bg-slate-50 hover:bg-primary/5 border border-slate-100 hover:border-primary/20 rounded-2xl text-[10px] font-black text-text-sub hover:text-primary uppercase tracking-tight transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-[12px] font-medium text-slate-700 hover:text-slate-900 transition-all flex items-center gap-2 disabled:opacity-50"
                   >
-                    <qp.icon className="w-3 h-3" />
+                    <qp.icon className="w-4 h-4" />
                     {qp.label}
                   </button>
                 ))}
               </div>
             )}
 
-            <div className="max-w-2xl mx-auto flex items-center gap-2 p-1.5 bg-slate-50 border border-slate-200 rounded-[32px] focus-within:ring-2 focus-within:ring-primary/20 focus-within:bg-white transition-all shadow-sm">
-              <input 
-                type="text" 
-                placeholder={activeSource ? "Pergunte ao analista sobre esta fonte..." : "Selecione uma fonte para analisar..."}
+            <div className="max-w-4xl mx-auto flex items-end gap-2 p-2 bg-slate-100 hover:bg-slate-200/50 border border-transparent focus-within:bg-slate-50 focus-within:border-slate-300 rounded-3xl transition-all">
+              <textarea 
+                placeholder={activeSource ? "Pergunte sobre esta fonte ou o conteúdo..." : "Selecione uma fonte para analisar..."}
                 disabled={!activeSource || isChatLoading}
-                className="flex-1 bg-transparent border-none focus:outline-none px-4 py-2.5 text-[13px] font-medium text-text-main placeholder:text-slate-400"
+                className="flex-1 bg-transparent border-none focus:outline-none px-4 py-3 text-[15px] leading-relaxed text-slate-800 placeholder:text-slate-500 resize-none min-h-[48px] max-h-[200px]"
+                rows={1}
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
               />
-              <div className="flex items-center gap-1.5 pr-2">
+              <div className="flex items-center gap-2 pr-1 pb-1">
                  <button 
                   onClick={() => handleSendMessage()}
                   disabled={!inputText.trim() || isChatLoading || !activeSource}
-                  className="p-3 bg-text-main hover:brightness-125 disabled:opacity-20 rounded-full transition-all text-white"
+                  className="p-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-slate-900 rounded-full transition-all text-white flex items-center justify-center h-10 w-10 flex-shrink-0 shadow-sm"
                 >
-                  <ArrowUp className="w-4 h-4" />
+                  <ArrowUp className="w-5 h-5" />
                 </button>
               </div>
             </div>
+            <div className="text-center mt-2.5">
+              <p className="text-[10px] text-slate-400/80 font-medium">
+                O Notebook Stratis pode gerar respostas incorretas. Por isso, cheque o conteúdo.
+              </p>
+            </div>
             
             {!activeSource && (
-              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center rounded-b-3xl">
+              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center rounded-b-3xl">
                 <button 
                   onClick={() => {
                     setActiveMobileTab('fonts');
                     setIsSourcesPanelOpen(true);
                   }}
-                  className="text-[10px] font-black text-text-main uppercase tracking-[0.2em] bg-white px-6 py-3 rounded-full border border-slate-200 shadow-sm hover:border-primary hover:text-primary transition-all cursor-pointer">
+                  className="text-xs font-bold text-slate-700 tracking-wide bg-white px-6 py-2.5 rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-all cursor-pointer flex items-center gap-2">
+                  <Database className="w-4 h-4" />
                   Selecione uma Fonte
                 </button>
               </div>
@@ -1039,7 +1061,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
         </div>
 
         {/* RIGHT PANEL: ESTUDIO */}
-        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isStudioPanelOpen ? 'lg:w-48' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'studio' ? 'flex' : 'hidden'} lg:flex`}>
+        <div className={`bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden pb-4 transition-all duration-300 w-full ${isStudioPanelOpen ? 'lg:w-[190px]' : 'lg:w-16'} flex-shrink-0 ${activeMobileTab === 'studio' ? 'flex' : 'hidden'} lg:flex`}>
             <div className="p-5 flex items-center justify-between">
               {isStudioPanelOpen && <h3 className="font-bold text-text-main tracking-tight text-sm">Estúdio</h3>}
               <button 

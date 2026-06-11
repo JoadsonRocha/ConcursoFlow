@@ -1038,7 +1038,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
   if (activeTab === 'notebook') {
     return (
-      <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 pb-2 md:pb-20 select-none">
+      <div className="animate-in fade-in duration-500 select-none flex flex-col h-[calc(100vh-70px)] -mt-2.5 mx-[-15px] md:mx-[-23px]">
         {allModals}
         <NotebookSources 
           onBack={() => {
@@ -1153,7 +1153,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                     ) : (
                       <>
                         <Lock className="w-3.5 h-3.5 text-yellow-300" />
-                        Acessar Caderno de Trabalho (PRO)
+                        Acessar Caderno de Estudos (PRO)
                       </>
                     )}
                   </button>

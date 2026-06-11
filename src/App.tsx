@@ -63,35 +63,28 @@ import Dashboard from './pages/Dashboard';
 import FocusMode from './pages/FocusMode';
 import Estatisticas from './pages/Estatisticas';
 
-const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id, variant = 'default' }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string, variant?: 'default' | 'highlight' }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id, variant = 'default', iconColor }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string, variant?: 'default' | 'highlight', iconColor?: string }) => (
   <Link 
     id={id}
     to={to} 
     className={cn(
-      "flex items-center gap-3 py-2 rounded-lg transition-all duration-300 group relative text-[12px] font-black uppercase tracking-wider",
+      "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 group relative text-[14px] font-medium",
       variant === 'highlight'
-        ? (active ? "bg-amber-500/20 text-amber-600 shadow-sm shadow-amber-500/5" : "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border border-amber-500/20")
-        : (active ? "bg-primary/10 text-primary" : "text-text-sub hover:bg-slate-50 hover:text-text-main"),
+        ? (active ? "bg-amber-500/10 text-amber-700 font-semibold" : "text-amber-600 hover:bg-amber-50")
+        : (active ? "bg-primary/10 text-primary font-semibold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"),
       collapsed ? "justify-center px-0" : "px-4"
     )}
     title={collapsed ? label : undefined}
   >
     <Icon className={cn(
-      "w-4 h-4 shrink-0", 
+      "w-4.5 h-4.5 shrink-0 transition-all", 
       variant === 'highlight' 
-        ? "text-amber-500 group-hover:scale-110 transition-transform animate-pulse" 
-        : (active ? "text-primary" : "text-text-sub/50 group-hover:text-text-main")
+        ? "text-amber-500 group-hover:scale-110" 
+        : (active ? "text-primary" : cn(iconColor || "text-slate-400", "group-hover:scale-110 opacity-80 group-hover:opacity-100"))
     )} />
     {!collapsed && <span>{label}</span>}
     {variant === 'highlight' && !collapsed && (
-      <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-extrabold uppercase scale-90 tracking-widest leading-none">PRO</span>
-    )}
-    {active && !collapsed && variant !== 'highlight' && (
-      <motion.div 
-        layoutId="active-nav-bg"
-        className="absolute inset-y-2 left-0 w-1 bg-primary rounded-full shadow-[0_0_10px_var(--color-primary)] opacity-80"
-        initial={false}
-      />
+      <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold uppercase tracking-wider">PRO</span>
     )}
   </Link>
 );
@@ -685,17 +678,17 @@ export default function App() {
           <div>
             {isSidebarOpen && <span className="block text-[11px] font-bold text-text-sub uppercase tracking-widest mb-2 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-0.5">
-              <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão Foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook Stratis" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão Stratis" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} />
-              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} /> 
-              <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} />
-              <SidebarItem to="/suporte" icon={LifeBuoy} label="Suporte" active={location.pathname === '/suporte'} collapsed={!isSidebarOpen} />
+              <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} iconColor="text-blue-500" />
+              <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} iconColor="text-indigo-500" />
+              <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} iconColor="text-emerald-500" />
+              <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} iconColor="text-rose-500" />
+              <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} iconColor="text-orange-500" />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} iconColor="text-violet-500" />
+              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} iconColor="text-cyan-500" />
+              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} iconColor="text-fuchsia-500" /> 
+              <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} iconColor="text-teal-500" />
+              <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} iconColor="text-sky-500" />
+              <SidebarItem to="/suporte" icon={LifeBuoy} label="Suporte" active={location.pathname === '/suporte'} collapsed={!isSidebarOpen} iconColor="text-pink-500" />
               {!isPro && (
                 <SidebarItem to="/planos" icon={Crown} label="Assinar Pro" active={location.pathname === '/planos'} collapsed={!isSidebarOpen} variant="highlight" />
               )}
@@ -740,7 +733,7 @@ export default function App() {
 
       {/* Main Content */}
       <main ref={mainRef} className={cn("flex-1 min-w-0 overflow-x-hidden bg-bg relative scroll-smooth flex flex-col", location.pathname === '/tutor' ? "overflow-hidden" : "overflow-y-auto")}>
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-4 flex shrink-0 items-center justify-between border-b border-border">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-3.5 flex shrink-0 items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -961,20 +954,20 @@ export default function App() {
           </div>
         )}
 
-        <div className={cn("w-full max-w-[1536px] mx-auto space-y-10", (location.pathname === '/tutor' || location.pathname === '/foco') ? "p-0 h-full" : "p-4 md:p-8")}>
+        <div className={cn("w-full max-w-[1536px] mx-auto space-y-6", (location.pathname === '/tutor' || location.pathname === '/foco') ? "p-0 h-full" : "p-4 md:p-6")}>
           <AnimatePresence mode="wait">
             <Routes location={location}>
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />
               <Route path="/foco" element={<FocusMode contest={currentContest} onUpdate={handleUpdateContest} />} />
-              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
-              <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital primeiro</span></div>} />
+              <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
+              <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
+              <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</span></div>} />
               <Route path="/microaprendizado" element={<Microlearning contest={currentContest} onUpdate={handleUpdateContest} />} />
               <Route path="/tutor" element={<Tutor contest={currentContest} />} />
-              <Route path="/mepp" element={currentContest ? <MentorMepp contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/mepp" element={currentContest ? <MentorMepp contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
               <Route path="/configuracoes" element={<Configuracoes onImport={handleImportEdital} contests={contests} />} />
               <Route path="/perfil" element={<Perfil />} />
-              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital na aba "Importar Edital"</div>} />
+              <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />
               <Route path="/feedback" element={<Feedback />} />
               <Route path="/suporte" element={<Suporte />} />

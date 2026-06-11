@@ -61,10 +61,10 @@ export default function Planos() {
     (profile?.userPlan === 'annual');
 
   return (
-    <div className="min-h-full bg-slate-50 selection:bg-primary/20 relative py-12 md:py-16">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-full bg-slate-50 selection:bg-primary/20 relative py-4 flex flex-col md:py-8">
+      <div className="max-w-4xl mx-auto px-4 w-full">
         {/* Main white panel grouping all content */}
-        <div className="bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-xl p-6 sm:p-10 md:p-12 space-y-8">
+        <div className="bg-white rounded-3xl md:rounded-[2rem] border border-slate-100 shadow-xl p-5 sm:p-8 md:p-10 space-y-6">
           
           {/* Header section inside the panel */}
           <div className="text-center space-y-3 max-w-2xl mx-auto">
