@@ -46,8 +46,9 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
           const data = userDoc.data();
           let plan = data?.userPlan || 'free';
           
-          // Hardcoded PRO for special user
-          if (data?.email === 'onrocha08@gmail.com') {
+          // Hardcoded PRO for special users (case-insensitive)
+          const userEmailLower = (data?.email || '').toLowerCase().trim();
+          if (userEmailLower === 'onrocha08@gmail.com' || userEmailLower === 'joadsonrocharr@gmail.com' || userEmailLower === 'joadsonrochar@gmail.com') {
             plan = 'pro';
           }
 

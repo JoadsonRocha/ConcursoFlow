@@ -71,6 +71,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             } else {
               const data = userDoc.data() as Profile;
+              // Sincronização resiliente de foto de perfil e nome de forma automática
+              let needsUpdate = false;
+              const updateData: any = {};
+              if (!data.photoURL && user.photoURL) {
+                updateData.photoURL = user.photoURL;
+                data.photoURL = user.photoURL;
+                needsUpdate = true;
+              }
+              if (!data.displayName && user.displayName) {
+                updateData.displayName = user.displayName;
+                data.displayName = user.displayName;
+                needsUpdate = true;
+              }
+              if (needsUpdate) {
+                updateDoc(userRef, updateData).catch(e => console.warn("Erro ao auto-sincronizar foto/nome no firestore:", e));
+              }
               setProfile(data);
               // Background check for reset
               checkMonthlyReset(user.uid, data);
@@ -176,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
     const userEmail = (profile?.email || user?.email || '').toLowerCase().trim();
-    const isSpecialUser = ['onrocha08@gmail.com'].includes(userEmail);
+    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(userEmail);
     
     let effectivePlan: 'free' | 'pro' = 'free';
     if (isSpecialUser) {

@@ -190,7 +190,22 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         if (userId) {
           userDocRef = db.collection('users').doc(userId);
         } else if (customerEmail) {
-          const snapshot = await db.collection('users').where('email', '==', customerEmail).limit(1).get();
+          // Attempt case-insensitive match options due to Firestore query limits
+          let snapshot = await db.collection('users').where('email', '==', customerEmail).limit(1).get();
+          if (snapshot.empty) {
+            snapshot = await db.collection('users').where('email', '==', customerEmail.toLowerCase()).limit(1).get();
+          }
+          if (snapshot.empty) {
+            snapshot = await db.collection('users').where('email', '==', customerEmail.toUpperCase()).limit(1).get();
+          }
+          if (snapshot.empty) {
+            // Check formatted capitalized case for domain (e.g. joadsonrochaRR@gmail.com)
+            const parts = customerEmail.split('@');
+            if (parts.length === 2) {
+              const formattedEmail = parts[0].substring(0, parts[0].length - 2) + "RR@" + parts[1];
+              snapshot = await db.collection('users').where('email', '==', formattedEmail).limit(1).get();
+            }
+          }
           if (!snapshot.empty) userDocRef = snapshot.docs[0].ref;
         }
 
@@ -509,6 +524,98 @@ app.post('/api/create-portal-session', async (req, res) => {
     res.json({ url: session.url });
   } catch (error: any) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// Sincronização e auto-recuperação de assinaturas com Stripe
+app.post('/api/auth/sync-subscription', async (req, res) => {
+  try {
+    const { userId, userEmail } = req.body;
+    if (!userEmail) {
+      return res.status(400).json({ error: 'E-mail do usuário é obrigatório.' });
+    }
+
+    const db = getDb();
+    const stripe = getStripe();
+    let hasActiveSubscription = false;
+    let activePlan = 'free';
+    let stripeCustomerId = '';
+
+    // Sincronizar pelo e-mail original, minúsculo e maiúsculo
+    const emailVariations = [
+      userEmail.trim(),
+      userEmail.toLowerCase().trim(),
+      userEmail.toUpperCase().trim()
+    ];
+
+    // Adiciona caso de variação "RR"
+    const parts = userEmail.split('@');
+    if (parts.length === 2 && parts[0].toLowerCase().endsWith('rr')) {
+      emailVariations.push(parts[0].substring(0, parts[0].length - 2) + "RR@" + parts[1]);
+    }
+
+    // Remover duplicatas
+    const uniqueEmails = Array.from(new Set(emailVariations));
+
+    // Buscar no Stripe por clientes
+    for (const email of uniqueEmails) {
+      const customers = await stripe.customers.list({
+        email: email,
+        limit: 5
+      });
+
+      for (const customer of customers.data) {
+        stripeCustomerId = customer.id;
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: 'active',
+          limit: 10
+        });
+
+        if (subscriptions.data.length > 0) {
+          hasActiveSubscription = true;
+          const sub = subscriptions.data[0];
+          // Determinar se é anual ou mensal
+          const isAnnual = sub.items.data.some(
+            item => item.price.id.includes('annual') || item.price.id === process.env.STRIPE_ANNUAL_PRICE_ID
+          );
+          activePlan = isAnnual ? 'annual' : 'monthly';
+          break;
+        }
+      }
+      if (hasActiveSubscription) break;
+    }
+
+    if (hasActiveSubscription && userId) {
+      // Atualiza o banco com plano Pro
+      await db.collection('users').doc(userId).update({
+        userPlan: activePlan,
+        stripeCustomerId: stripeCustomerId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.json({ success: true, plan: activePlan, stripeCustomerId });
+    }
+
+    // Se o email for um dos e-mails especiais, auto-concede "pro"
+    const isSpecialEmail = uniqueEmails.some(e => 
+      ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(e.toLowerCase())
+    );
+
+    if (isSpecialEmail && userId) {
+      await db.collection('users').doc(userId).update({
+        userPlan: 'annual',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.json({ success: true, plan: 'annual', isSpecial: true });
+    }
+
+    return res.json({ 
+      success: false, 
+      error: 'Nenhuma assinatura ativa encontrada no Stripe para este e-mail. Caso tenha efetuado o pagamento recente, certifique-se de que o e-mail de pagamento corresponde ao e-mail logado no aplicativo.' 
+    });
+  } catch (error: any) {
+    console.error('Erro ao sincronizar assinatura:', error);
+    res.status(500).json({ error: error.message || 'Erro interno do servidor ao sincronizar assinatura.' });
   }
 });
 
