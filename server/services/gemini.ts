@@ -229,6 +229,38 @@ Gere uma descrição pedagógica detalhada baseada no conteúdo, sumário estrut
   }
 }
 
+export async function generateSuggestedQuestions(content: string, title?: string): Promise<string[]> {
+  const prompt = `Aja como um professor especialista em concursos públicos e preparação de alto rendimento.
+Baseado no seguinte conteúdo da fonte de estudo${title ? ` intitulada "${title}"` : ""}, sugira as 3 perguntas mais relevantes, intrigantes e de alto nível que um aluno poderia te fazer para dominar os pontos críticos e a aplicação deste assunto.
+
+O aluno clicará nestas perguntas para iniciar um debate de alto rendimento com você (o professor).
+
+Retorne EXATAMENTE um array JSON contendo 3 strings (as perguntas sugeridas). Não retorne nada além do array.
+
+Conteúdo da fonte:
+"""
+${content.substring(0, 15000)}
+"""`;
+
+  try {
+    const ai = getAiClient();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+    
+    let text = response.text || "[]";
+    const questions = JSON.parse(text);
+    return Array.isArray(questions) ? questions.slice(0, 3) : [];
+  } catch (err) {
+    console.error("Erro ao gerar sugestões de perguntas via Gemini:", err);
+    return [];
+  }
+}
+
 export async function parseEdital(rawText: string) {
   const params = { rawText: rawText.substring(0, 1000) }; // Hash short version to avoid massive hashes
   const prompt = `VOCÊ É UM ANALISTA DE EDITAIS EXPERT COM FOCO NA REGRA DE PARETO (80/20).

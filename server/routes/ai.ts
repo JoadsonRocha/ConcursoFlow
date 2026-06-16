@@ -138,6 +138,11 @@ router.post('/summary', authenticate, (req, res) => {
   handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.generateSummary(text));
 });
 
+router.post('/suggest-questions', authenticate, (req, res) => {
+  const { content, title } = req.body;
+  handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.generateSuggestedQuestions(content, title));
+});
+
 router.post('/mindmap', authenticate, (req, res) => {
   const { subject } = req.body;
   handleAiRequest(req, res, 'mindmapUsage', 'mindmapLimit', () => GeminiService.generateMindMap(subject));

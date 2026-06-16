@@ -12,7 +12,7 @@ import {
 import { getFirestore, doc, getDocFromServer, collection, addDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getAnalytics, isSupported, logEvent, setUserId } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -55,9 +55,14 @@ if (typeof window !== 'undefined') {
   }
   
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const isEnterprise = import.meta.env.VITE_RECAPTCHA_ENTERPRISE === 'true';
   if (siteKey) {
+    const provider = isEnterprise 
+      ? new ReCaptchaEnterpriseProvider(siteKey)
+      : new ReCaptchaV3Provider(siteKey);
+
     initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(siteKey),
+      provider,
       isTokenAutoRefreshEnabled: true
     });
   }

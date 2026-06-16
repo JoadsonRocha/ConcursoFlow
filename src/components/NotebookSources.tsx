@@ -50,6 +50,7 @@ interface Source {
   url?: string;
   fileName?: string;
   quizQuestions?: any[];
+  suggestedQuestions?: string[];
 }
 
 interface Message {
@@ -212,6 +213,57 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
     setSourceFlashcards(allFlashcards.filter((c: any) => c.sourceId === activeSource.id));
     setSourceMindmaps(allMindmaps.filter((m: any) => m.sourceId === activeSource.id));
   }, [allFlashcards, allMindmaps, activeSource?.id]);
+
+  // Keep activeSource synchronized with any real-time changes in the sources list
+  useEffect(() => {
+    if (!activeSource || sources.length === 0) return;
+    const matched = sources.find(s => s.id === activeSource.id);
+    if (matched) {
+      const changed = JSON.stringify(matched.suggestedQuestions) !== JSON.stringify(activeSource.suggestedQuestions) ||
+                      matched.title !== activeSource.title ||
+                      matched.content !== activeSource.content;
+      if (changed) {
+        setActiveSource(matched);
+      }
+    }
+  }, [sources, activeSource?.id]);
+
+  // Handle on-demand generation of suggested questions for sources lacking them
+  useEffect(() => {
+    if (!user || !activeSource) return;
+    if (activeSource.suggestedQuestions && activeSource.suggestedQuestions.length > 0) return;
+
+    const sourceId = activeSource.id;
+    const content = activeSource.content;
+    const title = activeSource.title;
+
+    const generateQuestions = async () => {
+      try {
+        const idToken = await user.getIdToken();
+        const docRef = doc(db, 'users', user.uid, 'sources', sourceId);
+        
+        const response = await fetch('/api/ai/suggest-questions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({ content, title })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+            await updateDoc(docRef, { suggestedQuestions: data.result });
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao gerar sugestões sob demanda:", err);
+      }
+    };
+
+    generateQuestions();
+  }, [user, activeSource?.id]);
 
   // Scroll to bottom of chat
   useEffect(() => {
@@ -420,6 +472,26 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
       setActiveSource(createdSource);
       setShowAddModal(false);
       resetAddForm();
+
+      // Fire and forget: generate suggested questions
+      fetch('/api/ai/suggest-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ content, title: sourceData.title })
+      })
+      .then(r => r.json())
+      .then(async (data) => {
+        if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+           await updateDoc(docRef, { suggestedQuestions: data.result });
+           // Se for a activeSource, atualiza o estado
+           setActiveSource(prev => prev && prev.id === docRef.id ? { ...prev, suggestedQuestions: data.result } : prev);
+        }
+      })
+      .catch(err => console.error("Erro ao gerar sugestões:", err));
+
     } catch (err: any) {
       console.error(err);
       toast.error(`Erro ao importar fonte: ${err.message || err}`);
@@ -991,13 +1063,24 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
           <div className="px-3 pb-6 pt-2 bg-white relative z-20">
             {activeSource && messages.length === 0 && (
               <div className="flex flex-wrap gap-2 mb-4 justify-center max-w-4xl mx-auto">
+                {activeSource.suggestedQuestions && activeSource.suggestedQuestions.map((q, i) => (
+                  <button 
+                    key={`sq-${i}`}
+                    onClick={() => handleSendMessage(q)}
+                    disabled={isChatLoading}
+                    className="px-4 py-2 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-full text-[12px] font-medium text-primary transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    {q}
+                  </button>
+                ))}
                 {[
                   { label: "Resumir em Tabela", icon: Table2, prompt: "Crie um resumo analítico desta fonte formatado em uma tabela técnica, destacando os pontos mais importantes para concursos." },
                   { label: "Pontos Críticos", icon: ListChecks, prompt: "Extraia desta fonte um checklist de pontos críticos, prazos e regras que costumam ser pegadinhas em provas." },
                   { label: "Termos Técnicos", icon: HelpCircle, prompt: "Identifique todos os termos técnicos e jurídicos desta fonte e crie um glossário simplificado." }
                 ].map((qp, i) => (
                   <button 
-                    key={i}
+                    key={`qp-${i}`}
                     onClick={() => handleSendMessage(qp.prompt)}
                     disabled={isChatLoading}
                     className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-[12px] font-medium text-slate-700 hover:text-slate-900 transition-all flex items-center gap-2 disabled:opacity-50"
