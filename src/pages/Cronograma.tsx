@@ -669,13 +669,15 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                     );
                     if (confirmReset) {
                       const resetSubjects = (contest.subjects || []).map((sub) => {
-                        const resetTopics = (sub.topics || []).map((top) => ({
-                          ...top,
-                          completed: false,
-                          revision: false,
-                          questions: false,
-                          errorNote: undefined
-                        }));
+                        const resetTopics = (sub.topics || []).map((top) => {
+                          const { errorNote, ...rest } = top;
+                          return {
+                            ...rest,
+                            completed: false,
+                            revision: false,
+                            questions: false
+                          };
+                        });
                         return {
                           ...sub,
                           completedTopics: 0,
@@ -683,12 +685,13 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                         };
                       });
 
-                      const resetSchedule = (contest.schedule || []).map((day) => ({
-                        ...day,
-                        completed: false,
-                        actualHours: undefined,
-                        actualQuestions: undefined
-                      }));
+                      const resetSchedule = (contest.schedule || []).map((day) => {
+                        const { actualHours, actualQuestions, ...rest } = day;
+                        return {
+                          ...rest,
+                          completed: false
+                        };
+                      });
 
                       const updated = { 
                         ...contest, 
