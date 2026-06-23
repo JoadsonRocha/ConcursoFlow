@@ -26,7 +26,7 @@ export default defineConfig(({mode}) => {
           description: 'Sistema inteligente de cronogramas e estudos para concursos públicos.',
           start_url: '/',
           display: 'standalone',
-          orientation: 'portrait',
+          orientation: 'any',
           theme_color: '#0f172a',
           background_color: '#f8fafc',
           icons: [
