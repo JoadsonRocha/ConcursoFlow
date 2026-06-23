@@ -664,9 +664,43 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
                  value={contest.scheduleStartDate || new Date().toISOString().split('T')[0]}
                  onChange={(e) => {
                    const newStartDate = e.target.value;
-                   const updated = { ...contest, scheduleStartDate: newStartDate };
-                   onUpdate(updated);
-                   toast.success("Início do cronograma atualizado! 🗓️");
+                    const confirmReset = window.confirm(
+                      "Alterar a data de início irá reiniciar todo o seu progresso neste edital (histórico diário, tópicos concluídos e metas diárias). Deseja prosseguir?"
+                    );
+                    if (confirmReset) {
+                      const resetSubjects = (contest.subjects || []).map((sub) => {
+                        const resetTopics = (sub.topics || []).map((top) => ({
+                          ...top,
+                          completed: false,
+                          revision: false,
+                          questions: false,
+                          errorNote: undefined
+                        }));
+                        return {
+                          ...sub,
+                          completedTopics: 0,
+                          topics: resetTopics
+                        };
+                      });
+
+                      const resetSchedule = (contest.schedule || []).map((day) => ({
+                        ...day,
+                        completed: false,
+                        actualHours: undefined,
+                        actualQuestions: undefined
+                      }));
+
+                      const updated = { 
+                        ...contest, 
+                        scheduleStartDate: newStartDate,
+                        dailyHistory: [],
+                        meppReviews: [],
+                        subjects: resetSubjects,
+                        schedule: resetSchedule
+                      };
+                      onUpdate(updated);
+                      toast.success("Data de início atualizada e métricas resetadas! 🗓️🔄");
+                    }
                  }}
                  className="bg-transparent border-none p-0 text-[10px] font-black text-slate-700 outline-none focus:ring-0 cursor-pointer h-4 leading-tight"
                />

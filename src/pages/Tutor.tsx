@@ -5,6 +5,7 @@ import { SIcon } from '../components/SIcon';
 import { Contest } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { chatWithTutor } from '../services/gemini';
+import { useContestStats } from '../hooks/useContestStats';
 import ReactMarkdown from 'react-markdown';
 
 interface TutorProps {
@@ -18,6 +19,7 @@ interface Message {
 
 export default function Tutor({ contest }: TutorProps) {
   const { isPro, user } = useAuth();
+  const stats = useContestStats(contest);
   const storageKey = `stratis_tutor_messages_${contest?.id || 'global'}`;
 
   const defaultGreeting = `Olá! Sou seu expert em estratégia para o cargo de ${contest?.role || 'seu concurso'}. Meu foco é transformar seu planejamento em aprovação de forma cirúrgica e objetiva. O que vamos ajustar em sua jornada hoje?`;
@@ -95,7 +97,18 @@ export default function Tutor({ contest }: TutorProps) {
         role: contest?.role,
         banca: contest?.banca,
         recentHistory,
-        subjectsProgress
+        subjectsProgress,
+        streak: stats.streak,
+        totalStudiedDays: stats.totalStudiedDays,
+        mostProductiveDay: stats.mostProductiveDay,
+        projectedCompletionDate: stats.projectedCompletionDate,
+        daysRemainingForCompletion: stats.daysRemainingForCompletion,
+        weeklyAverageHours: stats.weeklyAverageHours,
+        weeklyAverageQuestions: stats.weeklyAverageQuestions,
+        goalComplianceRate: stats.goalComplianceRate,
+        meppComplianceRate: stats.meppComplianceRate,
+        totalHours: stats.totalHours,
+        totalQuestions: stats.totalQuestions
       };
 
       const aiResponse = await chatWithTutor(newMessages, contextData);

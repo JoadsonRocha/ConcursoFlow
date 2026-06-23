@@ -388,6 +388,17 @@ export async function chatWithTutor(chatHistory: any[], contextData: any) {
   - Banca organizadora: ${contextData?.banca || 'Não definida'}
   - Histórico das últimas sessões (dias recentes): ${JSON.stringify(contextData?.recentHistory || [])}
   - Progresso atual das matérias: ${JSON.stringify(contextData?.subjectsProgress || {})}
+  - Ofensiva ativa (sequência): ${contextData?.streak ?? 0} dias seguidos
+  - Total de dias estudados: ${contextData?.totalStudiedDays ?? 0} dias
+  - Total acumulado de horas de estudo: ${contextData?.totalHours ?? 0}h
+  - Total de questões respondidas: ${contextData?.totalQuestions ?? 0}
+  - Dia da semana mais produtivo: ${contextData?.mostProductiveDay ?? 'Sem dados'}
+  - Previsão de conclusão do edital: ${contextData?.projectedCompletionDate ?? 'Sem dados'}
+  - Dias restantes projetados para concluir: ${contextData?.daysRemainingForCompletion ?? 'Sem dados'}
+  - Média de horas estudadas por semana: ${contextData?.weeklyAverageHours ?? 0}h
+  - Média de questões resolvidas por semana: ${contextData?.weeklyAverageQuestions ?? 0}
+  - Taxa de aderência à meta diária de estudos: ${contextData?.goalComplianceRate ?? 0}%
+  - Taxa de compliance/aderência ao Método MEPP (Revisões, Questões e Teoria): ${contextData?.meppComplianceRate ?? 0}%
 
   DIRETRIZES DE COMUNICAÇÃO E COMPORTAMENTO:
   1. RESPONDA DE FORMA EXTREMAMENTE DIRETAS E CURTAS (MÁXIMO 3 PARÁGRAFOS CURTOS OU UMA LISTA CURTA DE BULLET POINTS). NUNCA envie textos longos ou prolixos. Vá direto à cereja do bolo.

@@ -114,31 +114,55 @@ export function useContestStats(contest: Contest | null) {
       });
     }
 
-    // Calculate Streak
-    let streak = 0;
-    const dObj = new Date();
-    while (true) {
-      const year = dObj.getFullYear();
-      const month = String(dObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dObj.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      
-      if (historyData.some(h => h.date === dateStr && (h.hours > 0 || h.questions > 0))) {
-        streak++;
-        dObj.setDate(dObj.getDate() - 1);
-      } else {
-        const todayDObj = new Date();
-        const tYear = todayDObj.getFullYear();
-        const tMonth = String(todayDObj.getMonth() + 1).padStart(2, '0');
-        const tDay = String(todayDObj.getDate()).padStart(2, '0');
-        const todayStr = `${tYear}-${tMonth}-${tDay}`;
+    // Calculate Streak using Set of studied days
+    const activeDates = new Set(
+      historyData
+        .filter(h => h && ((h.hours || 0) > 0 || (h.questions || 0) > 0))
+        .map(h => h.date)
+    );
 
-        if (streak === 0 && dateStr === todayStr) {
-           dObj.setDate(dObj.getDate() - 1);
-           continue;
+    const totalStudiedDays = activeDates.size;
+
+    const getLocalDateString = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    let streak = 0;
+    const todayStr = getLocalDateString(new Date());
+
+    const yesterdayDObj = new Date();
+    yesterdayDObj.setDate(yesterdayDObj.getDate() - 1);
+    const yesterdayStr = getLocalDateString(yesterdayDObj);
+
+    if (activeDates.has(todayStr)) {
+      streak = 1;
+      let currentDObj = new Date();
+      while (true) {
+        currentDObj.setDate(currentDObj.getDate() - 1);
+        const curStr = getLocalDateString(currentDObj);
+        if (activeDates.has(curStr)) {
+          streak++;
+        } else {
+          break;
         }
-        break;
       }
+    } else if (activeDates.has(yesterdayStr)) {
+      streak = 1;
+      let currentDObj = new Date(yesterdayDObj);
+      while (true) {
+        currentDObj.setDate(currentDObj.getDate() - 1);
+        const curStr = getLocalDateString(currentDObj);
+        if (activeDates.has(curStr)) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+    } else {
+      streak = 0;
     }
 
     // Today Task Calculation
@@ -178,6 +202,64 @@ export function useContestStats(contest: Contest | null) {
     const todayStrFull = localNow.toISOString().split('T')[0];
     const todayHistory = historyData.find(h => h.date === todayStrFull);
 
+    // Specialist Stat: Most Productive Day of Week
+    const weekDaysPT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const hoursPerDayOfWeek = [0, 0, 0, 0, 0, 0, 0];
+    historyData.forEach(h => {
+      if (h && h.date) {
+        const dateParts = h.date.split('-');
+        if (dateParts.length === 3) {
+          const year = parseInt(dateParts[0], 10);
+          const month = parseInt(dateParts[1], 10) - 1;
+          const day = parseInt(dateParts[2], 10);
+          const dateObj = new Date(year, month, day);
+          const dayOfWeek = dateObj.getDay();
+          hoursPerDayOfWeek[dayOfWeek] += h.hours || 0;
+        }
+      }
+    });
+    
+    let maxHoursIdx = -1;
+    let maxHours = 0;
+    for (let i = 0; i < 7; i++) {
+      if (hoursPerDayOfWeek[i] > maxHours) {
+        maxHours = hoursPerDayOfWeek[i];
+        maxHoursIdx = i;
+      }
+    }
+    const mostProductiveDay = maxHoursIdx !== -1 ? weekDaysPT[maxHoursIdx] : "Ainda sem dados";
+
+    // Specialist Stat: Syllabus Completion Projection
+    const daysElapsed = Math.max(1, diffDays);
+    const velocity = completedTopics / daysElapsed; // topics completed per day
+    const remainingTopics = Math.max(0, totalTopics - completedTopics);
+    
+    let projectedCompletionDate = "Indisponível (adicione progresso)";
+    let daysRemainingForCompletion = 0;
+    
+    if (velocity > 0 && remainingTopics > 0) {
+      daysRemainingForCompletion = Math.ceil(remainingTopics / velocity);
+      const projDate = new Date(now.getTime() + daysRemainingForCompletion * 24 * 60 * 60 * 1000);
+      const pDay = String(projDate.getDate()).padStart(2, '0');
+      const pMonth = String(projDate.getMonth() + 1).padStart(2, '0');
+      const pYear = projDate.getFullYear();
+      projectedCompletionDate = `${pDay}/${pMonth}/${pYear}`;
+    } else if (remainingTopics === 0 && totalTopics > 0) {
+      projectedCompletionDate = "Edital Concluído! 🎉";
+    }
+
+    // Specialist Stat: Weekly Averages
+    const weeklyAverageHours = Number((last7Days.reduce((acc, d) => acc + d.horas, 0) / 7).toFixed(1));
+    const weeklyAverageQuestions = Number((last7Days.reduce((acc, d) => acc + d.questoes, 0) / 7).toFixed(1));
+
+    // Specialist Stat: Goal Compliance Rate
+    const goalHours = contest.dailyGoalHours || 1;
+    const studiedDays = historyData.filter(h => h && h.hours > 0);
+    const metGoalDays = studiedDays.filter(h => h.hours >= goalHours);
+    const goalComplianceRate = studiedDays.length > 0
+      ? Math.round((metGoalDays.length / studiedDays.length) * 100)
+      : 0;
+
     // MEPP Active Review Stats
     const meppReviews = contest.meppReviews || [];
     const totalMeppReviews = meppReviews.length;
@@ -216,7 +298,14 @@ export function useContestStats(contest: Contest | null) {
       reviews24h,
       reviews7d,
       reviews30d,
-      meppComplianceRate
+      meppComplianceRate,
+      mostProductiveDay,
+      projectedCompletionDate,
+      daysRemainingForCompletion,
+      weeklyAverageHours,
+      weeklyAverageQuestions,
+      goalComplianceRate,
+      totalStudiedDays
     };
   }, [contest]);
 }

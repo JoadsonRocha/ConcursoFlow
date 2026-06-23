@@ -26,6 +26,7 @@ import { useContestStats } from '../hooks/useContestStats';
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import StudyCalendar from '../components/StudyCalendar';
 
 interface EstatisticasProps {
   contest: Contest;
@@ -53,7 +54,14 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
     reviews24h,
     reviews7d,
     reviews30d,
-    meppComplianceRate
+    meppComplianceRate,
+    mostProductiveDay,
+    projectedCompletionDate,
+    daysRemainingForCompletion,
+    weeklyAverageHours,
+    weeklyAverageQuestions,
+    goalComplianceRate,
+    totalStudiedDays
   } = stats;
 
   const [activeTab, setActiveTab] = useState<TabType>('geral');
@@ -180,9 +188,9 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
         />
         <KPIBox 
           icon={Flame} 
-          label="Soliar Sequência" 
+          label="Ofensiva ativa" 
           value={`${streak}d`} 
-          subtext="Dias consecutivos"
+          subtext={`Estudou ${totalStudiedDays} dias no total`}
           color="amber"
         />
       </div>
@@ -198,6 +206,84 @@ export default function Estatisticas({ contest }: EstatisticasProps) {
             transition={{ duration: 0.2 }}
             className="space-y-6 lg:space-y-8"
           >
+            {/* ROADMAP ESTILO GITHUB (MAPA DE CONSISTÊNCIA) */}
+            <StudyCalendar dailyHistory={contest.dailyHistory || []} streak={streak} />
+
+            {/* BENTO GRID DE INSIGHTS E MÉTRICAS DE ESPECIALISTA */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+              
+              {/* Projeção de Edital */}
+              <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-5 border border-indigo-900/40 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg">
+                    <Sparkles className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/10">
+                    Projeção IA
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[8px] font-black uppercase tracking-wider text-indigo-200">Previsão Conclusão</span>
+                  <span className="text-sm font-black tracking-tight block mt-1 leading-none">{projectedCompletionDate}</span>
+                  {daysRemainingForCompletion > 0 && (
+                    <span className="block text-[8px] text-indigo-300/80 font-semibold mt-1">Faltam aprox. {daysRemainingForCompletion} dias de estudo</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Dia de Alta Performance */}
+              <div className="bg-white rounded-2xl p-5 border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2 bg-amber-50 text-amber-500 rounded-lg border border-amber-100">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                    Ritmo
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[8px] font-black uppercase tracking-wider text-text-sub">Dia Mais Produtivo</span>
+                  <span className="text-base font-black text-text-main mt-1 block leading-none">{mostProductiveDay}</span>
+                  <span className="block text-[8px] text-text-sub/80 font-semibold mt-1">Maior acúmulo de horas focadas</span>
+                </div>
+              </div>
+
+              {/* Frequência de Metas */}
+              <div className="bg-white rounded-2xl p-5 border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2 bg-blue-50 text-blue-500 rounded-lg border border-blue-100">
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                    Meta
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[8px] font-black uppercase tracking-wider text-text-sub">Aderência à Meta</span>
+                  <span className="text-base font-black text-text-main mt-1 block leading-none">{goalComplianceRate}% de sucesso</span>
+                  <span className="block text-[8px] text-text-sub/80 font-semibold mt-1">Dias com foco ≥ meta diária</span>
+                </div>
+              </div>
+
+              {/* Médias Semanais */}
+              <div className="bg-white rounded-2xl p-5 border border-border shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="p-2 bg-emerald-50 text-emerald-500 rounded-lg border border-emerald-100">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                    Médias
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[8px] font-black uppercase tracking-wider text-text-sub">Média Semanal</span>
+                  <span className="text-base font-black text-text-main mt-1 block leading-none">{weeklyAverageHours}h e {weeklyAverageQuestions}q</span>
+                  <span className="block text-[8px] text-text-sub/80 font-semibold mt-1">Média líquida diária recente</span>
+                </div>
+              </div>
+
+            </div>
+
             {/* STUDY & RETENTION GRAPHS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               

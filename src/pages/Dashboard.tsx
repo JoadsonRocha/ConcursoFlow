@@ -149,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   const [featuredContests, setFeaturedContests] = useState<Contest[]>([]);
 
   const stats = useContestStats(contest);
-  const { totalHours, totalQuestions, streak: streakDays, generalProgressProps: generalProgress, specificProgressProps: technicalProgress, overallProgress, todayDayNumber, todayTask, todayHistory } = stats;
+  const { totalHours, totalQuestions, streak: streakDays, totalStudiedDays, generalProgressProps: generalProgress, specificProgressProps: technicalProgress, overallProgress, todayDayNumber, todayTask, todayHistory } = stats;
 
   const isDefaultContest = !contest || !contest.ownerId;
 
@@ -584,10 +584,11 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       </div>
 
       {/* Quick Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3">
         {[
           { label: 'Evolução', value: `${overallProgress}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
           { label: 'Ofensiva', value: `${streakDays} dias`, icon: Zap, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+          { label: 'Dias Estudados', value: `${totalStudiedDays} dias`, icon: Calendar, color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
           { label: 'Horas', value: `${totalHours}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
           { label: 'Questões', value: totalQuestions, icon: CheckCircle2, color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20' }
         ].map((metric, i) => {
