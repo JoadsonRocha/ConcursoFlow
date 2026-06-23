@@ -38,9 +38,15 @@ import Markdown from 'react-markdown';
 import { toast } from 'sonner';
 import * as pdfjs from 'pdfjs-dist';
 
-// Configure worker
-const PDFJS_VERSION = '5.7.284';
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
+// Configure worker safely
+try {
+  const PDFJS_VERSION = '4.0.379';
+  if (pdfjs && pdfjs.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+  }
+} catch (e) {
+  console.warn("[PDF.js] Failed to configure worker source statically, will fallback:", e);
+}
 
 interface Source {
   id: string;
@@ -325,6 +331,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
             return;
           }
           const script = document.createElement('script');
+          script.crossOrigin = "anonymous";
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
           script.onload = () => {
             const lib = (window as any).pdfjsLib;
@@ -997,17 +1004,20 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-8 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-8 custom-scrollbar">
             <div className="space-y-8 max-w-4xl mx-auto pb-4">
               {messages.length === 0 && (
                 <div className="flex w-full justify-start">
-                  <div className="flex gap-4 max-w-[95%]">
-                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-                      <Sparkles className="w-4 h-4 text-white" />
+                  <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-4 max-w-[98%] sm:max-w-[95%] w-full">
+                    <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:justify-start flex-shrink-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-900 flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-3" />
+                      </div>
+                      <span className="sm:hidden text-xs font-semibold text-slate-600">Stratis</span>
                     </div>
-                    <div className="text-[15px] leading-relaxed break-words text-slate-800">
+                    <div className="text-[15px] leading-relaxed break-words text-slate-800 pt-0.5 sm:pt-1">
                       <div className="prose prose-slate max-w-none select-text marker:text-slate-900 prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-slate-900 prose-strong:text-slate-900">
-                        <h3 className="text-xl font-display font-medium text-slate-900 tracking-tight mt-0 mb-3">Estúdio Notebook</h3>
+                        <h3 className="text-lg sm:text-xl font-display font-medium text-slate-900 tracking-tight mt-0 mb-3">Estúdio Notebook</h3>
                         <p className="text-slate-600">Esta é sua área de estudos interativa com <b>inteligência artificial</b>. Adicione documentos, PDFs ou textos soltos como Fontes.</p>
                         <p className="text-slate-600">O Stratis se tornará um especialistaInstantaneamente no material importado, permitindo que você tire dúvidas, resuma partes complexas e estude de forma ativa.</p>
                       </div>
@@ -1017,15 +1027,22 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
               )}
               {messages.map((m) => (
                 <div key={m.id} className={`flex w-full ${m.role === 'model' ? 'justify-start' : 'justify-end'}`}>
-                  <div className={`flex gap-3 sm:gap-4 ${m.role === 'model' ? 'max-w-[95%]' : 'max-w-[85%]'}`}>
+                  <div className={`flex w-full ${
+                    m.role === 'model' 
+                      ? 'flex-col sm:flex-row gap-1.5 sm:gap-4 max-w-[98%] sm:max-w-[95%]' 
+                      : 'flex-row gap-3 sm:gap-4 justify-end max-w-[85%] ml-auto'
+                  }`}>
                     {m.role === 'model' && (
-                      <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-                        <Sparkles className="w-4 h-4 text-white" />
+                      <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:justify-start flex-shrink-0">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-900 flex items-center justify-center shadow-sm">
+                          <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                        </div>
+                        <span className="sm:hidden text-xs font-semibold text-slate-600">Stratis</span>
                       </div>
                     )}
                     <div className={`text-[15px] leading-relaxed break-words ${
                       m.role === 'model' 
-                        ? 'text-slate-800 pt-1' 
+                        ? 'text-slate-800 pt-0.5 sm:pt-1 w-full' 
                         : 'bg-slate-100 py-3.5 px-6 rounded-3xl text-slate-800 font-medium'
                     }`}>
                       {m.role === 'model' ? (
@@ -1043,11 +1060,14 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
               ))}
               {isChatLoading && (
                 <div className="flex w-full justify-start">
-                  <div className="flex gap-4 max-w-[95%]">
-                    <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-                      <Sparkles className="w-4 h-4 text-white animate-pulse" />
+                  <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-4 max-w-[98%] sm:max-w-[95%] w-full">
+                    <div className="flex sm:flex-col items-center gap-2 sm:gap-0 sm:justify-start flex-shrink-0">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-900 flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white animate-pulse" />
+                      </div>
+                      <span className="sm:hidden text-xs font-semibold text-slate-600">Stratis</span>
                     </div>
-                    <div className="flex items-center gap-2 pt-2.5">
+                    <div className="flex items-center gap-2 pt-1 sm:pt-2.5">
                       <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                       <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />

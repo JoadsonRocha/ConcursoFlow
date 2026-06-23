@@ -12,9 +12,15 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { toast } from 'sonner';
 
-// Configure worker
-const PDFJS_VERSION = '5.7.284';
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
+// Configure worker safely
+try {
+  const PDFJS_VERSION = '4.0.379';
+  if (pdfjs && pdfjs.GlobalWorkerOptions) {
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+  }
+} catch (e) {
+  console.warn("[PDF.js] Failed to configure worker source statically, will fallback:", e);
+}
 
 interface SettingsProps {
   onImport: (contest: Contest) => void;
@@ -69,6 +75,7 @@ export default function Settings({ onImport, contests }: SettingsProps) {
             return;
           }
           const script = document.createElement('script');
+          script.crossOrigin = "anonymous";
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
           script.onload = () => {
             const lib = (window as any).pdfjsLib;

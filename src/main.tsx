@@ -22,14 +22,27 @@ if (typeof (Promise as any).withResolvers === "undefined") {
 }
 
 // Automatically register service worker
-const updateSW = registerSW({
-  onNeedRefresh() {
-    // Show a prompt to user if needed
-  },
-  onOfflineReady() {
-    // Show a ready to work offline message
-  },
-});
+let updateSW: any;
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  try {
+    // Don't register if we are in an iframe to avoid sandbox security errors
+    const isIframe = window.self !== window.top;
+    if (!isIframe) {
+      updateSW = registerSW({
+        onNeedRefresh() {
+          // Show a prompt to user if needed
+        },
+        onOfflineReady() {
+          // Show a ready to work offline message
+        },
+      });
+    } else {
+      console.log("[PWA] Service Worker registration skipped inside iframe sandbox.");
+    }
+  } catch (err) {
+    console.warn("[PWA] Service Worker registration failed:", err);
+  }
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -12,7 +12,7 @@ import {
 import { getFirestore, doc, getDocFromServer, collection, addDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider, CustomProvider } from 'firebase/app-check';
 import { getAnalytics, isSupported, logEvent, setUserId } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -48,23 +48,54 @@ const app = initializeApp(config);
 // Ativar App Check apenas em produção ou se houver chave definida
 // Em desenvolvimento, o Firebase possui um debug token que pode ser configurado no console
 if (typeof window !== 'undefined') {
-  if (import.meta.env.DEV) {
-    // Quando definido como true, o Firebase imprimirá um debug token no console do navegador.
-    // Esse token deve ser copiado e colado na seção "App Check" > "Apps" do Firebase Console.
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  }
-  
+  const hostname = window.location.hostname;
+  const isDevOrPreview = 
+    import.meta.env.DEV || 
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' || 
+    hostname.includes('ai-studio-applet-webapp') ||
+    hostname.includes('-dev-') || 
+    hostname.includes('-pre-') || 
+    hostname.includes('run.app');
+
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   const isEnterprise = import.meta.env.VITE_RECAPTCHA_ENTERPRISE === 'true';
-  if (siteKey) {
-    const provider = isEnterprise 
-      ? new ReCaptchaEnterpriseProvider(siteKey)
-      : new ReCaptchaV3Provider(siteKey);
 
-    initializeAppCheck(app, {
-      provider,
-      isTokenAutoRefreshEnabled: true
-    });
+  if (isDevOrPreview) {
+    // Permite usar uma variável de ambiente customizada ou o token gerado pelo usuário ("0CC200AC-9CB7-4196-903D-BE0CCE19F350")
+    const debugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN || "0CC200AC-9CB7-4196-903D-BE0CCE19F350";
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    console.log("[App Check] Ativado modo Debug. Token registrado:", debugToken);
+
+    // Usar CustomProvider para evitar baixar o Script do reCAPTCHA de terceiros onde as diretivas de sandbox do iframe gerariam "Script error"
+    try {
+      initializeAppCheck(app, {
+        provider: new CustomProvider({
+          getToken: () => {
+            return Promise.resolve({
+              token: debugToken,
+              expireTimeMillis: Date.now() + 1000 * 60 * 60, // 1 hour
+            });
+          }
+        }),
+        isTokenAutoRefreshEnabled: true
+      });
+    } catch (e) {
+      console.warn("[App Check] Falha ao registrar CustomProvider de depuração:", e);
+    }
+  } else if (siteKey) {
+    try {
+      const provider = isEnterprise 
+        ? new ReCaptchaEnterpriseProvider(siteKey)
+        : new ReCaptchaV3Provider(siteKey);
+
+      initializeAppCheck(app, {
+        provider,
+        isTokenAutoRefreshEnabled: true
+      });
+    } catch (e) {
+      console.error("[App Check] Falha ao registrar Provedor do reCAPTCHA:", e);
+    }
   }
 }
 
@@ -74,7 +105,16 @@ export const db = (databaseId && databaseId !== '(default)')
   ? getFirestore(app, databaseId) 
   : getFirestore(app);
 export const storage = getStorage(app);
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+export let messaging: any = null;
+if (typeof window !== 'undefined') {
+  try {
+    if ('serviceWorker' in navigator) {
+      messaging = getMessaging(app);
+    }
+  } catch (e) {
+    console.warn("FCM messaging initialization failed, skipping:", e);
+  }
+}
 export let analytics: any = null;
 if (typeof window !== 'undefined') {
   try {
