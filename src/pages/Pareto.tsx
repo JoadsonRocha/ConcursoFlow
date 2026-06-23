@@ -14,7 +14,9 @@ import {
   Lightbulb,
   Star,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Contest } from '../types';
@@ -98,6 +100,9 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
       label: string;
       isGolden?: boolean;
       insight?: string;
+      completed: boolean;
+      revision: boolean;
+      questions: boolean;
     }[] = [];
 
     const paretoSubjects = contest.paretoData.subjects || [];
@@ -128,7 +133,10 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
           score: aiTp.incidenceScore || 0,
           label: aiTp.priorityLabel || 'BÁSICA',
           isGolden: aiSub.goldenPoint === realTp.name,
-          insight: aiSub.strategicInsight
+          insight: aiSub.strategicInsight,
+          completed: realTp.completed || false,
+          revision: realTp.revision || false,
+          questions: realTp.questions || false
         });
       });
     });
@@ -152,6 +160,50 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
       }, {} as Record<string, string>) || {}
     };
   }, [isAnalyzed, contest]);
+
+  const updateTopic = (subId: string, topicId: string, field: 'completed' | 'revision' | 'questions') => {
+    if (!onUpdate) return;
+    const newSubjects = contest.subjects.map(sub => {
+      if (sub.id !== subId) return sub;
+      
+      const newTopics = sub.topics?.map(topic => {
+        if (topic.id !== topicId) return topic;
+        const currentVal = !!topic[field];
+        return { ...topic, [field]: !currentVal };
+      });
+      
+      const completedCount = newTopics?.filter(t => t.completed).length || 0;
+      return { ...sub, topics: newTopics, completedTopics: completedCount };
+    });
+    
+    onUpdate({ ...contest, subjects: newSubjects });
+  };
+
+  const paretoStats = useMemo(() => {
+    if (!processedData) return null;
+    const { topTopics } = processedData;
+    const totalTop = topTopics.length;
+    if (totalTop === 0) return null;
+
+    const completedTeoria = topTopics.filter(t => t.completed).length;
+    const completedRevisao = topTopics.filter(t => t.revision).length;
+    const completedQuestoes = topTopics.filter(t => t.questions).length;
+    const goldenTopics = topTopics.filter(t => t.isGolden);
+    const completedGolden = goldenTopics.filter(t => t.completed).length;
+
+    return {
+      totalTop,
+      teoriaPercent: Math.round((completedTeoria / totalTop) * 100),
+      teoriaCount: completedTeoria,
+      revisaoPercent: Math.round((completedRevisao / totalTop) * 100),
+      revisaoCount: completedRevisao,
+      questoesPercent: Math.round((completedQuestoes / totalTop) * 100),
+      questoesCount: completedQuestoes,
+      goldenTotal: goldenTopics.length,
+      goldenCount: completedGolden,
+      goldenPercent: goldenTopics.length > 0 ? Math.round((completedGolden / goldenTopics.length) * 100) : 0
+    };
+  }, [processedData]);
 
   return (
     <motion.div
@@ -492,6 +544,74 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
             </motion.div>
           )}
 
+          {paretoStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white border border-border rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-emerald-400 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 text-emerald-500 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-12 h-12" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-text-sub uppercase tracking-wider">Cobertura Teórica</span>
+                  <h3 className="text-2xl font-black text-emerald-600">{paretoStats.teoriaPercent}%</h3>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${paretoStats.teoriaPercent}%` }}></div>
+                  </div>
+                  <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{paretoStats.teoriaCount} de {paretoStats.totalTop} tópicos</span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-border rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-indigo-400 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 text-indigo-500 group-hover:scale-110 transition-transform">
+                  <RefreshCw className="w-12 h-12" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-text-sub uppercase tracking-wider">Ciclo de Revisões</span>
+                  <h3 className="text-2xl font-black text-indigo-600">{paretoStats.revisaoPercent}%</h3>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${paretoStats.revisaoPercent}%` }}></div>
+                  </div>
+                  <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{paretoStats.revisaoCount} de {paretoStats.totalTop} tópicos</span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-border rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-amber-400 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 text-amber-500 group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="w-12 h-12" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-text-sub uppercase tracking-wider">Prática de Questões</span>
+                  <h3 className="text-2xl font-black text-amber-600">{paretoStats.questoesPercent}%</h3>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${paretoStats.questoesPercent}%` }}></div>
+                  </div>
+                  <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{paretoStats.questoesCount} de {paretoStats.totalTop} tópicos</span>
+                </div>
+              </div>
+
+              <div className="bg-white border border-border rounded-2xl p-4 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-yellow-400 transition-all">
+                <div className="absolute top-0 right-0 p-3 opacity-10 text-yellow-500 group-hover:scale-110 transition-transform">
+                  <Star className="w-12 h-12" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-text-sub uppercase tracking-wider">Pontos de Ouro</span>
+                  <h3 className="text-2xl font-black text-yellow-600">{paretoStats.goldenPercent}%</h3>
+                </div>
+                <div className="mt-3 space-y-1.5">
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-yellow-400 transition-all duration-500" style={{ width: `${paretoStats.goldenPercent}%` }}></div>
+                  </div>
+                  <span className="text-[9px] font-bold text-text-sub uppercase tracking-wider">{paretoStats.goldenCount} de {paretoStats.goldenTotal} concluídos</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Top Topics */}
             <div className="lg:col-span-2 space-y-6">
@@ -526,7 +646,7 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
                     className={cn(
-                      "rise-card p-5 border-2 rounded-2xl flex flex-col gap-3 relative transition-all group",
+                      "rise-card p-5 border-2 rounded-2xl flex flex-col gap-3.5 relative transition-all group",
                       topic.isGolden 
                         ? "border-amber-400 shadow-amber-400/5 bg-amber-50/10" 
                         : "border-emerald-100 bg-emerald-50/10 hover:border-emerald-400"
@@ -539,10 +659,10 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
                      )}
                      
                      <div className="flex items-center justify-between">
-                       <span className="text-[10px] font-black text-text-sub uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-md">
+                       <span className="text-[10px] font-black text-text-sub uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-md max-w-[60%] truncate">
                          {topic.subjectName}
                        </span>
-                       <div className="flex items-center gap-1.5">
+                       <div className="flex items-center gap-1.5 shrink-0">
                          <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
                            <div 
                              className={cn("h-full transition-all duration-1000", topic.score > 85 ? "bg-amber-500" : "bg-emerald-500")}
@@ -552,12 +672,68 @@ export default function Pareto({ contest, contests = [], onContestChange, onUpda
                          <span className="text-[10px] font-bold text-text-sub">{topic.score}%</span>
                        </div>
                      </div>
+ 
+                     <div>
+                       <h4 className="text-sm font-bold text-text-main leading-snug group-hover:text-primary transition-colors min-h-[40px] line-clamp-2">
+                         {topic.topicName}
+                       </h4>
+                     </div>
 
-                     <h4 className="text-sm font-bold text-text-main leading-snug group-hover:text-primary transition-colors">
-                       {topic.topicName}
-                     </h4>
+                     {/* Tactical Study Status Selector */}
+                     <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100/50">
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           updateTopic(topic.subjectId, topic.topicId, 'completed');
+                           toast.success(`Teoria de "${topic.topicName}" atualizada!`);
+                         }}
+                         className={cn(
+                           "flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-center gap-1 active:scale-95",
+                           topic.completed
+                             ? "bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/10"
+                             : "bg-white hover:bg-slate-50 border-slate-200 text-slate-400"
+                         )}
+                       >
+                         <BookOpen className="w-3.5 h-3.5" />
+                         <span className="text-[8px] font-black uppercase tracking-wider">Teoria</span>
+                       </button>
 
-                     <div className="mt-auto pt-3 border-t border-slate-100/50 flex items-center justify-between">
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           updateTopic(topic.subjectId, topic.topicId, 'revision');
+                           toast.success(`Revisão de "${topic.topicName}" atualizada!`);
+                         }}
+                         className={cn(
+                           "flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-center gap-1 active:scale-95",
+                           topic.revision
+                             ? "bg-indigo-500 border-indigo-500 text-white shadow-sm shadow-indigo-500/10"
+                             : "bg-white hover:bg-slate-50 border-slate-200 text-slate-400"
+                         )}
+                       >
+                         <RefreshCw className="w-3.5 h-3.5" />
+                         <span className="text-[8px] font-black uppercase tracking-wider">Revisão</span>
+                       </button>
+
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           updateTopic(topic.subjectId, topic.topicId, 'questions');
+                           toast.success(`Questões de "${topic.topicName}" atualizadas!`);
+                         }}
+                         className={cn(
+                           "flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-center gap-1 active:scale-95",
+                           topic.questions
+                             ? "bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-500/10"
+                             : "bg-white hover:bg-slate-50 border-slate-200 text-slate-400"
+                         )}
+                       >
+                         <CheckCircle2 className="w-3.5 h-3.5" />
+                         <span className="text-[8px] font-black uppercase tracking-wider">Questões</span>
+                       </button>
+                     </div>
+ 
+                     <div className="pt-2 border-t border-slate-100/50 flex items-center justify-between">
                         <span className={cn(
                           "text-[9px] font-black uppercase tracking-widest",
                           topic.score > 85 ? "text-amber-600" : "text-emerald-600"

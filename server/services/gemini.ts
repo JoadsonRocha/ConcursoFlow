@@ -380,6 +380,25 @@ export async function generateSVGMap(title: string, prompt: string, quantity: nu
 }
 
 export async function chatWithTutor(chatHistory: any[], contextData: any) {
+  // Pareto context if available
+  let paretoSection = '';
+  if (contextData?.paretoMetrics?.paretoAnalyzed) {
+    const pm = contextData.paretoMetrics;
+    paretoSection = `
+  - MÉTRICAS DE PARETO (Foco no Top 20% de tópicos que garantem 80% dos acertos):
+    * Cobertura de Teoria no Pareto: ${pm.stats?.teoriaPercent ?? 0}%
+    * Cobertura de Revisão no Pareto: ${pm.stats?.revisaoPercent ?? 0}%
+    * Cobertura de Questões no Pareto: ${pm.stats?.questoesPercent ?? 0}%
+    * Pontos de Ouro Concluídos: ${pm.stats?.goldenCompleted ?? 0} de ${pm.stats?.goldenTotal ?? 0} (${pm.stats?.goldenPercent ?? 0}%)
+    * Principais Assuntos de Alta Incidência PENDENTES (Sua maior prioridade de estudo!):
+      ${JSON.stringify(pm.pendingTopTopics || [])}
+  `;
+  } else {
+    paretoSection = `
+  - MÉTRICAS DE PARETO: O aluno ainda não gerou a análise de Pareto para a banca ${contextData?.banca || 'escolhida'}. Lembre-o com frequência de acessar a aba "Estatísticas -> Pareto & Foco" para mapear os assuntos mais recorrentes da banca e focar no que realmente cai.
+  `;
+  }
+
   const prompt = `Você é a inteligência estratégica e parceira de jornada dentro da plataforma "StratisPlanner".
   Esqueça o jargão inicial de "sou um especialista". Sua postura é a de um mentor direto ao ponto, pragmático, focado em maximizar a inteligência de prova e o desempenho com base em dados reais.
   
@@ -399,6 +418,7 @@ export async function chatWithTutor(chatHistory: any[], contextData: any) {
   - Média de questões resolvidas por semana: ${contextData?.weeklyAverageQuestions ?? 0}
   - Taxa de aderência à meta diária de estudos: ${contextData?.goalComplianceRate ?? 0}%
   - Taxa de compliance/aderência ao Método MEPP (Revisões, Questões e Teoria): ${contextData?.meppComplianceRate ?? 0}%
+  ${paretoSection}
 
   DIRETRIZES DE COMUNICAÇÃO E COMPORTAMENTO:
   1. RESPONDA DE FORMA EXTREMAMENTE DIRETAS E CURTAS (MÁXIMO 3 PARÁGRAFOS CURTOS OU UMA LISTA CURTA DE BULLET POINTS). NUNCA envie textos longos ou prolixos. Vá direto à cereja do bolo.

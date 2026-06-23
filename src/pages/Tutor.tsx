@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Send, User, AlertCircle, Loader2, Sparkles, Trash2, ArrowRight } from 'lucide-react';
 import { SIcon } from '../components/SIcon';
@@ -20,6 +20,105 @@ interface Message {
 export default function Tutor({ contest }: TutorProps) {
   const { isPro, user } = useAuth();
   const stats = useContestStats(contest);
+
+  const paretoMetrics = useMemo(() => {
+    if (!contest?.paretoAnalyzed || !contest?.paretoData || !contest?.subjects) {
+      return { paretoAnalyzed: false };
+    }
+
+    const subjects = contest.subjects || [];
+
+    const normalize = (s: string) => s?.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+
+    const allTopics: { 
+      subjectName: string; 
+      topicName: string; 
+      score: number;
+      label: string;
+      isGolden?: boolean;
+      completed: boolean;
+      revision: boolean;
+      questions: boolean;
+    }[] = [];
+
+    const paretoSubjects = contest.paretoData.subjects || [];
+
+    paretoSubjects.forEach(aiSub => {
+      const aiSubNorm = normalize(aiSub.name || "");
+      const realSub = subjects.find(s => s.id === aiSub.id) || 
+                      subjects.find(s => normalize(s.name) === aiSubNorm);
+      
+      if (!realSub) return;
+
+      const topics = aiSub.topics || [];
+
+      topics.forEach(aiTp => {
+        const aiTpNorm = normalize(aiTp.name || "");
+        const realTp = realSub.topics?.find(t => t.id === aiTp.id) ||
+                       realSub.topics?.find(t => normalize(t.name) === aiTpNorm);
+        
+        if (!realTp) return;
+
+        allTopics.push({
+          subjectName: realSub.name,
+          topicName: realTp.name,
+          score: aiTp.incidenceScore || 0,
+          label: aiTp.priorityLabel || 'BÁSICA',
+          isGolden: aiSub.goldenPoint === realTp.name,
+          completed: realTp.completed || false,
+          revision: realTp.revision || false,
+          questions: realTp.questions || false
+        });
+      });
+    });
+
+    allTopics.sort((a, b) => b.score - a.score);
+
+    const topTopics = allTopics.filter(t => t.score >= 70);
+    const totalTop = topTopics.length;
+
+    if (totalTop === 0) {
+      return { paretoAnalyzed: false };
+    }
+
+    const completedTeoria = topTopics.filter(t => t.completed).length;
+    const completedRevisao = topTopics.filter(t => t.revision).length;
+    const completedQuestoes = topTopics.filter(t => t.questions).length;
+    const goldenTopics = topTopics.filter(t => t.isGolden);
+    const completedGolden = goldenTopics.filter(t => t.completed).length;
+
+    const pendingTopTopics = topTopics
+      .filter(t => !t.completed || !t.revision || !t.questions)
+      .slice(0, 10)
+      .map(t => ({
+        subject: t.subjectName,
+        topic: t.topicName,
+        score: t.score,
+        completed: t.completed,
+        revision: t.revision,
+        questions: t.questions,
+        isGolden: t.isGolden
+      }));
+
+    return {
+      paretoAnalyzed: true,
+      stats: {
+        totalTopTopics: totalTop,
+        teoriaPercent: Math.round((completedTeoria / totalTop) * 100),
+        revisaoPercent: Math.round((completedRevisao / totalTop) * 100),
+        questoesPercent: Math.round((completedQuestoes / totalTop) * 100),
+        goldenTotal: goldenTopics.length,
+        goldenCompleted: completedGolden,
+        goldenPercent: goldenTopics.length > 0 ? Math.round((completedGolden / goldenTopics.length) * 100) : 0
+      },
+      pendingTopTopics
+    };
+  }, [contest]);
+
   const storageKey = `stratis_tutor_messages_${contest?.id || 'global'}`;
 
   const defaultGreeting = `Olá! Sou seu expert em estratégia para o cargo de ${contest?.role || 'seu concurso'}. Meu foco é transformar seu planejamento em aprovação de forma cirúrgica e objetiva. O que vamos ajustar em sua jornada hoje?`;
@@ -108,7 +207,8 @@ export default function Tutor({ contest }: TutorProps) {
         goalComplianceRate: stats.goalComplianceRate,
         meppComplianceRate: stats.meppComplianceRate,
         totalHours: stats.totalHours,
-        totalQuestions: stats.totalQuestions
+        totalQuestions: stats.totalQuestions,
+        paretoMetrics
       };
 
       const aiResponse = await chatWithTutor(newMessages, contextData);
