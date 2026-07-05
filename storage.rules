@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Permite leitura pública de todos os arquivos de áudio
+      allow read: if true;
+      
+      // Permite escrita apenas para usuários autenticados
+      // Se quiser permitir upload para qualquer visitante durante os testes, mude para: allow write: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

@@ -136,8 +136,8 @@ export default function FocusMode({ contest, onUpdate }: FocusModeProps) {
   useEffect(() => {
     const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
     
-    audio.onerror = (e) => {
-      console.error("Audio failed to load:", e);
+    audio.onerror = () => {
+      console.error("Audio failed to load (beep_short.ogg)");
     };
 
     audioRef.current = audio;

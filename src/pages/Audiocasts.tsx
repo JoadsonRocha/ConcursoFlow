@@ -48,81 +48,6 @@ interface Audiocast {
   createdAt?: any;
 }
 
-const AUDIOCASTS_DATA: Audiocast[] = [
-  {
-    id: '1',
-    title: 'Ciclos de Estudo e o Método MEPP',
-    description: 'Como organizar seu dia utilizando a Regra de Pareto (80/20) e as revisões programadas no ecossistema Stratis.',
-    duration: '06:12',
-    category: 'mentoria',
-    categoryLabel: 'Dicas do Mentor',
-    speaker: 'Prof. Lucas Silveira',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    topics: ['Ciclo de Estudos', 'Método MEPP', 'Curva do Esquecimento', 'Princípio de Pareto'],
-    isPremium: false
-  },
-  {
-    id: '2',
-    title: 'Constituição Federal - Direitos Individuais (Art. 5º)',
-    description: 'Resumo narrado e esquematizado dos principais incisos do Artigo 5º da CF/88, focado em alta recorrência em provas.',
-    duration: '07:05',
-    category: 'direito_const',
-    categoryLabel: 'Direito Constitucional',
-    speaker: 'Dra. Mariana Souza',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    topics: ['Artigo 5º', 'Direitos Fundamentais', 'Remédios Constitucionais', 'Garantias'],
-    isPremium: true
-  },
-  {
-    id: '3',
-    title: 'Dominando a Crase de Forma Definitiva',
-    description: 'Guia definitivo em áudio com as 3 regras de ouro da crase e os casos em que ela é proibida ou facultativa.',
-    duration: '05:44',
-    category: 'portugues',
-    categoryLabel: 'Língua Portuguesa',
-    speaker: 'Prof. Carlos Alberto',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    topics: ['Crase Facultativa', 'Regência Verbal', 'Crase Proibida', 'Macete do "Vou a, Volto da"'],
-    isPremium: false
-  },
-  {
-    id: '4',
-    title: 'Foco Profundo: Ondas Alfa e Frequência de Estudo',
-    description: 'Áudio ambiental com frequências binaurais perfeitamente equilibradas para aumentar a retenção e eliminar distrações.',
-    duration: '10:00',
-    category: 'foco',
-    categoryLabel: 'Mindfulness & Concentração',
-    speaker: 'Sons de Foco',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-    topics: ['Ondas Alfa', 'Foco Profundo', 'Sem Vocal', 'Estudo sem Distração'],
-    isPremium: false
-  },
-  {
-    id: '5',
-    title: 'Direito Administrativo - Princípios da Adm. Pública (LIMPE)',
-    description: 'Análise minuciosa dos princípios expressos e implícitos da Administração Pública com exemplos práticos.',
-    duration: '08:15',
-    category: 'direito_adm',
-    categoryLabel: 'Direito Administrativo',
-    speaker: 'Prof. Ricardo Gomes',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-    topics: ['Princípios do LIMPE', 'Legalidade', 'Impessoalidade', 'Moralidade', 'Publicidade', 'Eficiência'],
-    isPremium: true
-  },
-  {
-    id: '6',
-    title: 'Como Vencer a Procrastinação no Pós-Edital',
-    description: 'Estratégias mentais urgentes para manter a consistência diária quando o cansaço e a ansiedade começam a bater forte.',
-    duration: '06:50',
-    category: 'mentoria',
-    categoryLabel: 'Mentalidade e Produtividade',
-    speaker: 'Prof. Lucas Silveira',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-    topics: ['Regra dos 5 Segundos', 'Metas Micro', 'Ansiedade Pré-Prova', 'Foco Extremo'],
-    isPremium: true
-  }
-];
-
 export default function Audiocasts() {
   const { user, isPro } = useAuth();
   const userEmail = user?.email?.toLowerCase().trim() || '';
@@ -145,7 +70,7 @@ export default function Audiocasts() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
-  const [currentAudiocast, setCurrentAudiocast] = useState<Audiocast>(AUDIOCASTS_DATA[0]);
+  const [currentAudiocast, setCurrentAudiocast] = useState<Audiocast | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -202,6 +127,9 @@ export default function Audiocasts() {
       });
 
       setDbAudiocasts(list);
+      if (list.length > 0) {
+        setCurrentAudiocast((prev) => prev || list[0]);
+      }
     }, (error) => {
       console.error("Erro ao carregar audiocasts de Firestore:", error);
     });
@@ -340,10 +268,10 @@ export default function Audiocasts() {
     try {
       await deleteDoc(doc(db, 'audiocasts', id));
       toast.success('Audiocast excluído com sucesso!');
-      if (currentAudiocast.id === id) {
+      if (currentAudiocast && currentAudiocast.id === id) {
         setIsPlaying(false);
         if (audioRef.current) audioRef.current.pause();
-        setCurrentAudiocast(AUDIOCASTS_DATA[0]);
+        setCurrentAudiocast(dbAudiocasts.find(c => c.id !== id) || null);
       }
     } catch (err) {
       console.error('Erro ao excluir audiocast:', err);
@@ -353,7 +281,7 @@ export default function Audiocasts() {
 
   // Load and play logic
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && currentAudiocast) {
       audioRef.current.src = currentAudiocast.audioUrl;
       audioRef.current.load();
       audioRef.current.playbackRate = playbackRate;
@@ -370,6 +298,12 @@ export default function Audiocasts() {
           setIsPlaying(false);
         });
       }
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      setCurrentTime(0);
+      setDuration(0);
+      setIsPlaying(false);
     }
   }, [currentAudiocast]);
 
@@ -385,7 +319,7 @@ export default function Audiocasts() {
 
   // Handle play/pause toggle
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !currentAudiocast) return;
 
     if (currentAudiocast.isPremium && !isPro) {
       toast.error('Este conteúdo é exclusivo para assinantes PRO!');
@@ -406,7 +340,7 @@ export default function Audiocasts() {
   };
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
+    if (audioRef.current && currentAudiocast) {
       setCurrentTime(audioRef.current.currentTime);
       // Auto-mark as completed when reaching 95% of duration
       if (duration > 0 && audioRef.current.currentTime / duration >= 0.95) {
@@ -483,7 +417,7 @@ export default function Audiocasts() {
     }
     
     // Toggle play/pause if clicking the already active audio card
-    if (currentAudiocast.id === cast.id) {
+    if (currentAudiocast && currentAudiocast.id === cast.id) {
       togglePlay();
       return;
     }
@@ -516,10 +450,7 @@ export default function Audiocasts() {
     { id: 'outros', label: 'Outras Disciplinas', icon: Headphones }
   ];
 
-  const allAudiocasts = [
-    ...dbAudiocasts,
-    ...AUDIOCASTS_DATA.filter(def => !dbAudiocasts.some(dbCast => dbCast.title.toLowerCase().trim() === def.title.toLowerCase().trim()))
-  ];
+  const allAudiocasts = dbAudiocasts;
 
   const filteredAudiocasts = allAudiocasts.filter(cast => {
     const matchesSearch = cast.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -541,7 +472,13 @@ export default function Audiocasts() {
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={() => setIsPlaying(false)}
         onError={(e) => {
-          console.error("Erro no elemento de áudio:", e);
+          // Ignore error events when there is no active audiocast or src is empty
+          if (!currentAudiocast || !e.currentTarget.src || e.currentTarget.getAttribute('src') === '') {
+            return;
+          }
+          const errorCode = e.currentTarget.error ? e.currentTarget.error.code : 'desconhecido';
+          const errorMessage = e.currentTarget.error ? e.currentTarget.error.message : '';
+          console.error(`Erro no elemento de áudio (código ${errorCode}): ${errorMessage}`);
           setIsPlaying(false);
           toast.error("Erro ao carregar ou reproduzir este arquivo de áudio.");
         }}
@@ -839,7 +776,7 @@ export default function Audiocasts() {
               </div>
             ) : (
               filteredAudiocasts.map((cast) => {
-                const isActive = currentAudiocast.id === cast.id;
+                const isActive = currentAudiocast && currentAudiocast.id === cast.id;
                 const isFavorite = favoriteAudios.includes(cast.id);
                 const isCompleted = completedAudios.includes(cast.id);
                 const isCustom = dbAudiocasts.some(dbCast => dbCast.id === cast.id);
@@ -964,52 +901,66 @@ export default function Audiocasts() {
             <h3 className="text-[10px] font-black text-text-sub uppercase tracking-widest px-1">Tocando Agora</h3>
             
             <div className="bg-white border border-border rounded-3xl p-6 shadow-xl shadow-slate-100/50 space-y-6">
-              {/* Disc Rotation Visual */}
-              <div className="aspect-square bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-indigo-500/5" />
-                
-                {/* Rotating disc representation */}
-                <div className={cn(
-                  "w-36 h-36 rounded-full border-4 border-slate-200/80 bg-white flex items-center justify-center shadow-lg relative transition-transform duration-1000 ease-linear",
-                  isPlaying ? "animate-spin [animation-duration:8s]" : ""
-                )}>
-                  <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-white font-black text-xs font-display">
-                    S
+              {!currentAudiocast ? (
+                <div className="text-center py-16 space-y-4">
+                  <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mx-auto">
+                    <Headphones className="w-6 h-6 text-text-sub/40 animate-pulse" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black uppercase text-text-main">Nenhum áudio carregado</h4>
+                    <p className="text-[9px] font-bold uppercase text-text-sub leading-normal max-w-[200px] mx-auto">
+                      Selecione um audiocast na lista ao lado para iniciar.
+                    </p>
                   </div>
                 </div>
-
-                <div className="absolute bottom-4 left-4 right-4 text-center">
-                  <span className="text-[8px] font-black text-text-sub uppercase tracking-widest bg-white/80 border border-border backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">
-                    {currentAudiocast.categoryLabel}
-                  </span>
-                </div>
-              </div>
-
-              {/* Lesson Metadata */}
-              <div className="text-center space-y-1.5">
-                <h4 className="text-sm font-black uppercase text-text-main tracking-tight leading-snug">
-                  {currentAudiocast.title}
-                </h4>
-                <p className="text-[10px] font-bold uppercase text-text-sub tracking-wider">
-                  Por {currentAudiocast.speaker}
-                </p>
-              </div>
-
-              {/* Dynamic Transcript/Summary Accordion */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
-                <div className="flex items-center gap-1.5 text-[9px] font-black text-text-main uppercase tracking-widest">
-                  <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  <span>Pontos Relevantes</span>
-                </div>
-                <div className="max-h-[100px] overflow-y-auto no-scrollbar space-y-1">
-                  {currentAudiocast.topics.map((t, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[9px] font-bold text-text-sub uppercase tracking-wider">
-                      <span className="w-1 h-1 rounded-full bg-primary" />
-                      <span>{t}</span>
+              ) : (
+                <>
+                  {/* Disc Rotation Visual */}
+                  <div className="aspect-square bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-indigo-500/5" />
+                    
+                    {/* Rotating disc representation */}
+                    <div className={cn(
+                      "w-36 h-36 rounded-full border-4 border-slate-200/80 bg-white flex items-center justify-center shadow-lg relative transition-transform duration-1000 ease-linear",
+                      isPlaying ? "animate-spin [animation-duration:8s]" : ""
+                    )}>
+                      <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-white font-black text-xs font-display">
+                        S
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+
+                    <div className="absolute bottom-4 left-4 right-4 text-center">
+                      <span className="text-[8px] font-black text-text-sub uppercase tracking-widest bg-white/80 border border-border backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">
+                        {currentAudiocast.categoryLabel}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Lesson Metadata */}
+                  <div className="text-center space-y-1.5">
+                    <h4 className="text-sm font-black uppercase text-text-main tracking-tight leading-snug">
+                      {currentAudiocast.title}
+                    </h4>
+                    <p className="text-[10px] font-bold uppercase text-text-sub tracking-wider">
+                      Por {currentAudiocast.speaker}
+                    </p>
+                  </div>
+
+                  {/* Dynamic Transcript/Summary Accordion */}
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-text-main uppercase tracking-widest">
+                      <BookOpen className="w-3.5 h-3.5 text-primary" />
+                      <span>Pontos Relevantes</span>
+                    </div>
+                    <div className="max-h-[100px] overflow-y-auto no-scrollbar space-y-1">
+                      {currentAudiocast.topics.map((t, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[9px] font-bold text-text-sub uppercase tracking-wider">
+                          <span className="w-1 h-1 rounded-full bg-primary" />
+                          <span>{t}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
               {/* Audio Slider Controls */}
               <div className="space-y-1">
@@ -1103,6 +1054,8 @@ export default function Audiocasts() {
                   />
                 </div>
               </div>
+                </>
+              )}
             </div>
           </div>
         </div>
