@@ -21,7 +21,9 @@ import {
   Plus,
   Trash2,
   UploadCloud,
-  Loader2
+  Loader2,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -54,7 +56,7 @@ const AUDIOCASTS_DATA: Audiocast[] = [
     duration: '06:12',
     category: 'mentoria',
     categoryLabel: 'Dicas do Mentor',
-    speaker: 'Prof. Joadson Rocha',
+    speaker: 'Prof. Lucas Silveira',
     audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     topics: ['Ciclo de Estudos', 'Método MEPP', 'Curva do Esquecimento', 'Princípio de Pareto'],
     isPremium: false
@@ -114,7 +116,7 @@ const AUDIOCASTS_DATA: Audiocast[] = [
     duration: '06:50',
     category: 'mentoria',
     categoryLabel: 'Mentalidade e Produtividade',
-    speaker: 'Prof. Joadson Rocha',
+    speaker: 'Prof. Lucas Silveira',
     audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
     topics: ['Regra dos 5 Segundos', 'Metas Micro', 'Ansiedade Pré-Prova', 'Foco Extremo'],
     isPremium: true
@@ -132,7 +134,7 @@ export default function Audiocasts() {
   const [newDescription, setNewDescription] = useState('');
   const [newDuration, setNewDuration] = useState('05:00');
   const [newCategory, setNewCategory] = useState<string>('mentoria');
-  const [newSpeaker, setNewSpeaker] = useState('Prof. Joadson Rocha');
+  const [newSpeaker, setNewSpeaker] = useState('Prof. Lucas Silveira');
   const [newAudioUrl, setNewAudioUrl] = useState('');
   const [newIsPremium, setNewIsPremium] = useState(true);
   const [newTopics, setNewTopics] = useState('');
@@ -154,6 +156,21 @@ export default function Audiocasts() {
   const [favoriteAudios, setFavoriteAudios] = useState<string[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Load from Firestore
   useEffect(() => {
@@ -302,7 +319,7 @@ export default function Audiocasts() {
       setNewDescription('');
       setNewDuration('05:00');
       setNewCategory('mentoria');
-      setNewSpeaker('Prof. Joadson Rocha');
+      setNewSpeaker('Prof. Lucas Silveira');
       setNewAudioUrl('');
       setNewIsPremium(true);
       setNewTopics('');
@@ -563,27 +580,56 @@ export default function Audiocasts() {
           />
         </div>
 
-        {/* Category Tabs */}
-        <div className="md:col-span-8 flex gap-2 overflow-x-auto no-scrollbar py-1">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap border shrink-0",
-                  isSelected
-                    ? "bg-primary border-primary text-white shadow-md shadow-primary/15"
-                    : "bg-white border-border text-text-sub hover:bg-slate-50"
-                )}
+        {/* Category Dropdown (Replacing standard tabs for a premium, clean select experience) */}
+        <div ref={dropdownRef} className="md:col-span-8 relative">
+          <button
+            onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+            className="w-full flex items-center justify-between gap-2 px-5 py-3 bg-white border border-border rounded-2xl text-xs font-black uppercase tracking-wider text-text-main hover:bg-slate-50 transition-all shadow-sm"
+          >
+            <div className="flex items-center gap-2.5">
+              <Filter className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-text-sub normal-case font-bold shrink-0">Filtrar Disciplina:</span>
+              <span className="text-primary font-black truncate max-w-[150px] sm:max-w-none">
+                {categories.find(cat => cat.id === selectedCategory)?.label || 'Todos'}
+              </span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 text-text-sub transition-transform duration-250 shrink-0", isCategoryDropdownOpen && "rotate-180")} />
+          </button>
+
+          <AnimatePresence>
+            {isCategoryDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 right-0 mt-2 bg-white border border-border rounded-2xl shadow-xl z-50 p-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 max-h-[320px] overflow-y-auto no-scrollbar"
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setIsCategoryDropdownOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-left text-xs font-bold uppercase tracking-wider transition-all border",
+                        isSelected
+                          ? "bg-primary/5 border-primary/25 text-primary"
+                          : "bg-transparent border-transparent text-text-sub hover:bg-slate-50 hover:text-text-main"
+                      )}
+                    >
+                      <Icon className={cn("w-4 h-4 shrink-0", isSelected ? "text-primary" : "text-text-sub/75")} />
+                      <span className="truncate">{cat.label}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

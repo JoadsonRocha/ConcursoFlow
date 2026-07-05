@@ -99,7 +99,6 @@ if (typeof window !== 'undefined') {
   }
 }
 
-console.log("Firebase App initialized. Project:", config.projectId, "Database:", databaseId);
 export const auth = getAuth(app);
 export const db = (databaseId && databaseId !== '(default)') 
   ? initializeFirestore(app, {

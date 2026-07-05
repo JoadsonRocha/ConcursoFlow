@@ -144,7 +144,6 @@ export default function App() {
               updatedAt: serverTimestamp()
             });
             localStorage.setItem('stratis_fcm_token_device', token);
-            console.log('Token FCM salvo com sucesso para este dispositivo:', token);
           }
         } catch (error) {
           console.error('Erro ao salvar token FCM deste dispositivo:', error);

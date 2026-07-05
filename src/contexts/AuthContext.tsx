@@ -38,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         identifyUserForAnalytics(user.uid);
         try {
-          console.log("TESTE DEBUG - DB in AuthContext:", db);
           const userRef = doc(db, 'users', user.uid);
           
           if (unsubProfile) unsubProfile();

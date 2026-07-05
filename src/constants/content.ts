@@ -25,7 +25,7 @@ export const contentData: ContentItem[] = [
     category: 'tutorial',
     title: 'Transforme o Caos do Edital em Ordem',
     excerpt: 'Sabe aquele PDF gigante? A gente te ensina a transformar ele em um plano real de aprovação hoje mesmo.',
-    author: 'Joadson Rocha',
+    author: 'Lucas Silveira',
     date: '14 de Maio, 2024',
     tags: ['Estratégia', 'IA', 'Comece Aqui'],
     content: `
@@ -79,7 +79,7 @@ Estudar menos, mas estudar melhor. Esse é o caminho da elite.
     category: 'dica',
     title: 'Pare de ser um "Colecionador de PDFs"',
     excerpt: 'O erro número 1 que afasta você da posse e como a técnica 80/20 resolve isso.',
-    author: 'Joadson Rocha',
+    author: 'Lucas Silveira',
     date: '10 de Maio, 2024',
     tags: ['Mindset', 'Produtividade'],
     content: `
