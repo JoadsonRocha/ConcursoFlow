@@ -24,6 +24,7 @@ import {
   Bell,
   Brain,
   Instagram,
+  Headphones,
   LifeBuoy,
   Bot,
   Library
@@ -40,11 +41,13 @@ import Configuracoes from './pages/Configuracoes';
 import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
 import Feedback from './pages/Feedback';
+import FeedbackModal from './components/FeedbackModal';
 import Landing from './pages/Landing';
 import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import Perfil from './pages/Perfil';
+import Audiocasts from './pages/Audiocasts';
 import Suporte from './pages/Suporte';
 import Auth from './pages/Auth';
 import ResetPassword from './pages/ResetPassword';
@@ -453,6 +456,34 @@ export default function App() {
     }
   };
 
+  // Função utilitária recursiva para remover ou sanitizar valores 'undefined'
+  // antes de enviar para o Firestore, prevenindo erros de sincronização de dados.
+  const sanitizeFirestoreData = (data: any): any => {
+    if (data === undefined || data === null) {
+      return null;
+    }
+    if (Array.isArray(data)) {
+      return data.map(item => sanitizeFirestoreData(item));
+    }
+    if (typeof data === 'object') {
+      // Se for um Timestamp do Firebase ou similar com método isEqual, manter intacto
+      if (data && typeof data.isEqual === 'function') {
+        return data;
+      }
+      const sanitized: any = {};
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          const val = data[key];
+          if (val !== undefined) {
+            sanitized[key] = sanitizeFirestoreData(val);
+          }
+        }
+      }
+      return sanitized;
+    }
+    return data;
+  };
+
   const handleImportEdital = async (newContest: Contest) => {
     if (!user) return;
     
@@ -484,7 +515,9 @@ export default function App() {
         createdAt: isEdit ? (newContest.createdAt || serverTimestamp()) : serverTimestamp(), 
         updatedAt: serverTimestamp() 
       };
-      await setDoc(docRef, contestToSave, { merge: true });
+      
+      const sanitizedContest = sanitizeFirestoreData(contestToSave);
+      await setDoc(docRef, sanitizedContest, { merge: true });
       
       // Update local state immediately to ensure UI refresh
       setContests(prev => {
@@ -549,7 +582,8 @@ export default function App() {
         dailyHistory: contestData.dailyHistory || [],
       };
       
-      await setDoc(docRef, payload, { merge: true });
+      const sanitizedPayload = sanitizeFirestoreData(payload);
+      await setDoc(docRef, sanitizedPayload, { merge: true });
 
       // Update profile current ID in background
       const userRef = doc(db, 'users', user.uid);
@@ -686,9 +720,8 @@ export default function App() {
               <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} iconColor="text-violet-500" />
               <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} iconColor="text-cyan-500" />
               <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} iconColor="text-fuchsia-500" /> 
-              <SidebarItem to="/feedback" icon={MessageCircle} label="Feedback" active={location.pathname === '/feedback'} collapsed={!isSidebarOpen} iconColor="text-teal-500" />
+              <SidebarItem to="/audiocasts" icon={Headphones} label="Audiocasts" active={location.pathname === '/audiocasts'} collapsed={!isSidebarOpen} iconColor="text-pink-500" />
               <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} iconColor="text-sky-500" />
-              <SidebarItem to="/suporte" icon={LifeBuoy} label="Suporte" active={location.pathname === '/suporte'} collapsed={!isSidebarOpen} iconColor="text-pink-500" />
               {!isPro && (
                 <SidebarItem to="/planos" icon={Crown} label="Assinar Pro" active={location.pathname === '/planos'} collapsed={!isSidebarOpen} variant="highlight" />
               )}
@@ -970,6 +1003,7 @@ export default function App() {
               <Route path="/cronograma" element={currentContest ? <Cronograma contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
               <Route path="/comunidade" element={<Comunidade onImport={handleImportEdital} contests={contests} />} />
               <Route path="/feedback" element={<Feedback />} />
+              <Route path="/audiocasts" element={<Audiocasts />} />
               <Route path="/suporte" element={<Suporte />} />
               <Route path="/explorar" element={<Explorar />} />
               <Route path="/planos" element={<Planos />} />
@@ -983,6 +1017,9 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Floating Feedback Modal */}
+      <FeedbackModal />
     </div>
   );
 }

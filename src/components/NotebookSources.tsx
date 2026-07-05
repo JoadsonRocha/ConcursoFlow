@@ -37,12 +37,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
 import * as pdfjs from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Configure worker safely
 try {
-  const PDFJS_VERSION = '4.0.379';
   if (pdfjs && pdfjs.GlobalWorkerOptions) {
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
   }
 } catch (e) {
   console.warn("[PDF.js] Failed to configure worker source statically, will fallback:", e);
@@ -226,6 +226,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
     const matched = sources.find(s => s.id === activeSource.id);
     if (matched) {
       const changed = JSON.stringify(matched.suggestedQuestions) !== JSON.stringify(activeSource.suggestedQuestions) ||
+                      JSON.stringify(matched.quizQuestions) !== JSON.stringify(activeSource.quizQuestions) ||
                       matched.title !== activeSource.title ||
                       matched.content !== activeSource.content;
       if (changed) {

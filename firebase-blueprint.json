@@ -135,9 +135,34 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["role", "content", "createdAt"]
+    },
+    "Audiocast": {
+      "title": "Audiocast",
+      "description": "An audio recording / podcast item uploaded by the admin for study purposes.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "string" },
+        "category": { "type": "string" },
+        "categoryLabel": { "type": "string" },
+        "speaker": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "isPremium": { "type": "boolean" },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "audioUrl", "createdAt"]
     }
   },
   "firestore": {
+    "/audiocasts/{audiocastId}": {
+      "schema": "Audiocast",
+      "description": "Stores audiocasts uploaded by the administrator."
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "Stores user profile data."

@@ -134,6 +134,22 @@ export default function Perfil() {
     }
   }, [updateProfile]);
 
+  // Sincroniza o estado local do formulário com o perfil carregado da nuvem de forma resiliente
+  React.useEffect(() => {
+    if (profile) {
+      setDisplayName(prev => prev || profile.displayName || user?.displayName || '');
+      setPhotoURL(prev => prev || profile.photoURL || user?.photoURL || '');
+      setPhoneNumber(prev => prev || profile.phoneNumber || '');
+      setConcursoFoco(prev => prev || profile.concursoFoco || '');
+      setNivelAtual(prev => prev === 'Iniciante' ? (profile.nivelAtual || 'Iniciante') : prev);
+      setFraseStatus(prev => prev || profile.fraseStatus || '');
+      setIsCreator(prev => prev || profile.isCreator || false);
+    } else if (user) {
+      setDisplayName(prev => prev || user.displayName || '');
+      setPhotoURL(prev => prev || user.photoURL || '');
+    }
+  }, [profile, user]);
+
   const toggleTour = async () => {
     if (!user) return;
     try {

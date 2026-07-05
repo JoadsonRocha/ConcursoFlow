@@ -41,6 +41,34 @@ import { useAuth } from '../contexts/AuthContext';
 import NotebookSources from '../components/NotebookSources';
 import ProModal from '../components/ProModal';
 
+const getQuizOptions = (questionObj: any): string[] => {
+  if (!questionObj) return [];
+  const opts = questionObj.options || questionObj.choices || questionObj.alternativas || questionObj.alternatives || [];
+  if (Array.isArray(opts)) return opts;
+  if (typeof opts === 'object') return Object.values(opts);
+  return [];
+};
+
+const getCorrectAnswerIndex = (questionObj: any): number => {
+  if (!questionObj) return 0;
+  const directKeys = ['correctAnswerIndex', 'correctAnswer', 'answerIndex', 'respostaCorreta', 'respostaCorretaIndex'];
+  for (const key of directKeys) {
+    if (questionObj[key] !== undefined) {
+      const val = questionObj[key];
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        const parsed = parseInt(val, 10);
+        if (!isNaN(parsed)) return parsed;
+        const charCode = val.toUpperCase().charCodeAt(0);
+        if (charCode >= 65 && charCode <= 69) { // A-E
+          return charCode - 65;
+        }
+      }
+    }
+  }
+  return 0;
+};
+
 export default function Microlearning({ contest, onUpdate }: { contest?: Contest | null, onUpdate?: (contest: Contest) => void }) {
   const { user, profile, isPro } = useAuth();
   const navigate = useNavigate();
@@ -379,7 +407,11 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
   const handleAnswer = (idx: number) => {
     if (selectedOption !== null) return;
     setSelectedOption(idx);
-    if (idx === quizData[currentQuestion].correctAnswerIndex) {
+    
+    const currentQuizQuestion = quizData[currentQuestion];
+    const correctAnswerIndex = getCorrectAnswerIndex(currentQuizQuestion);
+
+    if (idx === correctAnswerIndex) {
       setScore(s => s + 1);
     }
     setTimeout(() => {
@@ -1303,6 +1335,29 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
     );
   }
 
+  if (activeTab === 'quiz' && (!quizData || quizData.length === 0 || !quizData[currentQuestion])) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+        <div className="w-20 h-20 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-sm">
+           <BookOpen className="w-10 h-10 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-display font-bold text-text-main">Simulado não iniciado</h3>
+          <p className="text-sm text-text-sub max-w-xs mx-auto">Para fazer um simulado, acesse o seu Caderno de Estudos e clique em "Treinar" no simulado gerado!</p>
+        </div>
+        <button 
+          onClick={() => {
+            setActiveTab('selection');
+            navigate('/microaprendizado?tab=selection');
+          }}
+          className="px-8 py-3 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 cursor-pointer"
+        >
+          Voltar para Início
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-12 animate-in slide-in-from-right-8 duration-700 pb-20">
         {allModals}
@@ -1321,13 +1376,16 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
 
         <div className="rise-card p-6 md:p-10 space-y-8 md:space-y-12">
             <h2 className="text-lg md:text-2xl font-display leading-[1.4] text-text-main italic font-bold tracking-tight">
-                {quizData[currentQuestion]?.question}
+                {quizData[currentQuestion]?.question || quizData[currentQuestion]?.pergunta}
             </h2>
 
             <div className="grid grid-cols-1 gap-3 md:gap-4">
-                {quizData[currentQuestion]?.options.map((opt: string, idx: number) => {
-                    const isCorrect = selectedOption !== null && idx === quizData[currentQuestion].correctAnswerIndex;
-                    const isWrong = selectedOption === idx && idx !== quizData[currentQuestion].correctAnswerIndex;
+                {getQuizOptions(quizData[currentQuestion]).map((opt: string, idx: number) => {
+                    const currentQuizQuestion = quizData[currentQuestion];
+                    const correctAnswerIndex = getCorrectAnswerIndex(currentQuizQuestion);
+
+                    const isCorrect = selectedOption !== null && idx === correctAnswerIndex;
+                    const isWrong = selectedOption === idx && idx !== correctAnswerIndex;
                     
                     return (
                         <button
@@ -1374,7 +1432,9 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Explicação</span>
                         </div>
-                        <p className="text-sm md:text-base text-text-sub leading-relaxed italic relative z-10 font-medium">"{quizData[currentQuestion]?.explanation}"</p>
+                        <p className="text-sm md:text-base text-text-sub leading-relaxed italic relative z-10 font-medium">
+                            "{quizData[currentQuestion]?.explanation || quizData[currentQuestion]?.explicacao || 'Sem explicação disponível.'}"
+                        </p>
                     </motion.div>
                 )}
             </AnimatePresence>

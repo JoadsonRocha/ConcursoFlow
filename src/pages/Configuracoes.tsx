@@ -5,18 +5,18 @@ import { parseEdital, generateSchedule, generateParetoAnalysis } from '../servic
 import { Contest, Subject } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import * as pdfjs from 'pdfjs-dist';
 import { useAuth } from '../contexts/AuthContext';
 import ProModal from '../components/ProModal';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { toast } from 'sonner';
+import * as pdfjs from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 // Configure worker safely
 try {
-  const PDFJS_VERSION = '4.0.379';
   if (pdfjs && pdfjs.GlobalWorkerOptions) {
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.js`;
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
   }
 } catch (e) {
   console.warn("[PDF.js] Failed to configure worker source statically, will fallback:", e);

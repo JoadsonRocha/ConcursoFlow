@@ -1,6 +1,6 @@
 {
   "name": "Stratis Planner",
-  "description": "Sistema avançado para concursos com foco em inclusão e produtividade PRO.",
+  "description": "O Stratis Planner transforma seu edital em um plano de estudos completo, organiza a sua semana, programa revisões automáticas e acelera a aprovação com Inteligência Artificial para concurseiros de alto rendimento.",
   "requestFramePermissions": ["screen-wake-lock", "wake-lock", "microphone"],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

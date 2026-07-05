@@ -9,7 +9,7 @@ import {
   sendPasswordResetEmail,
   updateProfile
 } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, collection, addDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer, collection, addDoc, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider, CustomProvider } from 'firebase/app-check';
@@ -102,8 +102,16 @@ if (typeof window !== 'undefined') {
 console.log("Firebase App initialized. Project:", config.projectId, "Database:", databaseId);
 export const auth = getAuth(app);
 export const db = (databaseId && databaseId !== '(default)') 
-  ? getFirestore(app, databaseId) 
-  : getFirestore(app);
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, databaseId)
+  : initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
 export const storage = getStorage(app);
 export let messaging: any = null;
 if (typeof window !== 'undefined') {

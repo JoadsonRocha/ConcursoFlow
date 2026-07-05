@@ -180,8 +180,9 @@ export async function generateMindMap(subject: string) {
 
 export async function generateQuizQuestions(topic: string, subject: string, count: number = 10) {
   const params = { topic, subject, count };
-  const prompt = `Gere exatamente ${count} questões de múltipla escolha sobre "${topic}" (${subject}). Use o material fornecido se houver.
-  Retorne JSON: [{question, options: [], correctAnswerIndex, explanation}]`;
+  const prompt = `Gere exatamente ${count} questões de múltipla escolha sobre o tópico/matéria "${topic}" (${subject}). Use o material fornecido se houver.
+  Cada questão deve conter exatamente 4 ou 5 opções de resposta (no campo "options").
+  Retorne EXATAMENTE no formato JSON com as chaves: [{ "question": "texto da pergunta", "options": ["A", "B", "C", "D"], "correctAnswerIndex": 0, "explanation": "explicacao" }]`;
 
   const text = await generateContentWithCache("generateQuizQuestions", params, prompt, GEMINI_MODEL, {
     config: {
@@ -196,6 +197,7 @@ export async function generateQuizQuestions(topic: string, subject: string, coun
             correctAnswerIndex: { type: Type.NUMBER },
             explanation: { type: Type.STRING }
           },
+          required: ["question", "options", "correctAnswerIndex", "explanation"]
         }
       }
     }

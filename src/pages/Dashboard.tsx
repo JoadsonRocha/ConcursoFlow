@@ -18,6 +18,8 @@ import {
   ArrowRight,
   Target,
   Zap,
+  GitCompare,
+  Info,
   Star,
   CheckCircle2,
   ChevronDown,
@@ -38,7 +40,8 @@ import {
   Instagram,
   Laptop,
   Smartphone,
-  Youtube
+  Youtube,
+  Headphones
 } from 'lucide-react';
 import { SIcon } from '../components/SIcon';
 import { toast } from 'sonner';
@@ -147,6 +150,26 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   const [logForm, setLogForm] = useState<{ hours: number | '', questions: number | '' }>({ hours: '', questions: '' });
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [featuredContests, setFeaturedContests] = useState<Contest[]>([]);
+  const [latestAudiocasts, setLatestAudiocasts] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchLatestAudiocasts() {
+      try {
+        const q = query(collection(db, 'audiocasts'), limit(3));
+        const snapshot = await getDocs(q);
+        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        list.sort((a: any, b: any) => {
+          const timeA = a.createdAt?.seconds || a.createdAt?.toMillis?.() || 0;
+          const timeB = b.createdAt?.seconds || b.createdAt?.toMillis?.() || 0;
+          return timeB - timeA;
+        });
+        setLatestAudiocasts(list);
+      } catch (error) {
+        console.error("Error fetching latest audiocasts:", error);
+      }
+    }
+    fetchLatestAudiocasts();
+  }, []);
 
   const stats = useContestStats(contest);
   const { totalHours, totalQuestions, streak: streakDays, totalStudiedDays, generalProgressProps: generalProgress, specificProgressProps: technicalProgress, overallProgress, todayDayNumber, todayTask, todayHistory } = stats;
@@ -224,7 +247,20 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
   };
 
   const [showSimilarityModal, setShowSimilarityModal] = useState(false);
-  const [selectedContestsForComparison, setSelectedContestsForComparison] = useState<string[]>([]);
+  const [selectedCompareContestId, setSelectedCompareContestId] = useState<string | null>(null);
+  const [activeCompareTab, setActiveCompareTab] = useState<'compatibles' | 'differences'>('compatibles');
+
+  useEffect(() => {
+    if (showSimilarityModal && contests && contest) {
+      const others = contests.filter(c => c.id !== contest.id);
+      if (others.length > 0) {
+        // Auto-select the first other contest if nothing is selected or if the currently selected one doesn't exist anymore
+        if (!selectedCompareContestId || !others.some(o => o.id === selectedCompareContestId)) {
+          setSelectedCompareContestId(others[0].id);
+        }
+      }
+    }
+  }, [showSimilarityModal, contests, contest, selectedCompareContestId]);
 
   const calculateSimilarity = (c1: Contest, c2: Contest) => {
     if (!c1 || !c2) return 0;
@@ -245,6 +281,67 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
     });
     
     return Math.round((intersection / t1.size) * 100);
+  };
+
+  const getSubjectComparison = (c1: Contest, c2: Contest) => {
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\w\s]/gi, '')
+      .trim();
+
+    const c1Subjects = c1.subjects || [];
+    const c2Subjects = c2.subjects || [];
+
+    const matches: {
+      subjectName: string;
+      c1TopicsCount: number;
+      c2TopicsCount: number;
+      commonTopicsCount: number;
+      percentage: number;
+    }[] = [];
+
+    const c1Exclusive: string[] = [];
+    const r2Exclusive: string[] = [];
+
+    c1Subjects.forEach(s1 => {
+      const norm1 = normalize(s1.name);
+      const s2 = c2Subjects.find(x => normalize(x.name) === norm1);
+
+      const t1Names = (s1.topics || []).map(t => normalize(t.name));
+      const t1Set = new Set(t1Names);
+
+      if (s2) {
+        const t2Names = (s2.topics || []).map(t => normalize(t.name));
+        const t2Set = new Set(t2Names);
+
+        let common = 0;
+        t1Names.forEach(name => {
+          if (t2Set.has(name)) {
+            common++;
+          }
+        });
+
+        matches.push({
+          subjectName: s1.name,
+          c1TopicsCount: s1.topics?.length || 0,
+          c2TopicsCount: s2.topics?.length || 0,
+          commonTopicsCount: common,
+          percentage: t1Names.length > 0 ? Math.round((common / t1Names.length) * 100) : 100
+        });
+      } else {
+        c1Exclusive.push(s1.name);
+      }
+    });
+
+    c2Subjects.forEach(s2 => {
+      const norm2 = normalize(s2.name);
+      const hasMatch = c1Subjects.some(x => normalize(x.name) === norm2);
+      if (!hasMatch) {
+        r2Exclusive.push(s2.name);
+      }
+    });
+
+    return { matches, c1Exclusive, c2Exclusive: r2Exclusive };
   };
 
   /**
@@ -816,19 +913,19 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
         </div>
       </div>
 
-      {/* Mentor MPP - Sequência Inteligente (Passos 2 e 3) */}
+      {/* Mentor MPP - Sequência Inteligente (Passos 2, 3 e 4) */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1 pt-2">
            <h3 className="text-xs font-display text-text-main uppercase font-bold tracking-wider flex items-center gap-2">
               <Brain className="w-5 h-5 text-indigo-500" />
               Revisão Ativa
            </h3>
-           <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full self-start">
+           <span className="text-[9px] font-black text-indigo-650 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-full self-start">
              ETAPAS DE ABSORÇÃO ATIVA
            </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* PASSO 2: REVISÃO ESPAÇADA MEPP */}
           <div className="rise-card bg-white border border-border rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-indigo-400/45 transition-all min-h-[220px]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50/60 rounded-full transition-all" />
@@ -892,7 +989,61 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
             </div>
           </div>
 
-          {/* PASSO 3: COMUNIDADE STRATIS */}
+          {/* PASSO 3: AUDIOCASTS & LEIS */}
+          <div className="rise-card bg-white border border-border rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-pink-400/40 transition-all min-h-[220px]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-pink-50/40 rounded-full transition-all" />
+            
+            <div className="space-y-4 relative z-10 text-left">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-pink-500/10 text-pink-600 flex items-center justify-center font-black text-xs">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Estudo em Áudio</h4>
+                    <p className="text-[9px] font-bold text-text-sub uppercase tracking-widest pl-0.5">Estudo On-the-Go</p>
+                  </div>
+                </div>
+                <span className="text-[8px] font-black bg-pink-50 text-pink-700 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                  PASSO 3
+                </span>
+              </div>
+
+              {/* Audiocasts Content */}
+              <div className="space-y-3">
+                <div className="p-2.5 bg-pink-50/10 border border-pink-200/30 rounded-xl space-y-1">
+                  <span className="text-[8px] font-bold uppercase text-pink-700 tracking-widest block font-display">Mentorias & Leis</span>
+                  {latestAudiocasts.length > 0 ? (
+                    <div className="space-y-1">
+                      <span className="text-[7.5px] font-black uppercase text-pink-600/80 block tracking-widest">Lançamento recente:</span>
+                      <p className="font-bold truncate text-[10px] text-slate-800 flex items-center gap-1 bg-pink-500/5 rounded p-1 border border-pink-500/5">
+                        <Play className="w-2 h-2 fill-pink-600 text-pink-600 shrink-0" />
+                        {latestAudiocasts[0].title}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-text-main font-semibold leading-relaxed line-clamp-2">
+                      Aproveite momentos ociosos para memorizar leis e ouvir mentorias de alto rendimento.
+                    </p>
+                  )}
+                </div>
+
+                <Link 
+                  to="/audiocasts"
+                  className="w-full py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all text-center flex items-center justify-center gap-1 shadow-sm"
+                >
+                  <Headphones className="w-3.5 h-3.5 text-white animate-bounce" /> Ouvir Áudio-Aulas
+                </Link>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[9px] relative z-10">
+              <span className="text-text-sub font-semibold">Otimize seu tempo ocioso</span>
+              <Link to="/audiocasts" className="text-pink-600 font-bold uppercase hover:underline">Sintonizar ➔</Link>
+            </div>
+          </div>
+
+          {/* PASSO 4: COMUNIDADE STRATIS */}
           <div className="rise-card bg-white border border-border rounded-2xl p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:border-accent/40 transition-all min-h-[220px]">
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50/50 rounded-full transition-all" />
             
@@ -900,7 +1051,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
               <div className="flex items-center justify-between border-b border-border/60 pb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-black text-xs">
-                    3
+                    4
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-text-main uppercase tracking-wider">Comunidade Stratis</h4>
@@ -908,7 +1059,7 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
                   </div>
                 </div>
                 <span className="text-[8px] font-black bg-accent/10 text-accent px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                  PASSO 3
+                  PASSO 4
                 </span>
               </div>
 
@@ -1015,51 +1166,270 @@ const Dashboard: React.FC<DashboardProps> = ({ contest, contests, onUpdate, onSw
       {/* Similarity Modal */}
       <AnimatePresence>
         {showSimilarityModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }} 
-              className="rise-card w-full max-w-md p-8 bg-white border border-border space-y-6"
+              className="rise-card w-full max-w-4xl p-6 sm:p-8 bg-white border border-border space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
             >
-              <div className="text-center space-y-2">
-                 <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto text-indigo-500 mb-2">
-                    <Zap className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-display font-bold text-text-main">Análise de Similaridade</h3>
-                 <p className="text-xs text-text-sub">Veja o quanto outros editais cobrem o conteúdo deste.</p>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500">
+                    <GitCompare className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-display font-bold text-text-main">Grade de Similaridade entre Editais</h3>
+                    <p className="text-xs text-text-sub">Mapeie disciplinas equivalentes e concilie múltiplos concursos de forma estratégica.</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowSimilarityModal(false)} 
+                  className="p-2 rounded-full hover:bg-slate-100 text-text-sub hover:text-text-main transition-colors"
+                >
+                  <Plus className="w-5 h-5 rotate-45" />
+                </button>
               </div>
 
-              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                {contests.filter(c => c.id !== contest.id).length === 0 ? (
-                  <p className="text-center text-xs text-text-sub font-medium py-10 uppercase tracking-widest">Importe outros editais para comparar</p>
-                ) : (
-                  contests.filter(c => c.id !== contest.id).map(other => {
-                    const similarity = calculateSimilarity(contest, other);
-                    return (
-                      <div key={other.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-colors">
-                        <div className="overflow-hidden pr-4">
-                          <div className="text-[10px] font-black text-text-main uppercase tracking-tight truncate">{other.role}</div>
-                          <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{other.name}</div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className={cn(
-                            "text-lg font-black font-display leading-none",
-                            similarity > 70 ? "text-green-500" : similarity > 40 ? "text-indigo-500" : "text-text-sub"
-                          )}>
-                            {similarity}%
-                          </div>
-                          <div className="text-[8px] font-black uppercase text-text-sub tracking-widest mt-1">Match</div>
-                        </div>
+              {/* Active Base Contest Banner */}
+              <div className="bg-gradient-to-r from-indigo-500/5 to-primary/5 rounded-2xl p-4 border border-indigo-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[9px] font-black uppercase text-indigo-600 tracking-wider bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                    Edital Base de Referência
+                  </span>
+                  <h4 className="text-sm font-black text-text-main uppercase tracking-tight mt-1.5">{contest?.role}</h4>
+                  <p className="text-xs text-text-sub uppercase tracking-wider font-bold opacity-75">{contest?.name}</p>
+                </div>
+                <div className="text-left sm:text-right shrink-0">
+                  <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider block">Disciplinas Totais</span>
+                  <span className="text-lg font-black font-display text-indigo-600 leading-none">{contest?.subjects?.length || 0}</span>
+                </div>
+              </div>
+
+              {/* Split-Screen Interactive Panel */}
+              {contests.filter(c => c.id !== contest?.id).length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 border border-dashed border-slate-200 rounded-2xl space-y-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                    <Info className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-text-main uppercase tracking-wider">Nenhum outro edital disponível</p>
+                    <p className="text-[10px] font-bold text-text-sub uppercase tracking-widest max-w-sm mx-auto leading-relaxed">
+                      Cadastre ou importe outros editais nas configurações para compará-los com o seu edital base.
+                    </p>
+                  </div>
+                </div>
+              ) : (() => {
+                const others = contests.filter(c => c.id !== contest?.id);
+                const activeCompareContest = others.find(o => o.id === selectedCompareContestId) || others[0];
+                const activeSimilarity = activeCompareContest ? calculateSimilarity(contest, activeCompareContest) : 0;
+                const comparisonDetails = activeCompareContest ? getSubjectComparison(contest, activeCompareContest) : null;
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Left List Column */}
+                    <div className="md:col-span-1 space-y-3 max-h-[380px] overflow-y-auto pr-1 no-scrollbar border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
+                      <h4 className="text-[10px] font-black text-text-sub uppercase tracking-widest mb-2">Selecione para Comparar</h4>
+                      <div className="space-y-2">
+                        {others.map(other => {
+                          const similarity = calculateSimilarity(contest, other);
+                          const isSelected = other.id === activeCompareContest?.id;
+                          return (
+                            <button
+                              key={other.id}
+                              onClick={() => setSelectedCompareContestId(other.id)}
+                              className={cn(
+                                "w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group",
+                                isSelected 
+                                  ? "bg-indigo-50/40 border-indigo-200 shadow-sm shadow-indigo-100/30" 
+                                  : "bg-slate-50/50 hover:bg-slate-50 border-slate-100 hover:border-slate-200"
+                              )}
+                            >
+                              <div className="overflow-hidden pr-3">
+                                <div className={cn("text-[10px] font-black uppercase tracking-tight truncate", isSelected ? "text-indigo-600" : "text-text-main")}>
+                                  {other.role}
+                                </div>
+                                <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">
+                                  {other.name}
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <span className={cn(
+                                  "text-[10px] font-black font-display px-2 py-0.5 rounded-full border leading-none block text-center",
+                                  similarity > 70 
+                                    ? "bg-green-500/10 border-green-500/20 text-green-600" 
+                                    : similarity > 40 
+                                      ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-600" 
+                                      : "bg-slate-100 border-slate-200 text-slate-500"
+                                )}>
+                                  {similarity}%
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                    </div>
 
-              <div className="pt-2">
-                <button onClick={() => setShowSimilarityModal(false)} className="w-full bg-slate-100 text-text-main py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-colors shadow-sm">
-                  Fechar
+                    {/* Right Details Column */}
+                    {activeCompareContest && comparisonDetails && (
+                      <div className="md:col-span-2 space-y-5 animate-in fade-in duration-200">
+                        {/* Comparison Bridge Graphic */}
+                        <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 flex items-center justify-around relative overflow-hidden">
+                          <div className="text-center w-5/12">
+                            <div className="text-[9px] font-black uppercase text-indigo-600 tracking-wider mb-0.5">Seu Edital Base</div>
+                            <div className="text-xs font-black text-text-main uppercase tracking-tight truncate">{contest?.role}</div>
+                            <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{contest?.name}</div>
+                          </div>
+
+                          <div className="flex flex-col items-center justify-center w-2/12 shrink-0 relative">
+                            <div className="relative flex items-center justify-center z-10">
+                              <div className={cn(
+                                "w-12 h-12 rounded-full border-2 flex items-center justify-center bg-white shadow-md font-display font-black text-xs",
+                                activeSimilarity > 70 ? "border-green-500 text-green-500" : activeSimilarity > 40 ? "border-indigo-500 text-indigo-500" : "border-slate-300 text-slate-500"
+                              )}>
+                                {activeSimilarity}%
+                              </div>
+                              <div className="absolute left-[-20px] right-[-20px] top-1/2 h-[1px] bg-slate-200 -z-10" />
+                            </div>
+                            <span className="text-[8px] font-black uppercase tracking-widest text-text-sub mt-1">Compatível</span>
+                          </div>
+
+                          <div className="text-center w-5/12">
+                            <div className="text-[9px] font-black uppercase text-indigo-600 tracking-wider mb-0.5">Concurso Comparado</div>
+                            <div className="text-xs font-black text-text-main uppercase tracking-tight truncate">{activeCompareContest.role}</div>
+                            <div className="text-[9px] font-bold text-text-sub uppercase tracking-wider opacity-60 truncate">{activeCompareContest.name}</div>
+                          </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex border-b border-slate-100">
+                          <button
+                            onClick={() => setActiveCompareTab('compatibles')}
+                            className={cn(
+                              "flex-1 pb-3 text-[10px] font-black uppercase tracking-widest border-b-2 text-center transition-all",
+                              activeCompareTab === 'compatibles'
+                                ? "border-indigo-500 text-indigo-600"
+                                : "border-transparent text-text-sub hover:text-text-main"
+                            )}
+                          >
+                            📖 Matérias em Comum ({comparisonDetails.matches.length})
+                          </button>
+                          <button
+                            onClick={() => setActiveCompareTab('differences')}
+                            className={cn(
+                              "flex-1 pb-3 text-[10px] font-black uppercase tracking-widest border-b-2 text-center transition-all",
+                              activeCompareTab === 'differences'
+                                ? "border-indigo-500 text-indigo-600"
+                                : "border-transparent text-text-sub hover:text-text-main"
+                            )}
+                          >
+                            ⚡ Grade de Diferenças ({comparisonDetails.c1Exclusive.length + comparisonDetails.c2Exclusive.length})
+                          </button>
+                        </div>
+
+                        {/* Tab Content */}
+                        {activeCompareTab === 'compatibles' ? (
+                          <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 no-scrollbar">
+                            {comparisonDetails.matches.length === 0 ? (
+                              <p className="text-center text-[10px] font-bold text-text-sub uppercase tracking-widest py-10 opacity-60">Nenhuma matéria correspondente encontrada.</p>
+                            ) : (
+                              comparisonDetails.matches.map((m, idx) => (
+                                <div key={idx} className="p-3 bg-slate-50/50 border border-slate-100 rounded-xl space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-text-main uppercase tracking-tight truncate max-w-[65%]">
+                                      {m.subjectName}
+                                    </span>
+                                    <span className={cn(
+                                      "text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                      m.percentage > 70 
+                                        ? "bg-green-500/5 border-green-500/10 text-green-600" 
+                                        : m.percentage > 40 
+                                          ? "bg-indigo-50 border-indigo-100 text-indigo-600" 
+                                          : "bg-slate-100 border-slate-200 text-slate-500"
+                                    )}>
+                                      {m.percentage}% similaridade de tópicos
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                      <div 
+                                        className={cn(
+                                          "h-full rounded-full transition-all duration-500",
+                                          m.percentage > 70 ? "bg-green-500" : m.percentage > 40 ? "bg-indigo-500" : "bg-slate-400"
+                                        )}
+                                        style={{ width: `${m.percentage}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-[8px] font-bold text-text-sub uppercase tracking-wider shrink-0 font-mono">
+                                      {m.commonTopicsCount} / {m.c1TopicsCount} Tópicos equivalentes
+                                    </span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-1 no-scrollbar">
+                            {/* Column 1: Base Exclusive */}
+                            <div className="bg-slate-50/30 border border-slate-100 p-3.5 rounded-xl space-y-2.5">
+                              <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-amber-600 tracking-wider">
+                                <Info className="w-3.5 h-3.5 text-amber-500" />
+                                <span>Apenas no Edital Base</span>
+                              </div>
+                              <p className="text-[8px] font-bold uppercase text-text-sub tracking-wide leading-normal">
+                                Matérias presentes no {contest?.role} que você deixaria de estudar caso focasse apenas no outro concurso:
+                              </p>
+                              <div className="space-y-1">
+                                {comparisonDetails.c1Exclusive.length === 0 ? (
+                                  <p className="text-[8px] font-bold text-text-sub italic uppercase tracking-wider opacity-50 py-2">Nenhuma (todas são compatíveis!)</p>
+                                ) : (
+                                  comparisonDetails.c1Exclusive.map((sub, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 text-[9px] font-bold text-text-main uppercase tracking-wider bg-white border border-slate-100/50 px-2 py-1 rounded-md">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                                      <span className="truncate">{sub}</span>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Column 2: Compared Exclusive (Gargalo) */}
+                            <div className="bg-indigo-50/5 border border-indigo-100/50 p-3.5 rounded-xl space-y-2.5">
+                              <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-indigo-600 tracking-wider">
+                                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                                <span>Gargalo de Conciliação</span>
+                              </div>
+                              <p className="text-[8px] font-bold uppercase text-text-sub tracking-wide leading-normal">
+                                Matérias adicionais do {activeCompareContest.role} que você terá que incluir na sua rotina para conciliar os dois:
+                              </p>
+                              <div className="space-y-1">
+                                {comparisonDetails.c2Exclusive.length === 0 ? (
+                                  <p className="text-[8px] font-bold text-text-sub italic uppercase tracking-wider opacity-50 py-2">Nenhuma matéria extra necessária!</p>
+                                ) : (
+                                  comparisonDetails.c2Exclusive.map((sub, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 text-[9px] font-bold text-indigo-900 uppercase tracking-wider bg-indigo-50/40 border border-indigo-100/50 px-2 py-1 rounded-md">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                                      <span className="truncate">{sub}</span>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className="pt-2 flex justify-end">
+                <button 
+                  onClick={() => setShowSimilarityModal(false)} 
+                  className="bg-slate-100 text-text-main px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-colors shadow-sm"
+                >
+                  Fechar Painel
                 </button>
               </div>
             </motion.div>

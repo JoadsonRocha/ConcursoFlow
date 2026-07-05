@@ -107,5 +107,14 @@ service cloud.firestore {
       ) || (isOwner(resource.data.ownerId));
       allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
     }
+
+    // Audiocasts
+    match /audiocasts/{audiocastId} {
+      allow read: if true;
+      allow write: if isSignedIn() && (
+        request.auth.token.email.matches('(?i)onrocha08@gmail\\.com') || 
+        request.auth.token.email.matches('(?i)joadsonrocharr@gmail\\.com')
+      );
+    }
   }
 }
