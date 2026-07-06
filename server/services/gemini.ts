@@ -322,14 +322,20 @@ export async function parseEdital(rawText: string) {
 
 export async function generateSchedule(subjectsSummary: string, days: number) {
   const params = { subjectsSummary, days };
-  const prompt = `VOCÊ É UM ESTRATEGISTA DE ESTUDOS EXPERT EM PARETO (80/20).
-  Gere rigorosamente ${days} dias de cronograma de estudos baseados nos tópicos: ${subjectsSummary}.
+  const prompt = `VOCÊ É UM ESTRATEGISTA DE ESTUDOS ALTAMENTE QUALIFICADO E ESPECIALISTA EM PREPARAÇÃO PARA CONCURSOS PÚBLICOS DE ALTO DESEMPENHO (MÉTODO PARETO 80/20).
   
-  DIRETRIZES DE ESTRATÉGIA:
-  1. Priorize os assuntos com "Incidência Alta" ou "Muito Alta" para aparecerem mais cedo e com maior frequência.
-  2. Organize de forma progressiva e equilibrada (Básicas + Específicas por dia).
-  3. Para cada dia, o 'dayNumber' deve ser a sequência do dia (1 até ${days}).
-  4. Inclua 'specificTopic' (assunto principal), 'generalTopic' (revisão base), 'questionGoal' (número inteiro) e 'revisionTask' (ex: Flashcards).`;
+  Gere rigorosamente um cronograma de estudos estruturado para ${days} dias com base nos seguintes tópicos e disciplinas do edital:
+  ${subjectsSummary}
+  
+  DIRETRIZES DE ESTRATÉGIA DE CONCURSO (ANÁLISE DE ESPECIALISTA):
+  1. **Análise de Pareto (Foco de Alto Rendimento)**: Priorize os assuntos de alta relevância, incidência ou complexidade para aparecerem de forma estratégica e progressiva.
+  2. **Organização Equilibrada**: Distribua o cronograma alternando de forma saudável disciplinas de Conhecimentos Específicos e Conhecimentos Básicos/Gerais por dia.
+  3. **Identificação Precisa de Assuntos (NÃO DEIXE CAMPOS VAZIOS OU GENÉRICOS)**:
+     - **specificTopic**: Deve conter o tópico específico detalhado com subassuntos ou frentes de estudo (ex: "Ato administrativo: requisitos, atributos, classificação e extinção", "Tutelas constitucionais: remédios constitucionais (habeas corpus, MS, etc.)").
+     - **generalTopic**: Deve obrigatoriamente especificar a Matéria Geral juntamente com o seu respectivo tópico de estudo específico para aquele dia, sempre estruturado no formato "[Nome da Matéria Geral]: [Tópico/Assunto Geral Específico de Estudo]" (ex: "Noções de Direito Constitucional: Princípios Fundamentais e Direitos Individuais", "Raciocínio Lógico-Matemático: Diagramas Lógicos e Operações de Conjuntos", "Física: Teorema trabalho-energia e potência"). NUNCA insira apenas o nome genérico ou isolado da matéria como "Física" ou "Noções de Direito Constitucional". O usuário precisa saber exatamente qual tópico de estudo/revisão daquela matéria geral ele deve cobrir no dia.
+  4. **DayNumber**: Deve seguir a sequência linear estrita do dia (1 até ${days}).
+  5. **QuestionGoal**: Um número inteiro estimando a meta de questões (ex: 15, 20, 25).
+  6. **RevisionTask**: Tarefa de fixação ou revisão ativa recomendada pelo estrategista de forma personalizada e contextualizada ao assunto (ex: "Flashcards sobre CO-FI-FO-M-OB e atributos PATI", "Quadro comparativo de gratuidade e legitimidade ativa de cada remédio constitucional"). Use a criatividade e a precisão pedagógica para recomendar técnicas ricas de memorização/revisão baseadas no assunto estudado no dia.`;
 
   const text = await generateContentWithCache("generateSchedule", params, prompt, GEMINI_MODEL, {
     config: {
