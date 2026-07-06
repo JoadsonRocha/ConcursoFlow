@@ -194,11 +194,20 @@ export const requestNotificationPermission = async () => {
  */
 export const sendEmail = async (to: string | string[], subject: string, html: string, text?: string) => {
   try {
+    const authInstance = getAuth();
+    const currentUser = authInstance.currentUser;
+    const token = currentUser ? await currentUser.getIdToken() : '';
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch('/api/send-email', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         to,
         from: "Stratis Planner <suporte@stratisplanner.com.br>",

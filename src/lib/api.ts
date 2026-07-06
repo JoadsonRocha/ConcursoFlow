@@ -28,7 +28,14 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
       console.error("Non-JSON API error response:", errorText);
     }
     
-    throw new Error(errorData.error || errorData.details || (response.statusText ? `Erro na requisição: ${response.statusText}` : `Erro HTTP ${response.status} ao acessar a API`));
+    let errorMessage = '';
+    if (errorData.error) {
+      errorMessage = errorData.details ? `${errorData.error} (Detalhes: ${errorData.details})` : errorData.error;
+    } else {
+      errorMessage = errorData.details || (response.statusText ? `Erro na requisição: ${response.statusText}` : `Erro HTTP ${response.status} ao acessar a API`);
+    }
+    
+    throw new Error(errorMessage);
   }
 
   const contentType = response.headers.get('content-type') || '';

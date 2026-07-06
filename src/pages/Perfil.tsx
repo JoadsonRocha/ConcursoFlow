@@ -37,11 +37,17 @@ export default function Perfil() {
     if (!user?.email) return;
     setSyncLoading(true);
     try {
+      const token = await auth.currentUser?.getIdToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/auth/sync-subscription', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           userId: user.uid,
           userEmail: user.email,

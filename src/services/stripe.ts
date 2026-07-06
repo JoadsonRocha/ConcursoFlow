@@ -7,10 +7,8 @@ export async function createCheckoutSession(priceId: string) {
     throw new Error('Você precisa estar logado para assinar.');
   }
 
-  // Use price IDs from .env (accessible via import.meta.env if prefixed with VITE_)
-  // For the backend, we use the IDs configured there.
-  
   try {
+    const token = await user.getIdToken();
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const finalUrl = apiUrl ? `${apiUrl}/api/create-checkout-session` : '/api/create-checkout-session';
 
@@ -18,6 +16,7 @@ export async function createCheckoutSession(priceId: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         priceId,
@@ -50,6 +49,7 @@ export async function createPortalSession() {
   }
 
   try {
+    const token = await user.getIdToken();
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const finalUrl = apiUrl ? `${apiUrl}/api/create-portal-session` : '/api/create-portal-session';
 
@@ -57,6 +57,7 @@ export async function createPortalSession() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         userId: user.uid,

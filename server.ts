@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import aiRoutes from './server/routes/ai';
+import { authenticate } from './server/middleware/auth';
 import fs from 'fs';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -117,10 +118,13 @@ if (admin.apps.length === 0) {
 
 // Auth-specific App (to avoid audience mismatch if environment project != auth project)
 try {
-  const authConfig: admin.AppOptions = { projectId: AUTH_PROJECT_ID };
+  const authConfig: admin.AppOptions = {};
+  let finalAuthProjectId = AUTH_PROJECT_ID;
+  
   if (hasServiceAccount) {
     const sa = JSON.parse(serviceAccountJson as string);
     authConfig.credential = admin.credential.cert(sa);
+    finalAuthProjectId = sa.project_id || AUTH_PROJECT_ID;
   } else {
     try {
       authConfig.credential = admin.credential.applicationDefault();
@@ -128,8 +132,10 @@ try {
       console.warn('⚠️ Firebase Auth default credentials check failed:', credErr);
     }
   }
+  
+  authConfig.projectId = finalAuthProjectId;
   authApp = admin.initializeApp(authConfig, 'auth');
-  console.log('✅ Firebase Auth App: Inicializado para o projeto:', AUTH_PROJECT_ID);
+  console.log('✅ Firebase Auth App: Inicializado para o projeto:', finalAuthProjectId);
 } catch (err) {
   console.warn('⚠️ Firebase Auth App: Já inicializado ou erro:', err);
 }
@@ -279,8 +285,17 @@ const validateAppCheck = async (req: express.Request, res: express.Response, nex
 };
 
 // Endpoint para disparar notificações (Exemplo de uso interno)
-app.post('/api/notify', async (req, res) => {
+app.post('/api/notify', authenticate, async (req: any, res) => {
   const { userId, title, body, icon } = req.body;
+  const requesterUid = req.user?.uid;
+  const requesterEmail = req.user?.email || '';
+  
+  // Apenas admins ou o próprio usuário podem enviar notificações
+  const isSpecialEmail = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(requesterEmail.toLowerCase().trim());
+  if (!isSpecialEmail && userId !== requesterUid) {
+    return res.status(403).json({ error: 'Acesso negado. Você não tem permissão para disparar notificações para este usuário.' });
+  }
+
   const db = getDb();
 
   try {
@@ -315,10 +330,22 @@ app.post('/api/notify', async (req, res) => {
 import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
 
-app.post('/api/send-email', async (req, res) => {
+app.post('/api/send-email', authenticate, async (req: any, res) => {
   const { to, subject, html, text, from } = req.body;
   if (!to || !subject) return res.status(400).json({ error: 'Faltam campos obrigatórios para envio de email' });
   
+  const requesterEmail = req.user?.email || '';
+  const isSpecialEmail = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(requesterEmail.toLowerCase().trim());
+  
+  if (!isSpecialEmail) {
+    // Se não for admin, o destinatário ("to") tem que ser igual ao e-mail autenticado do usuário
+    const recipientEmails = Array.isArray(to) ? to : [to];
+    const hasOtherRecipients = recipientEmails.some(email => email.toLowerCase().trim() !== requesterEmail.toLowerCase().trim());
+    if (hasOtherRecipients) {
+      return res.status(403).json({ error: 'Acesso negado. Usuários não administradores só podem enviar e-mails para si mesmos.' });
+    }
+  }
+
   try {
     const data = await resend.emails.send({
       from: from || 'Stratis Planner <suporte@stratisplanner.com.br>',
@@ -427,10 +454,16 @@ app.post('/api/auth/verify-email', async (req, res) => {
 app.use('/api/ai', aiRoutes);
 
 // Stripe Checkout Session
-app.post('/api/create-checkout-session', async (req, res) => {
+app.post('/api/create-checkout-session', authenticate, async (req: any, res) => {
   try {
     const db = getDb();
-    const { priceId: planKey, userId, userEmail } = req.body;
+    const { priceId: planKey } = req.body;
+    const userId = req.user?.uid;
+    const userEmail = req.user?.email;
+
+    if (!userId || !userEmail) {
+      return res.status(401).json({ error: 'Não autorizado. Identificação do usuário não encontrada no token.' });
+    }
 
     if (userId) {
       try {
@@ -489,12 +522,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
 });
 
 // Stripe Customer Portal Session
-app.post('/api/create-portal-session', async (req, res) => {
+app.post('/api/create-portal-session', authenticate, async (req: any, res) => {
   try {
-    const { userId, userEmail, originURL } = req.body;
+    const userId = req.user?.uid;
+    const userEmail = req.user?.email;
+    const { originURL } = req.body;
 
-    if (!userEmail) {
-      throw new Error('E-mail do usuário é obrigatório.');
+    if (!userId || !userEmail) {
+      return res.status(401).json({ error: 'Não autorizado. Identificação do usuário não encontrada no token.' });
     }
 
     const db = getDb();
@@ -558,11 +593,13 @@ app.post('/api/create-portal-session', async (req, res) => {
 });
 
 // Sincronização e auto-recuperação de assinaturas com Stripe
-app.post('/api/auth/sync-subscription', async (req, res) => {
+app.post('/api/auth/sync-subscription', authenticate, async (req: any, res) => {
   try {
-    const { userId, userEmail } = req.body;
-    if (!userEmail) {
-      return res.status(400).json({ error: 'E-mail do usuário é obrigatório.' });
+    const userId = req.user?.uid;
+    const userEmail = req.user?.email;
+
+    if (!userId || !userEmail) {
+      return res.status(401).json({ error: 'Não autorizado. Identificação do usuário não encontrada no token.' });
     }
 
     const db = getDb();
