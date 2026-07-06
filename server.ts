@@ -67,6 +67,25 @@ let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
   serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
 }
+
+// Limpeza e decodificação robusta do JSON de Service Account para evitar falhas de deploy (ex: Railway)
+if (serviceAccountJson) {
+  let cleaned = serviceAccountJson.trim();
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  if (cleaned.startsWith('ey')) {
+    try {
+      cleaned = Buffer.from(cleaned, 'base64').toString('utf8').trim();
+    } catch (b64Err: any) {
+      console.error('⚠️ [Firebase Admin] Falha ao decodificar Base64:', b64Err.message);
+    }
+  }
+  // Corrige caracteres de nova linha escapados comuns em variáveis de ambiente
+  cleaned = cleaned.replace(/\\n/g, '\n');
+  serviceAccountJson = cleaned;
+}
+
 const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
 
 // Primary Admin App (for Firestore permissions)
