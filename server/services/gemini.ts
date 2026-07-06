@@ -325,6 +325,12 @@ export async function parseEdital(rawText: string) {
 
 export async function generateSchedule(subjectsSummary: string, days: number) {
   const params = { subjectsSummary, days };
+  
+  // Se o número de dias for grande, instruímos a IA a ser extremamente concisa para evitar timeouts (limite de 100s do Cloudflare)
+  const concisenessInstruction = days > 15
+    ? `\n  7. **DIRETRIZ CRÍTICA DE VELOCIDADE (CONTRATO DE SUCINTO)**: Como o cronograma cobre um período longo de ${days} dias, para evitar estouros de tempo (timeout de 100 segundos da rede), você DEVE ser extremamente direto, curto e telegráfico nos campos de texto ("specificTopic", "generalTopic", "revisionTask"). Escreva descrições curtas de no máximo 5 a 10 palavras por campo, mantendo a precisão pedagógica de forma super resumida.`
+    : '';
+
   const prompt = `VOCÊ É UM ESTRATEGISTA DE ESTUDOS ALTAMENTE QUALIFICADO E ESPECIALISTA EM PREPARAÇÃO PARA CONCURSOS PÚBLICOS DE ALTO DESEMPENHO (MÉTODO PARETO 80/20).
   
   Gere rigorosamente um cronograma de estudos estruturado para ${days} dias com base nos seguintes tópicos e disciplinas do edital:
@@ -338,7 +344,7 @@ export async function generateSchedule(subjectsSummary: string, days: number) {
      - **generalTopic**: Deve obrigatoriamente especificar a Matéria Geral juntamente com o seu respectivo tópico de estudo específico para aquele dia, sempre estruturado no formato "[Nome da Matéria Geral]: [Tópico/Assunto Geral Específico de Estudo]" (ex: "Noções de Direito Constitucional: Princípios Fundamentais e Direitos Individuais", "Raciocínio Lógico-Matemático: Diagramas Lógicos e Operações de Conjuntos", "Física: Teorema trabalho-energia e potência"). NUNCA insira apenas o nome genérico ou isolado da matéria como "Física" ou "Noções de Direito Constitucional". O usuário precisa saber exatamente qual tópico de estudo/revisão daquela matéria geral ele deve cobrir no dia.
   4. **DayNumber**: Deve seguir a sequência linear estrita do dia (1 até ${days}).
   5. **QuestionGoal**: Um número inteiro estimando a meta de questões (ex: 15, 20, 25).
-  6. **RevisionTask**: Tarefa de fixação ou revisão ativa recomendada pelo estrategista de forma personalizada e contextualizada ao assunto (ex: "Flashcards sobre CO-FI-FO-M-OB e atributos PATI", "Quadro comparativo de gratuidade e legitimidade ativa de cada remédio constitucional"). Use a criatividade e a precisão pedagógica para recomendar técnicas ricas de memorização/revisão baseadas no assunto estudado no dia.`;
+  6. **RevisionTask**: Tarefa de fixação ou revisão ativa recomendada pelo estrategista de forma personalizada e contextualizada ao assunto (ex: "Flashcards sobre CO-FI-FO-M-OB e atributos PATI", "Quadro comparativo de gratuidade e legitimidade ativa de cada remédio constitucional"). Use a criatividade e a precisão pedagógica para recomendar técnicas ricas de memorização/revisão baseadas no assunto estudado no dia.${concisenessInstruction}`;
 
   const text = await generateContentWithCache("generateSchedule", params, prompt, GEMINI_MODEL, {
     config: {

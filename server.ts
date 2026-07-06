@@ -1,3 +1,7 @@
+import dotenv from 'dotenv';
+// Carrega o dotenv imediatamente no início absoluto do arquivo para garantir que as constantes locais importadas depois vejam as variáveis de ambiente corretas.
+dotenv.config();
+
 import { setGlobalDispatcher, Agent } from 'undici';
 
 // Configura o dispatcher global do fetch para evitar HeadersTimeoutError em chamadas lentas da IA
@@ -12,7 +16,6 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import Stripe from 'stripe';
-import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import aiRoutes from './server/routes/ai';
@@ -23,8 +26,6 @@ import rateLimit from 'express-rate-limit';
 import hpp from 'hpp';
 
 import { DATABASE_ID, DB_PROJECT_ID, AUTH_PROJECT_ID } from './server/constants/config';
-
-dotenv.config();
 
 // Self-healing icon copies for PWA compatibility and pre-cache safety
 try {
@@ -64,16 +65,37 @@ process.on('uncaughtException', (error) => {
 let adminApp: admin.app.App | null = null;
 let authApp: admin.app.App | null = null;
 
-let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-                         process.env.FIREBASE_SERVICE_ACCOUNT ||
-                         process.env.JSON_ACCOUNT ||
-                         process.env.JSON_ACOUNT ||
-                         process.env.json_account ||
-                         process.env.json_acount ||
-                         process.env.SERVICE_ACCOUNT_JSON ||
-                         process.env.SERVICE_ACCOUNT;
+let selectedEnvVarName = '';
+let serviceAccountJson = '';
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  selectedEnvVarName = 'FIREBASE_SERVICE_ACCOUNT_JSON';
+  serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+} else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  selectedEnvVarName = 'FIREBASE_SERVICE_ACCOUNT';
+  serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+} else if (process.env.JSON_ACCOUNT) {
+  selectedEnvVarName = 'JSON_ACCOUNT';
+  serviceAccountJson = process.env.JSON_ACCOUNT;
+} else if (process.env.JSON_ACOUNT) {
+  selectedEnvVarName = 'JSON_ACOUNT';
+  serviceAccountJson = process.env.JSON_ACOUNT;
+} else if (process.env.json_account) {
+  selectedEnvVarName = 'json_account';
+  serviceAccountJson = process.env.json_account;
+} else if (process.env.json_acount) {
+  selectedEnvVarName = 'json_acount';
+  serviceAccountJson = process.env.json_acount;
+} else if (process.env.SERVICE_ACCOUNT_JSON) {
+  selectedEnvVarName = 'SERVICE_ACCOUNT_JSON';
+  serviceAccountJson = process.env.SERVICE_ACCOUNT_JSON;
+} else if (process.env.SERVICE_ACCOUNT) {
+  selectedEnvVarName = 'SERVICE_ACCOUNT';
+  serviceAccountJson = process.env.SERVICE_ACCOUNT;
+}
 
 if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
+  selectedEnvVarName = 'local file (service_account.json)';
   serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
 }
 
@@ -99,6 +121,42 @@ if (serviceAccountJson) {
 }
 
 const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
+
+// Executa diagnósticos imediatos impressos de forma ultra limpa para auxiliar o usuário na Railway
+if (serviceAccountJson) {
+  const len = serviceAccountJson.length;
+  const startsWithCurly = serviceAccountJson.startsWith('{');
+  const endsWithCurly = serviceAccountJson.endsWith('}');
+  const isProbablyRawPem = serviceAccountJson.includes('-----BEGIN PRIVATE KEY-----') && !startsWithCurly;
+  let isValidJson = false;
+  let jsonParseError = '';
+
+  try {
+    JSON.parse(serviceAccountJson);
+    isValidJson = true;
+  } catch (parseErr: any) {
+    jsonParseError = parseErr.message || String(parseErr);
+  }
+
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🔎 [Firebase Diagnóstico] Carregada variável: "${selectedEnvVarName}"`);
+  console.log(`   - Comprimento da string: ${len} caracteres`);
+  console.log(`   - Começa com '{'? ${startsWithCurly ? 'SIM ✅' : 'NÃO ❌'}`);
+  console.log(`   - Termina com '}'? ${endsWithCurly ? 'SIM ✅' : 'NÃO ❌'}`);
+  console.log(`   - É um PEM bruto diretamente (Chave Privada colada como JSON)? ${isProbablyRawPem ? 'SIM ⚠️ (DEVE ser o JSON completo, não apenas a chave!)' : 'NÃO ✅'}`);
+  console.log(`   - É um JSON sintaticamente válido? ${isValidJson ? 'SIM ✅' : 'NÃO ❌'}`);
+  if (!isValidJson && jsonParseError) {
+    console.log(`   - Detalhe do erro de sintaxe JSON: "${jsonParseError}"`);
+    console.log(`   - Amostra do conteúdo inicial: "${serviceAccountJson.substring(0, 100)}..."`);
+    console.log(`   - Amostra do conteúdo final: "...${serviceAccountJson.substring(Math.max(0, len - 100))}"`);
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+} else {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('⚠️ [Firebase Diagnóstico] Nenhuma credencial de Service Account (JSON_ACOUNT, etc.) foi encontrada!');
+  console.log('   O sistema utilizará fallback local para validação temporária.');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+}
 
 function getFirebaseCredential(projectId: string) {
   if (hasServiceAccount) {
