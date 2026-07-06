@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { getCachedResponse, setCachedResponse } from "./cache";
+import crypto from 'crypto';
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -88,7 +89,9 @@ async function generateWithRetryAndFallback(payload: any, initialModel: string =
 }
 
 async function generateContentWithCache(serviceName: string, params: any, prompt: string, model: string = GEMINI_MODEL, config: any = {}) {
-  const cached = await getCachedResponse(serviceName, params);
+  const promptHash = crypto.createHash('sha256').update(prompt).digest('hex').substring(0, 12);
+  const cacheParams = { ...params, _promptHash: promptHash };
+  const cached = await getCachedResponse(serviceName, cacheParams);
   if (cached) return cached;
 
   const response = await generateWithRetryAndFallback({
@@ -98,7 +101,7 @@ async function generateContentWithCache(serviceName: string, params: any, prompt
 
   const result = response.text;
   if (result) {
-    await setCachedResponse(serviceName, params, result);
+    await setCachedResponse(serviceName, cacheParams, result);
   }
   return result;
 }

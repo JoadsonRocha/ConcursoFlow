@@ -1,3 +1,13 @@
+import { setGlobalDispatcher, Agent } from 'undici';
+
+// Configura o dispatcher global do fetch para evitar HeadersTimeoutError em chamadas lentas da IA
+const globalAgent = new Agent({
+  headersTimeout: 300000, // 5 minutos
+  bodyTimeout: 300000,    // 5 minutos
+  connectTimeout: 60000,  // 1 minuto
+});
+setGlobalDispatcher(globalAgent);
+
 import express from 'express';
 import path from 'path';
 import cors from 'cors';

@@ -45,7 +45,9 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
   const [loading, setLoading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [weeksCount, setWeeksCount] = useState(4);
-  const [scheduleMode, setScheduleMode] = useState<'weeks' | 'examDate'>('weeks');
+  const [scheduleMode, setScheduleMode] = useState<'weeks' | 'examDate'>(() => {
+    return contest.examDate ? 'examDate' : 'weeks';
+  });
   const [showProModal, setShowProModal] = useState(false);
   const [proFeatureName, setProFeatureName] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -236,14 +238,14 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
     let weeksCountToUse = weeksCount;
     if (scheduleMode === 'examDate') {
       if (!contest.examDate) {
-        toast.error("Você precisa definir a data da prova em Configurações > Importar Edital primeiro.");
+        toast.error("Por favor, selecione a data oficial da prova.");
         return;
       }
-      const examTime = new Date(contest.examDate).getTime();
+      const examTime = new Date(contest.examDate + 'T00:00:00').getTime();
       const startTime = getStartDate().getTime();
       const diff = examTime - startTime;
       if (diff <= 0) {
-        toast.error("A data da prova já passou ou é inválida.");
+        toast.error("A data da prova já passou ou é inválida comparada à data de início.");
         return;
       }
       weeksCountToUse = Math.ceil(diff / (1000 * 60 * 60 * 24 * 7));
@@ -525,10 +527,31 @@ export default function Cronograma({ contest, onUpdate }: CronogramaProps) {
             </button>
           </div>
 
-          {scheduleMode === 'examDate' && contest.examDate && (
-             <p className="text-xs text-text-main font-medium italic mt-2 text-left">
-               A IA calculará automaticamente as semanas até a data oficial da prova ({new Date(contest.examDate).toLocaleDateString('pt-BR')}).
-             </p>
+          {scheduleMode === 'examDate' && (
+            <div className="space-y-2 text-left mt-4 animate-in fade-in duration-300">
+              <label className="text-xs font-bold text-text-sub uppercase tracking-wider block">Data Oficial da Prova</label>
+              <input 
+                type="date"
+                value={contest.examDate || ''}
+                onChange={(e) => {
+                  const newDate = e.target.value;
+                  onUpdate({
+                    ...contest,
+                    examDate: newDate
+                  });
+                }}
+                className="w-full bg-slate-50 border border-border p-3.5 rounded-xl text-xs font-bold text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20 text-center cursor-pointer font-sans"
+              />
+              {contest.examDate ? (
+                <p className="text-[11px] text-text-sub font-medium italic mt-1.5 leading-relaxed">
+                  A IA calculará automaticamente as semanas até a data oficial da prova ({new Date(contest.examDate + 'T00:00:00').toLocaleDateString('pt-BR')}).
+                </p>
+              ) : (
+                <p className="text-[11px] text-rose-500 font-bold italic mt-1.5 leading-relaxed">
+                  ⚠️ Defina a data da prova acima para calcular o cronograma de estudos.
+                </p>
+              )}
+            </div>
           )}
 
           {scheduleMode === 'weeks' && (

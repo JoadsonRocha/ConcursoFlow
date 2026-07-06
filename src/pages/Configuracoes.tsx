@@ -54,7 +54,12 @@ export default function Settings({ onImport, contests }: SettingsProps) {
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().split('T')[0];
   });
-  const [examDate, setExamDate] = useState('2026-06-27');
+  const [examDate, setExamDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 90); // 90 dias no futuro
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+  });
   const [autoSchedule, setAutoSchedule] = useState(true);
   const [scheduleMode, setScheduleMode] = useState<'weeks' | 'examDate'>('weeks');
   const [scheduleWeeks, setScheduleWeeks] = useState(4);
@@ -375,7 +380,13 @@ export default function Settings({ onImport, contests }: SettingsProps) {
                   setDailyHours(selected.dailyGoalHours || 2);
                   setDailyQuestions(selected.dailyGoalQuestions || 20);
                   setDailyContentVolume(selected.dailyContentVolume || 1);
-                  setExamDate(selected.examDate || '2026-12-31');
+                  const defaultExamDate = (() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 90);
+                    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                    return d.toISOString().split('T')[0];
+                  })();
+                  setExamDate(selected.examDate || defaultExamDate);
                   setScheduleStartDate(selected.scheduleStartDate || new Date().toISOString().split('T')[0]);
                   setScheduleWeeks(4); 
                   setContestData(selected);
