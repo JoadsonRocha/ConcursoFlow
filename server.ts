@@ -64,7 +64,15 @@ process.on('uncaughtException', (error) => {
 let adminApp: admin.app.App | null = null;
 let authApp: admin.app.App | null = null;
 
-let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+let serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+                         process.env.FIREBASE_SERVICE_ACCOUNT ||
+                         process.env.JSON_ACCOUNT ||
+                         process.env.JSON_ACOUNT ||
+                         process.env.json_account ||
+                         process.env.json_acount ||
+                         process.env.SERVICE_ACCOUNT_JSON ||
+                         process.env.SERVICE_ACCOUNT;
+
 if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_account.json'))) {
   serviceAccountJson = fs.readFileSync(path.join(process.cwd(), 'service_account.json'), 'utf8');
 }
@@ -73,6 +81,9 @@ if (!serviceAccountJson && fs.existsSync(path.join(process.cwd(), 'service_accou
 if (serviceAccountJson) {
   let cleaned = serviceAccountJson.trim();
   if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
     cleaned = cleaned.slice(1, -1).trim();
   }
   if (cleaned.startsWith('ey')) {
@@ -95,7 +106,15 @@ function getFirebaseCredential(projectId: string) {
       const sa = JSON.parse(serviceAccountJson as string);
       return admin.credential.cert(sa);
     } catch (e: any) {
-      console.error('❌ Erro ao processar FIREBASE_SERVICE_ACCOUNT_JSON:', e.message || e);
+      console.error('❌ Erro ao processar serviceAccountJson diretamente:', e.message || e);
+      try {
+        let raw = serviceAccountJson as string;
+        raw = raw.replace(/\\"/g, '"').replace(/\\n/g, '\n');
+        const sa = JSON.parse(raw);
+        return admin.credential.cert(sa);
+      } catch (e2: any) {
+        console.error('❌ Falha total ao decodificar JSON do Service Account:', e2.message || e2);
+      }
     }
   }
   
@@ -113,7 +132,8 @@ function getFirebaseCredential(projectId: string) {
 }
 
 // Primary Admin App (for Firestore permissions)
-if (admin.apps.length === 0) {
+const hasDefaultApp = admin.apps.some(app => app?.name === '[DEFAULT]');
+if (!hasDefaultApp) {
   try {
     const credential = getFirebaseCredential(DB_PROJECT_ID);
     adminApp = admin.initializeApp({
@@ -124,6 +144,9 @@ if (admin.apps.length === 0) {
   } catch (err: any) {
     console.error('❌ Firebase Admin: Erro crítico na inicialização do app principal:', err.message || err);
   }
+} else {
+  adminApp = admin.app();
+  console.log('✅ Firebase Admin: Default app já estava inicializado.');
 }
 
 // Auth-specific App (to avoid audience mismatch if environment project != auth project)
