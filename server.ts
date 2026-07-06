@@ -89,55 +89,60 @@ if (serviceAccountJson) {
 
 const hasServiceAccount = serviceAccountJson && !serviceAccountJson.includes('...');
 
+function getFirebaseCredential(projectId: string) {
+  if (hasServiceAccount) {
+    try {
+      const sa = JSON.parse(serviceAccountJson as string);
+      return admin.credential.cert(sa);
+    } catch (e: any) {
+      console.error('❌ Erro ao processar FIREBASE_SERVICE_ACCOUNT_JSON:', e.message || e);
+    }
+  }
+  
+  try {
+    return admin.credential.applicationDefault();
+  } catch (credErr: any) {
+    console.warn(`⚠️ [Firebase] Não foi possível carregar as credenciais padrão para o projeto ${projectId}. Usando fallback de certificado dummy para validação de tokens.`);
+    const dummyPrivateKey = "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3r7v7t7v7t7v7\n-----END PRIVATE KEY-----\n";
+    return admin.credential.cert({
+      projectId: projectId,
+      clientEmail: `dummy@${projectId}.iam.gserviceaccount.com`,
+      privateKey: dummyPrivateKey
+    });
+  }
+}
+
 // Primary Admin App (for Firestore permissions)
 if (admin.apps.length === 0) {
   try {
-    if (hasServiceAccount) {
-      const sa = JSON.parse(serviceAccountJson);
-      adminApp = admin.initializeApp({
-        credential: admin.credential.cert(sa),
-        projectId: sa.project_id
-      });
-      console.log('✅ Firebase Admin: Inicializado com Service Account.');
-    } else {
-      const initOptions: admin.AppOptions = {
-        projectId: DB_PROJECT_ID
-      };
-      try {
-        initOptions.credential = admin.credential.applicationDefault();
-      } catch (credErr) {
-        console.warn('⚠️ Firebase Admin default credentials check failed, using project fallback:', credErr);
-      }
-      adminApp = admin.initializeApp(initOptions);
-      console.log('✅ Firebase Admin: Inicializado com projeto:', DB_PROJECT_ID);
-    }
-  } catch (err) {
-    console.error('❌ Firebase Admin: Erro na inicialização do app principal:', err);
+    const credential = getFirebaseCredential(DB_PROJECT_ID);
+    adminApp = admin.initializeApp({
+      credential,
+      projectId: DB_PROJECT_ID
+    });
+    console.log('✅ Firebase Admin: Inicializado com projeto:', DB_PROJECT_ID);
+  } catch (err: any) {
+    console.error('❌ Firebase Admin: Erro crítico na inicialização do app principal:', err.message || err);
   }
 }
 
 // Auth-specific App (to avoid audience mismatch if environment project != auth project)
 try {
-  const authConfig: admin.AppOptions = {};
-  let finalAuthProjectId = AUTH_PROJECT_ID;
-  
-  if (hasServiceAccount) {
-    const sa = JSON.parse(serviceAccountJson as string);
-    authConfig.credential = admin.credential.cert(sa);
-    finalAuthProjectId = sa.project_id || AUTH_PROJECT_ID;
+  const hasAuthApp = admin.apps.some(app => app?.name === 'auth');
+  if (!hasAuthApp) {
+    const finalAuthProjectId = AUTH_PROJECT_ID;
+    const credential = getFirebaseCredential(finalAuthProjectId);
+    authApp = admin.initializeApp({
+      credential,
+      projectId: finalAuthProjectId
+    }, 'auth');
+    console.log('✅ Firebase Auth App: Inicializado para o projeto:', finalAuthProjectId);
   } else {
-    try {
-      authConfig.credential = admin.credential.applicationDefault();
-    } catch (credErr) {
-      console.warn('⚠️ Firebase Auth default credentials check failed:', credErr);
-    }
+    authApp = admin.app('auth');
+    console.log('✅ Firebase Auth App: Já inicializado anteriormente.');
   }
-  
-  authConfig.projectId = finalAuthProjectId;
-  authApp = admin.initializeApp(authConfig, 'auth');
-  console.log('✅ Firebase Auth App: Inicializado para o projeto:', finalAuthProjectId);
-} catch (err) {
-  console.warn('⚠️ Firebase Auth App: Já inicializado ou erro:', err);
+} catch (err: any) {
+  console.warn('⚠️ Firebase Auth App: Erro ou já inicializado:', err.message || err);
 }
 
 const app = express();
