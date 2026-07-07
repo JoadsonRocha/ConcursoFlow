@@ -58,6 +58,8 @@ import Pareto from './pages/Pareto';
 import Explorar from './pages/Explorar';
 import Planos from './pages/Planos';
 import BrandLogo from './components/BrandLogo';
+import ConsentModal from './components/ConsentModal';
+import CookieConsent from './components/CookieConsent';
 import { SIcon } from './components/SIcon';
 import { useAuth } from './contexts/AuthContext';
 import { onMessage } from 'firebase/messaging';
@@ -658,7 +660,8 @@ export default function App() {
 
   if (!user) {
     return (
-      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-bg">
+      <div ref={unauthRef} className="h-[100dvh] w-full overflow-y-auto overflow-x-hidden bg-bg relative">
+        <CookieConsent />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
@@ -675,6 +678,10 @@ export default function App() {
 
   return (
     <div className="flex h-[100dvh] w-full bg-bg font-sans overflow-hidden relative">
+      {/* Global Consent Modal (Terms and Privacy) */}
+      <ConsentModal />
+      <CookieConsent />
+
       {/* Navigation & Screens */}
 
       {user && profile && React.createElement(Joyride as any, {

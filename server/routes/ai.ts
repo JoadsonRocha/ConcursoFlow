@@ -200,11 +200,45 @@ function cleanHtml(html: string): string {
   return text.substring(0, 45000); 
 }
 
+/**
+ * Validates a URL to protect the server from Server-Side Request Forgery (SSRF).
+ * Blocks private, local, and loopback IP spaces.
+ */
+function isSafeUrl(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase().trim();
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '[::1]' ||
+      hostname === '::1'
+    ) {
+      return false;
+    }
+    const privateIpRegex = /^(?:10|127|192\.168|169\.254)\.|^172\.(?:1[6-9]|2\d|3[01])\./;
+    if (privateIpRegex.test(hostname)) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Endpoint to scrape plain-text content from any web page url
 router.post('/scrape-url', authenticate, async (req, res) => {
   const { url } = req.body;
   if (!url) {
     return res.status(400).json({ error: 'URL da página é obrigatória.' });
+  }
+
+  if (!isSafeUrl(url)) {
+    return res.status(400).json({ error: 'URL inválida ou não permitida por motivos de segurança.' });
   }
 
   try {
@@ -240,6 +274,10 @@ router.post('/scrape-youtube', authenticate, async (req, res) => {
   const { url } = req.body;
   if (!url) {
     return res.status(400).json({ error: 'URL do YouTube é obrigatória.' });
+  }
+
+  if (!isSafeUrl(url)) {
+    return res.status(400).json({ error: 'URL inválida ou não permitida por motivos de segurança.' });
   }
 
   try {

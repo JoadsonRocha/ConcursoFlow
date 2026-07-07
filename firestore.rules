@@ -22,10 +22,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Support Tickets (Adding this as it was in my previous draft)
+    // Support Tickets
     match /support_tickets/{ticketId} {
-      allow create: if true; // anyone can send a ticket
-      allow read, write: if isSignedIn(); // but only signed in users/admins (needs refining for real prod)
+      allow create: if incoming().userId == null || (isSignedIn() && incoming().userId == request.auth.uid);
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        (request.auth.token.email_verified == true && (
+          request.auth.token.email.matches('(?i)onrocha08@gmail\\.com') || 
+          request.auth.token.email.matches('(?i)joadsonrocharr@gmail\\.com')
+        ))
+      );
+      allow update, delete: if isSignedIn() && request.auth.token.email_verified == true && (
+        request.auth.token.email.matches('(?i)onrocha08@gmail\\.com') || 
+        request.auth.token.email.matches('(?i)joadsonrocharr@gmail\\.com')
+      );
     }
 
     // User Data
@@ -111,7 +121,7 @@ service cloud.firestore {
     // Audiocasts
     match /audiocasts/{audiocastId} {
       allow read: if true;
-      allow write: if isSignedIn() && (
+      allow write: if isSignedIn() && request.auth.token.email_verified == true && (
         request.auth.token.email.matches('(?i)onrocha08@gmail\\.com') || 
         request.auth.token.email.matches('(?i)joadsonrocharr@gmail\\.com')
       );

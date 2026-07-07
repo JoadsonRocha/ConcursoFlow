@@ -22,7 +22,16 @@ import {
   Youtube,
   Loader2,
   Crown,
-  BookOpen
+  BookOpen,
+  Flame,
+  Compass,
+  Headphones,
+  FileUp,
+  TrendingUp,
+  Clock,
+  BookMarked,
+  ClipboardList,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -179,6 +188,99 @@ const Landing = () => {
       title: "Comunidade e Compartilhamento",
       description: "Acesse cronogramas e materiais validados por quem já passou. Compartilhe e evolua com outros estrategistas.",
       color: "bg-indigo-500/10 text-indigo-500"
+    }
+  ];
+
+  const allFeatures = [
+    {
+      id: 'feat-edital',
+      icon: ClipboardList,
+      title: 'Edital Verticalizado',
+      badge: 'Organização',
+      desc: 'Esqueça editais confusos em PDF ou planilhas desorganizadas. Transformamos o edital do seu concurso em uma lista verticalizada interativa, categorizada por relevância e peso.',
+      details: ['Checklist integrado de progresso', 'Agrupamento por disciplinas chaves', 'Indicação visual de tópicos estudados'],
+      color: 'bg-blue-50 border-blue-100 text-blue-600'
+    },
+    {
+      id: 'feat-cronograma',
+      icon: Calendar,
+      title: 'Cronograma Adaptativo',
+      badge: 'Produtividade',
+      desc: 'Um planejador que se adequa à sua realidade de tempo. Defina suas horas de estudo por dia e deixe o algoritmo organizar e equilibrar as matérias de forma automática.',
+      details: ['Distribuição balanceada de pesos', 'Ajuste rápido de rotina semanal', 'Cálculo de metas e horas líquidas'],
+      color: 'bg-indigo-50 border-indigo-100 text-indigo-600'
+    },
+    {
+      id: 'feat-foco',
+      icon: Flame,
+      title: 'Sessão Foco Imersiva',
+      badge: 'Concentração',
+      desc: 'Otimize seu tempo de estudo de forma profunda. Um cronômetro de foco integrado com a técnica Pomodoro, player de trilhas sonoras em Lofi, sons da natureza e ruídos brancos.',
+      details: ['Timer Pomodoro customizável', 'Sons binaurais e Lofi relaxantes', 'Registro automático de tempo líquido'],
+      color: 'bg-orange-50 border-orange-100 text-orange-600'
+    },
+    {
+      id: 'feat-pareto',
+      icon: TrendingUp,
+      title: 'Análise de Pareto (80/20)',
+      badge: 'Estratégia',
+      desc: 'Estude o que cai. Mapeamos as estatísticas de cobrança da banca para destacar os 20% do edital que representam cerca de 80% das questões das últimas provas.',
+      details: ['Foco preditivo em temas quentes', 'Otimização de tempo pré-prova', 'Análise estatística da banca examinadora'],
+      color: 'bg-emerald-50 border-emerald-100 text-emerald-600'
+    },
+    {
+      id: 'feat-notebook',
+      icon: BookMarked,
+      title: 'Notebook Stratis',
+      badge: 'Inteligência Artificial',
+      desc: 'O seu caderno de estudos turbinado por IA. Suba resumos, PDFs ou anotações livres e gere mapas mentais interativos, quizzes rápidos e flashcards inteligentes instantaneamente.',
+      details: ['Geração 10x mais rápida', 'Mapas mentais automáticos', 'Questionários de fixação sob demanda'],
+      color: 'bg-violet-50 border-violet-100 text-violet-600'
+    },
+    {
+      id: 'feat-revisao',
+      icon: Clock,
+      title: 'Revisão Espaçada Ativa',
+      badge: 'Memorização',
+      desc: 'Vença a curva do esquecimento com ciclos automáticos de revisão. O algoritmo agenda automaticamente as datas de revisão ativa das matérias com base no seu nível de retenção.',
+      details: ['Notificação inteligente de revisão', 'Ciclos personalizados de repetição', 'Integração direta com flashcards'],
+      color: 'bg-pink-50 border-pink-100 text-pink-600'
+    },
+    {
+      id: 'feat-comunidade',
+      icon: Users,
+      title: 'Comunidade Stratis',
+      badge: 'Compartilhamento',
+      desc: 'Aprovação não precisa ser uma jornada solitária. Conecte-se com outros estudantes, acesse cronogramas de estudo compartilhados e materiais validados por quem já passou.',
+      details: ['Fórum de discussões por área', 'Importação de planos comunitários', 'Troca de experiências e feedbacks'],
+      color: 'bg-sky-50 border-sky-100 text-sky-600'
+    },
+    {
+      id: 'feat-audiocasts',
+      icon: Headphones,
+      title: 'Audiocasts de Revisão',
+      badge: 'Microlearning',
+      desc: 'Estude de forma passiva mas altamente eficiente enquanto caminha, se exercita ou se desloca. Ouça resumos em áudio narrados e explicados com foco na memorização das leis.',
+      details: ['Aulas rápidas em formato podcast', 'Explicação objetiva de legislação', 'Ideal para tempos mortos do dia a dia'],
+      color: 'bg-amber-50 border-amber-100 text-amber-600'
+    },
+    {
+      id: 'feat-explorar',
+      icon: Compass,
+      title: 'Explorar Concursos',
+      badge: 'Radar de Editais',
+      desc: 'Um portal completo de oportunidades. Busque por editais ativos e previstos de todo o Brasil, com informações detalhadas de vagas, remunerações e requisitos exigidos.',
+      details: ['Busca inteligente e filtros por área', 'Mapeamento de similaridade de editais', 'Estatísticas básicas de concorrência'],
+      color: 'bg-rose-50 border-rose-100 text-rose-600'
+    },
+    {
+      id: 'feat-importar',
+      icon: FileUp,
+      title: 'Importar Edital com IA',
+      badge: 'Automação',
+      desc: 'Chega de digitar tópico por tópico. Arraste o arquivo PDF do edital bruto do concurso ou cole o texto do conteúdo programático, e nossa inteligência estruturará tudo em segundos.',
+      details: ['Leitura de PDF inteligente', 'Detecção automática de matérias', 'Pronto para uso e checklists imediatos'],
+      color: 'bg-teal-50 border-teal-100 text-teal-600'
     }
   ];
 
@@ -475,6 +577,67 @@ const Landing = () => {
                 </div>
              </div>
           </div>
+
+          {/* Sub-seção: Matriz de Recursos unificada (As 10 Funcionalidades Chave) */}
+          <div className="pt-24 border-t border-slate-200/60 space-y-12">
+            <div className="text-center space-y-4 max-w-2xl mx-auto">
+              <span className="text-primary font-black text-[10px] md:text-xs uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-full inline-flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" /> Guia Explicativo do Ecossistema
+              </span>
+              <h3 className="text-3xl md:text-4xl font-display font-black text-slate-900 tracking-tight leading-none uppercase">
+                As 10 Ferramentas que Vão Acelerar sua Aprovação
+              </h3>
+              <p className="text-slate-500 text-sm font-semibold leading-relaxed">
+                Tudo o que você precisa em um único lugar, sem planilhas complexas ou materiais desorganizados.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+               {allFeatures.map((feat) => {
+                  const Icon = feat.icon;
+                  return (
+                     <div 
+                       key={feat.id} 
+                       id={feat.id}
+                       className="bg-white rounded-3xl p-6 border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                     >
+                       {/* Blur background flair */}
+                       <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/5 transition-colors" />
+
+                       <div className="space-y-4 relative z-10">
+                          <div className="flex items-center justify-between">
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center border", feat.color)}>
+                              <Icon className="w-6 h-6" />
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                              {feat.badge}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                             <h4 className="text-lg font-display font-black text-slate-800 uppercase tracking-tight group-hover:text-primary transition-colors font-semibold">
+                               {feat.title}
+                             </h4>
+                             <p className="text-slate-500 text-xs font-semibold leading-relaxed">
+                               {feat.desc}
+                             </p>
+                          </div>
+                       </div>
+
+                       <div className="space-y-2.5 pt-4 mt-4 border-t border-slate-50 relative z-10">
+                          {feat.details.map((detail, idx) => (
+                             <div key={idx} className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
+                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                               <span>{detail}</span>
+                             </div>
+                          ))}
+                       </div>
+                     </div>
+                  );
+               })}
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -768,8 +931,26 @@ const Landing = () => {
            </div>
            <div className="grid grid-cols-2 lg:grid-cols-3 gap-12 col-span-2">
               <div className="space-y-4">
-                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ecossistema</h4>
-                 <ul className="space-y-2.5 text-xs font-semibold text-text-sub">
+                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recursos I e II</h4>
+                 <div className="grid grid-cols-2 gap-x-6 gap-y-4 pt-2">
+                     <div className="space-y-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <span className="text-[9px] uppercase text-slate-400 font-extrabold tracking-widest block border-b border-slate-100 pb-1 mb-1">Recursos I</span>
+                        <a href="#feat-edital" className="hover:text-primary transition-colors block">Edital</a>
+                        <a href="#feat-cronograma" className="hover:text-primary transition-colors block">Cronograma</a>
+                        <a href="#feat-foco" className="hover:text-primary transition-colors block">Sessão Foco</a>
+                        <a href="#feat-pareto" className="hover:text-primary transition-colors block">Pareto</a>
+                        <a href="#feat-notebook" className="hover:text-primary transition-colors block">Notebook</a>
+                     </div>
+                     <div className="space-y-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <span className="text-[9px] uppercase text-slate-400 font-extrabold tracking-widest block border-b border-slate-100 pb-1 mb-1">Recursos II</span>
+                        <a href="#feat-revisao" className="hover:text-primary transition-colors block">Revisão</a>
+                        <a href="#feat-comunidade" className="hover:text-primary transition-colors block">Comunidade</a>
+                        <a href="#feat-audiocasts" className="hover:text-primary transition-colors block">Audiocasts</a>
+                        <a href="#feat-explorar" className="hover:text-primary transition-colors block">Explorar</a>
+                        <a href="#feat-importar" className="hover:text-primary transition-colors block">Importar Edital</a>
+                     </div>
+                  </div>
+                 <ul className="hidden">
                     <li>
                        <Link 
                          to="/planos" 

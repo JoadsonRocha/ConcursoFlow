@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { User, Camera, Mail, ShieldCheck, CheckCircle2, AlertCircle, Loader2, Bell, Trash, LogOut, Target, TrendingUp, MessageCircle, PlayCircle, Zap, CreditCard, Calendar, ChevronDown, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
-import { getStorage } from 'firebase/storage';
 import { auth, db, updateProfile as firebaseUpdateProfile, sendPasswordResetEmail } from '../lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { createCheckoutSession, createPortalSession } from '../services/stripe';

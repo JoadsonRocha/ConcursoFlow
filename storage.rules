@@ -1,13 +1,29 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // Admins can upload and manage audiocasts
+    match /audiocasts/{allPaths=**} {
+      allow read: if true; // public audiocasts reading
+      allow write: if request.auth != null 
+                   && request.auth.token.email_verified == true
+                   && (
+                     request.auth.token.email.matches('(?i)onrocha08@gmail\\.com') || 
+                     request.auth.token.email.matches('(?i)joadsonrocharr@gmail\\.com')
+                   );
+    }
+    
+    // Users can only upload and access their own files
+    match /users/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId 
+                   && request.resource.size < 50 * 1024 * 1024; // limit to 50MB
+    }
+
+    // Default fallback: deny everything else
     match /{allPaths=**} {
-      // Permite leitura pública de todos os arquivos de áudio
-      allow read: if true;
-      
-      // Permite escrita apenas para usuários autenticados
-      // Se quiser permitir upload para qualquer visitante durante os testes, mude para: allow write: if true;
-      allow write: if request.auth != null;
+      allow read: if false;
+      allow write: if false;
     }
   }
 }

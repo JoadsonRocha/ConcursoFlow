@@ -150,6 +150,10 @@ export interface Profile {
   fcmTokens?: string[];
   notificationsEnabled?: boolean;
   
+  termsAccepted?: boolean;
+  privacyAccepted?: boolean;
+  consentDate?: string;
+  
   lastUsageReset?: any;
   summaryUsage?: number;
   flashcardUsage?: number;

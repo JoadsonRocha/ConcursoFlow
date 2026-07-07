@@ -21,6 +21,8 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -50,6 +52,11 @@ export default function Auth() {
         await loginEmail(email, password);
         navigate('/');
       } else if (authMode === 'signup') {
+        if (!agreeTerms || !agreePrivacy) {
+          setError('Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.');
+          setLoading(false);
+          return;
+        }
         const passwordError = validatePassword(password);
         if (passwordError) {
           setError(passwordError);
@@ -293,12 +300,35 @@ export default function Auth() {
               )}
 
               {authMode === 'signup' && (
-                <p className="text-[10px] text-text-sub font-medium leading-relaxed px-1">
-                  Ao ativar seu acesso, você declara que concorda com nossos{' '}
-                  <Link to="/termos" className="text-primary hover:underline">Termos de Uso</Link>,{' '}
-                  <Link to="/privacidade" className="text-primary hover:underline">Política de Privacidade</Link> e{' '}
-                  <Link to="/cookies" className="text-primary hover:underline">Cookies</Link>.
-                </p>
+                <div className="space-y-2.5 pt-1.5 pb-1">
+                  <div className="flex items-start gap-2.5 px-1">
+                    <input
+                      id="signup-agree-terms"
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 text-primary bg-white border-slate-300 rounded focus:ring-primary focus:ring-2 accent-primary cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="signup-agree-terms" className="text-[10px] text-text-sub font-semibold leading-relaxed cursor-pointer select-none">
+                      Li e concordo com os{' '}
+                      <Link to="/termos" target="_blank" className="text-primary hover:underline font-bold">Termos de Uso</Link> da plataforma.
+                    </label>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 px-1">
+                    <input
+                      id="signup-agree-privacy"
+                      type="checkbox"
+                      checked={agreePrivacy}
+                      onChange={(e) => setAgreePrivacy(e.target.checked)}
+                      className="w-4 h-4 mt-0.5 text-primary bg-white border-slate-300 rounded focus:ring-primary focus:ring-2 accent-primary cursor-pointer shrink-0"
+                    />
+                    <label htmlFor="signup-agree-privacy" className="text-[10px] text-text-sub font-semibold leading-relaxed cursor-pointer select-none">
+                      Autorizo o tratamento de meus dados de acordo com a{' '}
+                      <Link to="/privacidade" target="_blank" className="text-primary hover:underline font-bold">Política de Privacidade</Link>.
+                    </label>
+                  </div>
+                </div>
               )}
 
               <button 

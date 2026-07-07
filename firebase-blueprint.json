@@ -10,6 +10,9 @@
         "photoURL": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "currentContestId": { "type": "string" },
+        "termsAccepted": { "type": "boolean" },
+        "privacyAccepted": { "type": "boolean" },
+        "consentDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
