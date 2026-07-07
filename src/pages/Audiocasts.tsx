@@ -51,7 +51,7 @@ interface Audiocast {
 export default function Audiocasts() {
   const { user, isPro } = useAuth();
   const userEmail = user?.email?.toLowerCase().trim() || '';
-  const isAdmin = userEmail === 'onrocha08@gmail.com' || userEmail === 'joadsonrocharr@gmail.com';
+  const isAdmin = userEmail === 'onrocha08@gmail.com';
 
   const [dbAudiocasts, setDbAudiocasts] = useState<Audiocast[]>([]);
   const [showAdminForm, setShowAdminForm] = useState(false);

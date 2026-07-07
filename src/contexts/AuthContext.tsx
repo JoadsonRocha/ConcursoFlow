@@ -191,7 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
     const userEmail = (profile?.email || user?.email || '').toLowerCase().trim();
-    const isSpecialUser = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(userEmail);
+    const isSpecialUser = ['onrocha08@gmail.com'].includes(userEmail);
     
     let effectivePlan: 'free' | 'pro' = 'free';
     if (isSpecialUser) {

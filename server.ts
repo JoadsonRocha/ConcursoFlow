@@ -342,6 +342,50 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
         console.error(`❌ [Webhook] Error:`, dbErr);
       }
     }
+  } else if (event.type === 'customer.subscription.deleted') {
+    const db = getDb();
+    const subscription = event.data.object as Stripe.Subscription;
+    const stripeCustomerId = subscription.customer as string;
+
+    if (stripeCustomerId) {
+      try {
+        const snapshot = await db.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+        if (!snapshot.empty) {
+          const userDocRef = snapshot.docs[0].ref;
+          await userDocRef.update({
+            userPlan: 'free',
+            updatedAt: FieldValue.serverTimestamp()
+          });
+          console.log(`✅ [Webhook] Assinatura expirou/foi deletada no Stripe para o cliente ${stripeCustomerId}. Plano alterado para 'free'.`);
+        } else {
+          console.warn(`⚠️ [Webhook] Assinatura cancelada recebida para o cliente ${stripeCustomerId}, mas nenhum usuário correspondente foi encontrado no Firestore.`);
+        }
+      } catch (dbErr) {
+        console.error(`❌ [Webhook Error - customer.subscription.deleted]:`, dbErr);
+      }
+    }
+  } else if (event.type === 'customer.subscription.updated') {
+    const db = getDb();
+    const subscription = event.data.object as Stripe.Subscription;
+    const stripeCustomerId = subscription.customer as string;
+    const status = subscription.status;
+
+    // Se o status mudar para algo inativo (unpaid, canceled, incomplete_expired)
+    if (stripeCustomerId && ['unpaid', 'canceled', 'incomplete_expired'].includes(status)) {
+      try {
+        const snapshot = await db.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+        if (!snapshot.empty) {
+          const userDocRef = snapshot.docs[0].ref;
+          await userDocRef.update({
+            userPlan: 'free',
+            updatedAt: FieldValue.serverTimestamp()
+          });
+          console.log(`✅ [Webhook] Assinatura atualizada com status inativo (${status}) para o cliente ${stripeCustomerId}. Plano alterado para 'free'.`);
+        }
+      } catch (dbErr) {
+        console.error(`❌ [Webhook Error - customer.subscription.updated]:`, dbErr);
+      }
+    }
   }
   res.json({ received: true });
 });
@@ -377,7 +421,7 @@ app.post('/api/notify', authenticate, async (req: any, res) => {
   const requesterEmail = req.user?.email || '';
   
   // Apenas admins ou o próprio usuário podem enviar notificações
-  const isSpecialEmail = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(requesterEmail.toLowerCase().trim());
+  const isSpecialEmail = ['onrocha08@gmail.com'].includes(requesterEmail.toLowerCase().trim());
   if (!isSpecialEmail && userId !== requesterUid) {
     return res.status(403).json({ error: 'Acesso negado. Você não tem permissão para disparar notificações para este usuário.' });
   }
@@ -421,7 +465,7 @@ app.post('/api/send-email', authenticate, async (req: any, res) => {
   if (!to || !subject) return res.status(400).json({ error: 'Faltam campos obrigatórios para envio de email' });
   
   const requesterEmail = req.user?.email || '';
-  const isSpecialEmail = ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(requesterEmail.toLowerCase().trim());
+  const isSpecialEmail = ['onrocha08@gmail.com'].includes(requesterEmail.toLowerCase().trim());
   
   if (!isSpecialEmail) {
     // Se não for admin, o destinatário ("to") tem que ser igual ao e-mail autenticado do usuário
@@ -452,12 +496,34 @@ app.post('/api/send-email', authenticate, async (req: any, res) => {
   }
 });
 
+function getAuthInstance() {
+  const hasAuthApp = admin.apps.some(app => app?.name === 'auth');
+  const finalAuthApp = hasAuthApp ? admin.app('auth') : admin.app();
+  return admin.auth(finalAuthApp);
+}
+
+function handleFirebaseError(error: any) {
+  const msg = error.message || String(error);
+  if (
+    msg.includes('Could not load the default credentials') ||
+    msg.includes('Credential implementation') ||
+    msg.includes('failed to fetch a valid Google OAuth2 access token') ||
+    msg.includes('access token')
+  ) {
+    return new Error(
+      'Erro de Credenciais: A chave de Conta de Serviço (FIREBASE_SERVICE_ACCOUNT_JSON) não está configurada, está incompleta ou é inválida nas variáveis de ambiente do seu servidor de produção (ex: Railway). Por favor, adicione o JSON completo da conta de serviço no seu painel de variáveis.'
+    );
+  }
+  return error;
+}
+
 app.post('/api/auth/reset-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
 
   try {
-    const rawLink = await admin.auth().generatePasswordResetLink(email);
+    const authInstance = getAuthInstance();
+    const rawLink = await authInstance.generatePasswordResetLink(email);
     const url = new URL(rawLink);
     url.host = 'www.stratisplanner.com.br';
     const link = url.toString();
@@ -489,8 +555,9 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
     res.json({ success: true, message: 'Link de recuperação enviado com sucesso.' });
   } catch (error: any) {
-    console.error('Erro ao gerar/enviar reset de senha:', error);
-    res.status(500).json({ error: error.message });
+    const enrichedError = handleFirebaseError(error);
+    console.error('Erro ao gerar/enviar reset de senha:', enrichedError);
+    res.status(500).json({ error: enrichedError.message });
   }
 });
 
@@ -499,7 +566,8 @@ app.post('/api/auth/verify-email', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'E-mail é obrigatório' });
 
   try {
-    const rawLink = await admin.auth().generateEmailVerificationLink(email);
+    const authInstance = getAuthInstance();
+    const rawLink = await authInstance.generateEmailVerificationLink(email);
     const url = new URL(rawLink);
     url.host = 'www.stratisplanner.com.br';
     const link = url.toString();
@@ -531,8 +599,9 @@ app.post('/api/auth/verify-email', async (req, res) => {
 
     res.json({ success: true, message: 'Link de verificação enviado com sucesso.' });
   } catch (error: any) {
-    console.error('Erro ao gerar/enviar verificação de e-mail:', error);
-    res.status(500).json({ error: error.message });
+    const enrichedError = handleFirebaseError(error);
+    console.error('Erro ao gerar/enviar verificação de e-mail:', enrichedError);
+    res.status(500).json({ error: enrichedError.message });
   }
 });
 
@@ -751,7 +820,7 @@ app.post('/api/auth/sync-subscription', authenticate, async (req: any, res) => {
 
     // Se o email for um dos e-mails especiais, auto-concede "pro"
     const isSpecialEmail = uniqueEmails.some(e => 
-      ['onrocha08@gmail.com', 'joadsonrocharr@gmail.com', 'joadsonrochar@gmail.com'].includes(e.toLowerCase())
+      ['onrocha08@gmail.com'].includes(e.toLowerCase())
     );
 
     if (isSpecialEmail && userId) {

@@ -172,7 +172,7 @@ export default function Suporte() {
             <div className="space-y-1">
               <h3 className="text-sm font-black text-text-main uppercase tracking-tight">Suporte por E-mail</h3>
               <p className="text-[11px] text-text-sub font-medium leading-relaxed">
-                Envie suas sugestões, feedbacks detalhados ou dúvidas técnicas sobre as ferramentas.
+                Envie suas sugestões, feedbacks detalhados ou dúvidas técnicas sobre as ferramentas para <span className="font-bold text-primary">suporte@stratisplanner.com.br</span>.
               </p>
             </div>
           </div>
