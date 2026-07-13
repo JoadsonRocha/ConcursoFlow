@@ -27,7 +27,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useContestStats } from '../hooks/useContestStats';
 import { db, auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import StudyCalendar from '../components/StudyCalendar';
 import { toast } from 'sonner';
 
@@ -74,46 +74,53 @@ export default function Estatisticas({ contest, onUpdate }: EstatisticasProps) {
   const [mindmapCount, setMindmapCount] = useState<number>(0);
   const [loadingFirestoreStats, setLoadingFirestoreStats] = useState<boolean>(true);
 
-  // Load real-time stats from firestore for flashcards and mindmaps
+  // Load static stats from firestore for flashcards and mindmaps
   useEffect(() => {
     if (!user) {
       setLoadingFirestoreStats(false);
       return;
     }
 
-    const qCards = query(collection(db, 'users', user.uid, 'flashcards'));
-    const unsubscribeCards = onSnapshot(qCards, (snapshot) => {
-      const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setFlashcardCount(cards.length);
+    let active = true;
 
-      const now = new Date();
-      const due = cards.filter((card: any) => {
-        if (!card.nextReview) return true;
-        let reviewDate;
-        if (typeof card.nextReview.toDate === 'function') {
-          reviewDate = card.nextReview.toDate();
-        } else {
-          reviewDate = new Date(card.nextReview);
-        }
-        return reviewDate <= now;
-      });
-      setDueFlashcardCount(due.length);
-      setLoadingFirestoreStats(false);
-    }, (err) => {
-      console.error("Error loading flashcard stats:", err);
-      setLoadingFirestoreStats(false);
-    });
+    const fetchStats = async () => {
+      setLoadingFirestoreStats(true);
+      try {
+        const qCards = query(collection(db, 'users', user.uid, 'flashcards'));
+        const snapshotCards = await getDocs(qCards);
+        if (!active) return;
+        
+        const cards = snapshotCards.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setFlashcardCount(cards.length);
 
-    const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid));
-    const unsubscribeMaps = onSnapshot(qMaps, (snapshot) => {
-      setMindmapCount(snapshot.docs.length);
-    }, (err) => {
-      console.error("Error loading mindmap stats:", err);
-    });
+        const now = new Date();
+        const due = cards.filter((card: any) => {
+          if (!card.nextReview) return true;
+          let reviewDate;
+          if (typeof card.nextReview.toDate === 'function') {
+            reviewDate = card.nextReview.toDate();
+          } else {
+            reviewDate = new Date(card.nextReview);
+          }
+          return reviewDate <= now;
+        });
+        setDueFlashcardCount(due.length);
+
+        const qMaps = query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid));
+        const snapshotMaps = await getDocs(qMaps);
+        if (!active) return;
+        setMindmapCount(snapshotMaps.docs.length);
+      } catch (err) {
+        console.error("Error loading stats:", err);
+      } finally {
+        if (active) setLoadingFirestoreStats(false);
+      }
+    };
+
+    fetchStats();
 
     return () => {
-      unsubscribeCards();
-      unsubscribeMaps();
+      active = false;
     };
   }, [user]);
 

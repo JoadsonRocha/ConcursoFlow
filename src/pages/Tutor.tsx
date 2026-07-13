@@ -156,7 +156,7 @@ export default function Tutor({ contest }: TutorProps) {
 
   if (!isPro) {
     return (
-      <div className="absolute inset-0 bg-white md:rounded-tl-[32px] md:border-l md:border-border flex flex-col pt-4 md:pt-8 overflow-hidden">
+      <div className="absolute inset-0 bg-white lg:rounded-tl-[32px] lg:border-l lg:border-border flex flex-col pt-4 lg:pt-8 overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
           <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mb-6">
             <SIcon className="w-8 h-8 text-accent" />
@@ -233,7 +233,7 @@ export default function Tutor({ contest }: TutorProps) {
   };
 
   return (
-    <div className="absolute inset-0 bg-[#F8FAFC] md:rounded-tl-[32px] md:border-l md:border-slate-200/60 flex flex-col overflow-hidden">
+    <div className="absolute inset-0 bg-[#F8FAFC] lg:rounded-tl-[32px] lg:border-l lg:border-slate-200/60 flex flex-col overflow-hidden">
       
       {/* Dynamic Subheader top information */}
       <div className="w-full bg-white border-b border-slate-200/60 py-3 px-4 md:px-8 flex items-center justify-between shrink-0 shadow-sm z-20">

@@ -1,10 +1,15 @@
 import { fetchWithAuth } from "../lib/api";
 
-export const generateStudySummary = async (subject: string, topic: string) => {
+export const generateStudySummary = async (subject: string, topic: string, banca?: string, role?: string, contestName?: string) => {
   try {
     const data = await fetchWithAuth("/api/ai/summary", {
       method: "POST",
-      body: JSON.stringify({ text: `${subject}: ${topic}` }),
+      body: JSON.stringify({ 
+        text: `${subject}: ${topic}`,
+        banca,
+        role,
+        contestName
+      }),
     });
     if (typeof data === "string") {
       return data;

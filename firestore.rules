@@ -51,6 +51,10 @@ service cloud.firestore {
         allow create: if isOwner(userId) && incoming().ownerId == userId;
         allow update: if isOwner(userId);
         allow delete: if isOwner(userId);
+
+        match /details/{detailId} {
+          allow read, write: if isOwner(userId);
+        }
       }
       
       match /flashcards/{flashcardId} {

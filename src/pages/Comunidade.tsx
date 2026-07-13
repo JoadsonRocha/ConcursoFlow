@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, increment, where, addDoc, serverTimestamp, orderBy, getDocs, limit, startAfter } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Contest } from '../types';
@@ -26,79 +26,209 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const [previewContest, setPreviewContest] = useState<Contest | null>(null);
   const [previewMindMap, setPreviewMindMap] = useState<any | null>(null);
 
+  // Pagination states
+  const [lastVisibleContest, setLastVisibleContest] = useState<any>(null);
+  const [hasMoreContests, setHasMoreContests] = useState(true);
+  const [lastVisibleDeck, setLastVisibleDeck] = useState<any>(null);
+  const [hasMoreDecks, setHasMoreDecks] = useState(true);
+  const [lastVisibleMindMap, setLastVisibleMindMap] = useState<any>(null);
+  const [hasMoreMindMaps, setHasMoreMindMaps] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
+
+  const PAGE_SIZE = 6;
+
   useEffect(() => {
     if (!user) return;
 
-    const unsubFlash = onSnapshot(collection(db, 'users', user.uid, 'flashcards'), (snap) => {
-      setPersonalFlashcardsCount(snap.docs.length);
-    }, (err) => {
-      console.warn("Erro ao carregar contagem de flashcards:", err);
-    });
+    let active = true;
 
-    const unsubMaps = onSnapshot(query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid)), (snap) => {
-      setPersonalMapsCount(snap.docs.length);
-    }, (err) => {
-      console.warn("Erro ao carregar contagem de mapas mentais:", err);
-    });
+    const loadCounts = async () => {
+      try {
+        const snapFlash = await getDocs(collection(db, 'users', user.uid, 'flashcards'));
+        if (!active) return;
+        setPersonalFlashcardsCount(snapFlash.docs.length);
+      } catch (err) {
+        console.warn("Erro ao carregar contagem de flashcards:", err);
+      }
+
+      try {
+        const snapMaps = await getDocs(query(collection(db, 'mindmaps'), where('ownerId', '==', user.uid)));
+        if (!active) return;
+        setPersonalMapsCount(snapMaps.docs.length);
+      } catch (err) {
+        console.warn("Erro ao carregar contagem de mapas mentais:", err);
+      }
+    };
+
+    loadCounts();
 
     return () => {
-      unsubFlash();
-      unsubMaps();
+      active = false;
     };
   }, [user]);
 
-  useEffect(() => {
-    setLoading(true);
-    if (activeTab === 'contests') {
-      const q = query(
-        collection(db, 'shared_contests')
-      );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const docs = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as Contest[];
-        setSharedContests(docs);
-        setLoading(false);
-      }, (err) => {
-        console.error("Erro ao carregar edital da comunidade:", err);
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    } else if (activeTab === 'flashcards') {
-      const q = query(
-        collection(db, 'shared_decks'),
-        orderBy('createdAt', 'desc')
-      );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const docs = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        }));
-        setSharedDecks(docs);
-        setLoading(false);
-      }, (err) => {
-        console.error("Erro ao carregar decks compartilhados:", err);
-        setLoading(false);
-      });
-      return () => unsubscribe();
+  const fetchContests = async (isFirstPage = false) => {
+    if (!isFirstPage && (!hasMoreContests || pageLoading)) return;
+    
+    if (isFirstPage) {
+      setLoading(true);
     } else {
-      const q = query(
-        collection(db, 'mindmaps'),
-        where('isPublic', '==', true)
-      );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const docs = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        }));
+      setPageLoading(true);
+    }
+
+    try {
+      let q;
+      if (isFirstPage) {
+        q = query(
+          collection(db, 'shared_contests'),
+          orderBy('updatedAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, 'shared_contests'),
+          orderBy('updatedAt', 'desc'),
+          startAfter(lastVisibleContest),
+          limit(PAGE_SIZE)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map(doc => ({
+        ...(doc.data() as any),
+        id: doc.id
+      })) as Contest[];
+
+      if (isFirstPage) {
+        setSharedContests(docs);
+      } else {
+        setSharedContests(prev => [...prev, ...docs]);
+      }
+
+      setLastVisibleContest(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMoreContests(snapshot.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Erro ao carregar editais:", err);
+      toast.error("Erro ao carregar editais compartilhados.");
+    } finally {
+      setLoading(false);
+      setPageLoading(false);
+    }
+  };
+
+  const fetchDecks = async (isFirstPage = false) => {
+    if (!isFirstPage && (!hasMoreDecks || pageLoading)) return;
+
+    if (isFirstPage) {
+      setLoading(true);
+    } else {
+      setPageLoading(true);
+    }
+
+    try {
+      let q;
+      if (isFirstPage) {
+        q = query(
+          collection(db, 'shared_decks'),
+          orderBy('createdAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, 'shared_decks'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisibleDeck),
+          limit(PAGE_SIZE)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map(doc => ({
+        ...(doc.data() as any),
+        id: doc.id
+      }));
+
+      if (isFirstPage) {
+        setSharedDecks(docs);
+      } else {
+        setSharedDecks(prev => [...prev, ...docs]);
+      }
+
+      setLastVisibleDeck(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMoreDecks(snapshot.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Erro ao carregar decks:", err);
+      toast.error("Erro ao carregar decks compartilhados.");
+    } finally {
+      setLoading(false);
+      setPageLoading(false);
+    }
+  };
+
+  const fetchMindMaps = async (isFirstPage = false) => {
+    if (!isFirstPage && (!hasMoreMindMaps || pageLoading)) return;
+
+    if (isFirstPage) {
+      setLoading(true);
+    } else {
+      setPageLoading(true);
+    }
+
+    try {
+      let q;
+      if (isFirstPage) {
+        q = query(
+          collection(db, 'mindmaps'),
+          where('isPublic', '==', true),
+          orderBy('createdAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, 'mindmaps'),
+          where('isPublic', '==', true),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisibleMindMap),
+          limit(PAGE_SIZE)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map(doc => ({
+        ...(doc.data() as any),
+        id: doc.id
+      }));
+
+      if (isFirstPage) {
         setSharedMindMaps(docs);
-        setLoading(false);
-      }, (err) => {
-        console.error("Erro ao carregar mapas mentais compartilhados:", err);
-        setLoading(false);
-      });
-      return () => unsubscribe();
+      } else {
+        setSharedMindMaps(prev => [...prev, ...docs]);
+      }
+
+      setLastVisibleMindMap(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMoreMindMaps(snapshot.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Erro ao carregar mapas mentais:", err);
+      toast.error("Erro ao carregar mapas mentais.");
+    } finally {
+      setLoading(false);
+      setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'contests') {
+      if (sharedContests.length === 0) {
+        fetchContests(true);
+      }
+    } else if (activeTab === 'flashcards') {
+      if (sharedDecks.length === 0) {
+        fetchDecks(true);
+      }
+    } else {
+      if (sharedMindMaps.length === 0) {
+        fetchMindMaps(true);
+      }
     }
   }, [activeTab]);
 
@@ -110,6 +240,15 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       await updateDoc(docRef, {
         likesCount: increment(1)
       });
+
+      // Update local state for immediate feedback
+      if (collectionName === 'shared_contests') {
+        setSharedContests(prev => prev.map(c => c.id === id ? { ...c, likesCount: ((c as any).likesCount || 0) + 1 } : c));
+      } else if (collectionName === 'shared_decks') {
+        setSharedDecks(prev => prev.map(d => d.id === id ? { ...d, likesCount: (d.likesCount || 0) + 1 } : d));
+      } else if (collectionName === 'mindmaps') {
+        setSharedMindMaps(prev => prev.map(m => m.id === id ? { ...m, likesCount: (m.likesCount || 0) + 1 } : m));
+      }
     } catch (err) {
       console.error("Erro ao dar like:", err);
     }
@@ -180,6 +319,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       await updateDoc(doc(db, 'shared_decks', deck.id), {
         clonesCount: increment(1)
       });
+      setSharedDecks(prev => prev.map(d => d.id === deck.id ? { ...d, clonesCount: (d.clonesCount || 0) + 1 } : d));
 
       toast.success(`Deck "${deck.title}" com ${deck.cards.length} cards adicionado!`);
     } catch (err) {
@@ -275,6 +415,7 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       await updateDoc(doc(db, 'mindmaps', map.id), {
         clonesCount: increment(1)
       });
+      setSharedMindMaps(prev => prev.map(m => m.id === map.id ? { ...m, clonesCount: (m.clonesCount || 0) + 1 } : m));
     } catch (err) {
       console.error("Erro ao clonar mapa mental:", err);
       toast.error("Erro ao clonar mapa mental.");
@@ -392,78 +533,103 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 pb-20">
-            <AnimatePresence mode="popLayout">
-              {filtered.map((contest) => (
-                <motion.div
-                  key={contest.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  className="group relative rise-card p-8 bg-white border border-border transition-all duration-500 hover:border-primary/30"
+          <div className="space-y-8 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((contest) => (
+                  <motion.div
+                    key={contest.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className="group relative rise-card p-8 bg-white border border-border transition-all duration-500 hover:border-primary/30"
+                  >
+                    <div className="flex items-start justify-between mb-8 relative z-10">
+                      <div className="space-y-2 max-w-[75%]">
+                        <p className="text-[10px] text-text-sub line-clamp-1 italic">{contest.name}</p>
+                        <h4 className="text-sm font-display text-text-main leading-tight line-clamp-2 group-hover:text-primary transition-colors italic">{contest.role}</h4>
+                        <div className="flex items-center gap-2 pt-1">
+                           <UserIcon className="w-3 h-3 text-text-sub/50" />
+                           <span className="text-[10px] text-text-sub truncate flex items-center gap-1 normal-case">
+                             por {contest.ownerName || 'Estrategista'}
+                             {contest.ownerIsCreator && <Award className="w-3 h-3 text-primary" />}
+                           </span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={(e) => handleLike(contest.id!, 'shared_contests', e)}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all active:scale-95 border",
+                          (contest as any).likesCount > 0 
+                            ? "bg-red-500/5 border-red-500/10 text-red-500" 
+                            : "bg-slate-50 border-border text-text-sub hover:border-red-500/20 hover:text-red-500"
+                        )}
+                      >
+                        <Heart className={cn("w-5 h-5 transition-transform duration-500", (contest as any).likesCount > 0 && "fill-red-500")} />
+                        <span className="text-xs font-bold leading-none">{(contest as any).likesCount || 0}</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-8 pt-6 border-t border-border relative z-10">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-sub">
+                           <Calendar className="w-3 h-3 text-primary" />
+                           Prova
+                        </div>
+                        <div className="text-[11px] font-semibold text-text-main truncate italic">{contest.examDate || 'A definir'}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-sub">
+                           <Award className="w-3 h-3 text-accent" />
+                           Materiais
+                        </div>
+                        <div className="text-[11px] font-semibold text-text-main italic">{contest.subjects?.length || 0} Matérias</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-auto relative z-10">
+                      <button 
+                        onClick={() => setPreviewContest(contest)}
+                        className="p-3.5 rounded-xl text-xs bg-slate-50 border border-border text-text-sub hover:text-primary transition-all shadow-sm"
+                      >
+                        <Search className="w-4.5 h-4.5" />
+                      </button>
+                      <button 
+                        onClick={() => handleClone(contest)}
+                        className="flex-1 bg-primary text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:brightness-110 active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Adicionar
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {hasMoreContests && (
+              <div className="flex justify-center pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => fetchContests(false)}
+                  disabled={pageLoading}
+                  className="px-8 py-3.5 bg-white border border-border text-primary hover:border-primary/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
                 >
-                  <div className="flex items-start justify-between mb-8 relative z-10">
-                    <div className="space-y-2 max-w-[75%]">
-                      <p className="text-[10px] text-text-sub line-clamp-1 italic">{contest.name}</p>
-                      <h4 className="text-sm font-display text-text-main leading-tight line-clamp-2 group-hover:text-primary transition-colors italic">{contest.role}</h4>
-                      <div className="flex items-center gap-2 pt-1">
-                         <UserIcon className="w-3 h-3 text-text-sub/50" />
-                         <span className="text-[10px] text-text-sub truncate flex items-center gap-1 normal-case">
-                           por {contest.ownerName || 'Estrategista'}
-                           {contest.ownerIsCreator && <Award className="w-3 h-3 text-primary" />}
-                         </span>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={(e) => handleLike(contest.id!, 'shared_contests', e)}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all active:scale-95 border",
-                        (contest as any).likesCount > 0 
-                          ? "bg-red-500/5 border-red-500/10 text-red-500" 
-                          : "bg-slate-50 border-border text-text-sub hover:border-red-500/20 hover:text-red-500"
-                      )}
-                    >
-                      <Heart className={cn("w-5 h-5 transition-transform duration-500", (contest as any).likesCount > 0 && "fill-red-500")} />
-                      <span className="text-xs font-bold leading-none">{(contest as any).likesCount || 0}</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-8 pt-6 border-t border-border relative z-10">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-sub">
-                         <Calendar className="w-3 h-3 text-primary" />
-                         Prova
-                      </div>
-                      <div className="text-[11px] font-semibold text-text-main truncate italic">{contest.examDate || 'A definir'}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-sub">
-                         <Award className="w-3 h-3 text-accent" />
-                         Materiais
-                      </div>
-                      <div className="text-[11px] font-semibold text-text-main italic">{contest.subjects?.length || 0} Matérias</div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 mt-auto relative z-10">
-                    <button 
-                      onClick={() => setPreviewContest(contest)}
-                      className="p-3.5 rounded-xl text-xs bg-slate-50 border border-border text-text-sub hover:text-primary transition-all shadow-sm"
-                    >
-                      <Search className="w-4.5 h-4.5" />
-                    </button>
-                    <button 
-                      onClick={() => handleClone(contest)}
-                      className="flex-1 bg-primary text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:brightness-110 active:scale-95 flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      Adicionar
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  {pageLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Carregando...
+                    </>
+                  ) : (
+                    "Carregar mais Editais"
+                  )}
+                </motion.button>
+              </div>
+            )}
           </div>
         )
       ) : activeTab === 'flashcards' ? (
@@ -479,51 +645,76 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-20">
-            <AnimatePresence mode="popLayout">
-              {filteredDecks.map((d) => (
-                <motion.div
-                  key={d.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="group relative bg-white border border-border rounded-2xl p-5 hover:border-accent/30 transition-all flex flex-col hover:shadow-lg"
+          <div className="space-y-8 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              <AnimatePresence mode="popLayout">
+                {filteredDecks.map((d) => (
+                  <motion.div
+                    key={d.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group relative bg-white border border-border rounded-2xl p-5 hover:border-accent/30 transition-all flex flex-col hover:shadow-lg"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                       <div className="flex flex-col gap-1">
+                          <span className="text-[9px] font-bold text-accent uppercase tracking-widest bg-accent/5 px-2 py-1 rounded-lg border border-accent/10 w-fit">
+                              Deck de Flashcards
+                          </span>
+                          <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">{d.cards?.length || 0} Cartões</span>
+                       </div>
+                       <button 
+                        onClick={(e) => handleLike(d.id, 'shared_decks', e)}
+                        className="text-text-sub hover:text-red-500 transition-colors flex items-center gap-1"
+                       >
+                         <Heart className={cn("w-3.5 h-3.5", d.likesCount > 0 && "fill-red-500 text-red-500")} />
+                         <span className="text-[10px] font-bold">{d.likesCount || 0}</span>
+                       </button>
+                    </div>
+                    <div className="space-y-2 flex-1 mb-6">
+                       <h3 className="text-sm font-bold text-text-main line-clamp-1 italic">{d.title}</h3>
+                       {d.description && <p className="text-xs text-text-sub line-clamp-2 leading-relaxed">{d.description}</p>}
+                    </div>
+                    <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
+                       <span className="text-[8px] font-medium text-text-sub uppercase flex items-center gap-1">
+                         Por {d.ownerName}
+                         {d.ownerIsCreator && <Award className="w-3 h-3 text-accent" />}
+                       </span>
+                       <button 
+                        onClick={() => handleCloneDeck(d)}
+                        className="flex items-center gap-2 px-3 py-2 bg-accent/10 text-accent rounded-lg hover:bg-accent transition-all hover:text-white font-bold text-[9px] uppercase tracking-wider"
+                       >
+                          <Download className="w-3 h-3" />
+                          Salvar Lote
+                       </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            {hasMoreDecks && (
+              <div className="flex justify-center pt-4">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => fetchDecks(false)}
+                  disabled={pageLoading}
+                  className="px-8 py-3.5 bg-white border border-border text-accent hover:border-accent/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                     <div className="flex flex-col gap-1">
-                        <span className="text-[9px] font-bold text-accent uppercase tracking-widest bg-accent/5 px-2 py-1 rounded-lg border border-accent/10 w-fit">
-                            Deck de Flashcards
-                        </span>
-                        <span className="text-[10px] font-bold text-text-sub uppercase tracking-wider">{d.cards?.length || 0} Cartões</span>
-                     </div>
-                     <button 
-                      onClick={(e) => handleLike(d.id, 'shared_decks', e)}
-                      className="text-text-sub hover:text-red-500 transition-colors flex items-center gap-1"
-                     >
-                       <Heart className={cn("w-3.5 h-3.5", d.likesCount > 0 && "fill-red-500 text-red-500")} />
-                       <span className="text-[10px] font-bold">{d.likesCount || 0}</span>
-                     </button>
-                  </div>
-                  <div className="space-y-2 flex-1 mb-6">
-                     <h3 className="text-sm font-bold text-text-main line-clamp-1 italic">{d.title}</h3>
-                     {d.description && <p className="text-xs text-text-sub line-clamp-2 leading-relaxed">{d.description}</p>}
-                  </div>
-                  <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
-                     <span className="text-[8px] font-medium text-text-sub uppercase flex items-center gap-1">
-                       Por {d.ownerName}
-                       {d.ownerIsCreator && <Award className="w-3 h-3 text-accent" />}
-                     </span>
-                     <button 
-                      onClick={() => handleCloneDeck(d)}
-                      className="flex items-center gap-2 px-3 py-2 bg-accent/10 text-accent rounded-lg hover:bg-accent transition-all hover:text-white font-bold text-[9px] uppercase tracking-wider"
-                     >
-                        <Download className="w-3 h-3" />
-                        Salvar Lote
-                     </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                  {pageLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Carregando...
+                    </>
+                  ) : (
+                    "Carregar mais Cartões"
+                  )}
+                </motion.button>
+              </div>
+            )}
           </div>
         )
       ) : activeTab === 'mindmaps' ? (
@@ -539,66 +730,91 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 pb-20">
-              <AnimatePresence mode="popLayout">
-                {filteredMindMaps.map((m) => (
-                  <motion.div
-                    key={m.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="group relative bg-white border border-border rounded-2xl p-5 hover:border-indigo-500/30 transition-all flex flex-col cursor-pointer hover:shadow-lg hover:-translate-y-1"
-                    onClick={() => setPreviewMindMap(m)}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                       <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-500/5 px-2 py-1 rounded-lg border border-indigo-500/10">
-                          Mapa Mental
-                       </span>
-                       <span className="text-[10px] font-semibold text-slate-400">
-                         {m.publishedAt ? new Date(m.publishedAt.toDate()).toLocaleDateString() : 'Recente'}
-                       </span>
-                    </div>
-                    <div className="space-y-3 flex-1 mb-4">
-                       <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug">{m.title}</h3>
-                       {m.description && (
-                         <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">{m.description}</p>
-                       )}
-                    </div>
-                    <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
-                       <div className="flex items-center gap-2">
-                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600 shrink-0">
-                           {m.ownerName?.[0]?.toUpperCase() || 'E'}
-                         </div>
-                         <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px] flex items-center gap-1">
-                           {m.ownerName || 'Estrategista'}
-                           {m.ownerIsCreator && <Award className="w-3 h-3 text-indigo-500 shrink-0" />}
+            <div className="space-y-8 pb-20">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                <AnimatePresence mode="popLayout">
+                  {filteredMindMaps.map((m) => (
+                    <motion.div
+                      key={m.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group relative bg-white border border-border rounded-2xl p-5 hover:border-indigo-500/30 transition-all flex flex-col cursor-pointer hover:shadow-lg hover:-translate-y-1"
+                      onClick={() => setPreviewMindMap(m)}
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                         <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest bg-indigo-500/5 px-2 py-1 rounded-lg border border-indigo-500/10">
+                            Mapa Mental
                          </span>
-                       </div>
-                       
-                       <div className="flex items-center gap-2">
-                         <button 
-                           className="flex items-center gap-1.5 text-slate-400 hover:text-red-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-red-100"
-                           onClick={(e) => handleLike(m.id, 'mindmaps', e)}
-                         >
-                           <Heart className="w-3.5 h-3.5" />
-                           <span className="text-xs font-bold">{m.likesCount || 0}</span>
-                         </button>
-                         <button 
-                           className="flex items-center gap-1.5 text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-indigo-100"
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             handleCloneMindMap(m);
-                           }}
-                           title="Importar para meus mapas"
-                         >
-                           <Download className="w-3.5 h-3.5" />
-                           <span className="text-xs font-bold">{m.clonesCount || 0}</span>
-                         </button>
-                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                         <span className="text-[10px] font-semibold text-slate-400">
+                           {m.publishedAt ? new Date(m.publishedAt.toDate()).toLocaleDateString() : 'Recente'}
+                         </span>
+                      </div>
+                      <div className="space-y-3 flex-1 mb-4">
+                         <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug">{m.title}</h3>
+                         {m.description && (
+                           <p className="text-xs text-slate-500 line-clamp-3 leading-relaxed">{m.description}</p>
+                         )}
+                      </div>
+                      <div className="pt-4 border-t border-border flex items-center justify-between mt-auto">
+                         <div className="flex items-center gap-2">
+                           <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-600 shrink-0">
+                             {m.ownerName?.[0]?.toUpperCase() || 'E'}
+                           </div>
+                           <span className="text-[10px] font-medium text-slate-600 truncate max-w-[100px] flex items-center gap-1">
+                             {m.ownerName || 'Estrategista'}
+                             {m.ownerIsCreator && <Award className="w-3 h-3 text-indigo-500 shrink-0" />}
+                           </span>
+                         </div>
+                         
+                         <div className="flex items-center gap-2">
+                           <button 
+                             className="flex items-center gap-1.5 text-slate-400 hover:text-red-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-red-100"
+                             onClick={(e) => handleLike(m.id, 'mindmaps', e)}
+                           >
+                             <Heart className="w-3.5 h-3.5" />
+                             <span className="text-xs font-bold">{m.likesCount || 0}</span>
+                           </button>
+                           <button 
+                             className="flex items-center gap-1.5 text-slate-400 hover:text-indigo-500 transition-colors px-2 py-1 bg-slate-50 rounded-lg border border-transparent hover:border-indigo-100"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               handleCloneMindMap(m);
+                             }}
+                             title="Importar para meus mapas"
+                           >
+                             <Download className="w-3.5 h-3.5" />
+                             <span className="text-xs font-bold">{m.clonesCount || 0}</span>
+                           </button>
+                         </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+              {hasMoreMindMaps && (
+                <div className="flex justify-center pt-4">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => fetchMindMaps(false)}
+                    disabled={pageLoading}
+                    className="px-8 py-3.5 bg-white border border-border text-indigo-500 hover:border-indigo-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
+                  >
+                    {pageLoading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Carregando...
+                      </>
+                    ) : (
+                      "Carregar mais Mapas"
+                    )}
+                  </motion.button>
+                </div>
+              )}
             </div>
           )
         ) : null

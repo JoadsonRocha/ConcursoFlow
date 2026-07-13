@@ -49,6 +49,32 @@
       },
       "required": ["name", "role", "ownerId"]
     },
+    "ContestDetails": {
+      "title": "Contest Details",
+      "description": "Heavy data collections for a specific contest.",
+      "type": "object",
+      "properties": {
+        "subjects": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "schedule": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "paretoData": {
+          "type": "object"
+        },
+        "meppReviews": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "dailyHistory": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
     "Flashcard": {
       "title": "Flashcard",
       "description": "A study card with front and back content for spaced repetition.",
@@ -173,6 +199,10 @@
     "/users/{userId}/contests/{contestId}": {
       "schema": "Contest",
       "description": "Stores user-specific contest data and progress."
+    },
+    "/users/{userId}/contests/{contestId}/details/{detailId}": {
+      "schema": "ContestDetails",
+      "description": "Stores heavy collections of a contest (subjects, schedule, paretoData, etc.)."
     },
     "/users/{userId}/flashcards/{flashcardId}": {
       "schema": "Flashcard",

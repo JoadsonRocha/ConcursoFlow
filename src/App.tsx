@@ -37,6 +37,7 @@ import { Contest, Subject } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Joyride, STATUS, Step } from 'react-joyride';
 import Subjects from './pages/Subjects';
+import Resumos from './pages/Resumos';
 import Microlearning from './pages/Microlearning';
 import Tutor from './pages/Tutor';
 import MentorMepp from './pages/MentorMepp';
@@ -64,17 +65,18 @@ import { SIcon } from './components/SIcon';
 import { useAuth } from './contexts/AuthContext';
 import { onMessage } from 'firebase/messaging';
 import { db, requestNotificationPermission, logPageView, messaging } from './lib/firebase';
-import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, setDoc, serverTimestamp, updateDoc, deleteDoc, orderBy, getDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './lib/errorUtils';
 
 import Dashboard from './pages/Dashboard';
 import FocusMode from './pages/FocusMode';
 import Estatisticas from './pages/Estatisticas';
 
-const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id, variant = 'default', iconColor }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string, variant?: 'default' | 'highlight', iconColor?: string }) => (
+const SidebarItem = ({ to, icon: Icon, label, active, collapsed, id, variant = 'default', iconColor, onClick }: { to: string, icon: any, label: string, active?: boolean, collapsed?: boolean, id?: string, variant?: 'default' | 'highlight', iconColor?: string, onClick?: () => void }) => (
   <Link 
     id={id}
     to={to} 
+    onClick={onClick}
     className={cn(
       "flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 group relative text-[14px] font-medium",
       variant === 'highlight'
@@ -128,6 +130,12 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
+
+  const handleSidebarItemClick = () => {
+    if (window.innerWidth <= 1024) {
+      setIsSidebarOpen(false);
+    }
+  };
 
   // Notificações Push: Solicitar permissão e salvar token em múltiplos dispositivos
   useEffect(() => {
@@ -309,7 +317,7 @@ export default function App() {
     if (!user) return;
 
     const contestsRef = collection(db, 'users', user.uid, 'contests');
-    const q = query(contestsRef);
+    const q = query(contestsRef, orderBy('updatedAt', 'desc'));
     
     // Migration Logic
     if (!migrated) {
@@ -382,6 +390,70 @@ export default function App() {
 
     return () => unsubscribe();
   }, [user, migrated]);
+
+  // Load contest content subdocument on demand (Document Splitting / Projection)
+  useEffect(() => {
+    if (!user || !currentContest?.id) return;
+
+    let isMounted = true;
+
+    const fetchContestDetails = async () => {
+      try {
+        const detailsDocRef = doc(db, 'users', user.uid, 'contests', currentContest.id, 'details', 'content');
+        const detailsSnap = await getDoc(detailsDocRef);
+        
+        if (!isMounted) return;
+
+        if (detailsSnap.exists()) {
+          const detailsData = detailsSnap.data() || {};
+          
+          const sanitizeSubjects = (subjects: any[]) => {
+            return (subjects || []).map((s: any) => ({
+              ...s,
+              id: s.id || `sub-${Math.random().toString(36).substr(2, 9)}`,
+              name: s.name || 'Matéria sem nome',
+              category: s.category || 'Gerais',
+              topics: (s.topics || []).map((t: any) => ({
+                ...t,
+                id: t.id || `top-${Math.random().toString(36).substr(2, 9)}`,
+                name: t.name || 'Tópico sem nome',
+                completed: !!t.completed
+              }))
+            }));
+          };
+
+          const mergedContest: Contest = {
+            ...currentContest,
+            subjects: sanitizeSubjects(detailsData.subjects || []),
+            schedule: (detailsData.schedule || []).map((d: any) => ({
+              ...d,
+              completed: !!d.completed
+            })),
+            paretoData: detailsData.paretoData || null,
+            meppReviews: detailsData.meppReviews || [],
+            dailyHistory: detailsData.dailyHistory || [],
+          };
+
+          // To prevent infinite re-render loops, verify changes before setting
+          const subjectsDiff = JSON.stringify(currentContest.subjects) !== JSON.stringify(mergedContest.subjects);
+          const scheduleDiff = JSON.stringify(currentContest.schedule) !== JSON.stringify(mergedContest.schedule);
+          
+          if (subjectsDiff || scheduleDiff) {
+            setCurrentContest(mergedContest);
+            setContests(prev => prev.map(c => c.id === currentContest.id ? mergedContest : c));
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar detalhes do edital:", err);
+      }
+    };
+
+    fetchContestDetails();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, currentContest?.id]);
 
   // Check for tour after initial loading
   useEffect(() => {
@@ -512,17 +584,61 @@ export default function App() {
     try {
       const contestId = isEdit ? newContest.id : `dynamic-${Date.now()}`;
       const docRef = doc(db, 'users', user.uid, 'contests', contestId);
-      const contestToSave = { 
-        ...newContest, 
-        id: contestId, 
-        ownerId: user.uid, 
-        createdAt: isEdit ? (newContest.createdAt || serverTimestamp()) : serverTimestamp(), 
-        updatedAt: serverTimestamp() 
+      const contentDocRef = doc(db, 'users', user.uid, 'contests', contestId, 'details', 'content');
+
+      // Calculate consolidated counters (Agregação e Contadores Dinâmicos)
+      const subjects = newContest.subjects || [];
+      const subjectsCount = subjects.length;
+      let totalTopicsCount = 0;
+      let completedTopicsCount = 0;
+      subjects.forEach((sub: any) => {
+        const topics = sub.topics || [];
+        totalTopicsCount += topics.length;
+        completedTopicsCount += topics.filter((t: any) => t.completed).length;
+      });
+
+      // Split payloads (Document Splitting / Projection)
+      const metadataPayload = {
+        id: contestId,
+        name: newContest.name || '',
+        role: newContest.role || '',
+        examDate: newContest.examDate || '',
+        scheduleStartDate: newContest.scheduleStartDate || '',
+        isPublic: !!newContest.isPublic,
+        ownerId: user.uid,
+        createdAt: isEdit ? (newContest.createdAt || serverTimestamp()) : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        subjectsCount,
+        totalTopicsCount,
+        completedTopicsCount,
+        banca: newContest.banca || '',
+        dailyGoalHours: newContest.dailyGoalHours || 0,
+        dailyGoalQuestions: newContest.dailyGoalQuestions || 0,
+        dailyContentVolume: newContest.dailyContentVolume || 0,
+        paretoAnalyzed: !!newContest.paretoAnalyzed,
       };
+
+      const contentPayload = {
+        subjects: newContest.subjects || [],
+        schedule: newContest.schedule || [],
+        paretoData: newContest.paretoData || null,
+        meppReviews: newContest.meppReviews || [],
+        dailyHistory: newContest.dailyHistory || [],
+      };
+
+      const sanitizedMetadata = sanitizeFirestoreData(metadataPayload);
+      const sanitizedContent = sanitizeFirestoreData(contentPayload);
+
+      await setDoc(docRef, sanitizedMetadata, { merge: true });
+      await setDoc(contentDocRef, sanitizedContent, { merge: true });
       
-      const sanitizedContest = sanitizeFirestoreData(contestToSave);
-      await setDoc(docRef, sanitizedContest, { merge: true });
-      
+      const contestToSave = {
+        ...metadataPayload,
+        ...contentPayload,
+        createdAt: isEdit ? (newContest.createdAt || new Date().toISOString()) : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
       // Update local state immediately to ensure UI refresh
       setContests(prev => {
         const index = prev.findIndex(c => c.id === contestId);
@@ -570,24 +686,55 @@ export default function App() {
 
     try {
       const docRef = doc(db, 'users', user.uid, 'contests', updatedContest.id);
+      const contentDocRef = doc(db, 'users', user.uid, 'contests', updatedContest.id, 'details', 'content');
       
       // Separate system fields from user data
       const { createdAt: _ignored, updatedAt: _ignored2, ownerId: _ignored3, ...contestData } = updatedContest;
       
-      const payload: any = { 
-        ...contestData, 
+      // Calculate consolidated counters (Agregação e Contadores Dinâmicos)
+      const subjects = contestData.subjects || [];
+      const subjectsCount = subjects.length;
+      let totalTopicsCount = 0;
+      let completedTopicsCount = 0;
+      subjects.forEach((sub: any) => {
+        const topics = sub.topics || [];
+        totalTopicsCount += topics.length;
+        completedTopicsCount += topics.filter((t: any) => t.completed).length;
+      });
+
+      // Split payloads (Document Splitting / Projection)
+      const metadataPayload = {
+        id: updatedContest.id,
+        name: contestData.name || '',
+        role: contestData.role || '',
+        examDate: contestData.examDate || '',
+        scheduleStartDate: contestData.scheduleStartDate || '',
+        isPublic: !!contestData.isPublic,
         ownerId: user.uid,
         updatedAt: serverTimestamp(),
-        // Ensure critical fields are never undefined for Firestore
-        schedule: contestData.schedule || [],
+        subjectsCount,
+        totalTopicsCount,
+        completedTopicsCount,
+        banca: contestData.banca || '',
+        dailyGoalHours: contestData.dailyGoalHours || 0,
+        dailyGoalQuestions: contestData.dailyGoalQuestions || 0,
+        dailyContentVolume: contestData.dailyContentVolume || 0,
+        paretoAnalyzed: !!contestData.paretoAnalyzed,
+      };
+
+      const contentPayload = {
         subjects: contestData.subjects || [],
+        schedule: contestData.schedule || [],
         paretoData: contestData.paretoData || null,
         meppReviews: contestData.meppReviews || [],
         dailyHistory: contestData.dailyHistory || [],
       };
       
-      const sanitizedPayload = sanitizeFirestoreData(payload);
-      await setDoc(docRef, sanitizedPayload, { merge: true });
+      const sanitizedMetadata = sanitizeFirestoreData(metadataPayload);
+      const sanitizedContent = sanitizeFirestoreData(contentPayload);
+
+      await setDoc(docRef, sanitizedMetadata, { merge: true });
+      await setDoc(contentDocRef, sanitizedContent, { merge: true });
 
       // Update profile current ID in background
       const userRef = doc(db, 'users', user.uid);
@@ -623,7 +770,15 @@ export default function App() {
       }
 
       const docRef = doc(db, 'users', user.uid, 'contests', id);
+      const contentDocRef = doc(db, 'users', user.uid, 'contests', id, 'details', 'content');
+      
+      // Delete metadata first then content (Document Splitting)
       await deleteDoc(docRef);
+      try {
+        await deleteDoc(contentDocRef);
+      } catch (subErr) {
+        console.warn("Details content document already deleted or missing:", subErr);
+      }
       
       toast.success("Cargo removido com sucesso!");
     } catch (err) {
@@ -700,7 +855,7 @@ export default function App() {
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-[45] md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-[45] lg:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -708,12 +863,12 @@ export default function App() {
       {/* Sidebar - Desktop & Mobile Drawer */}
       <aside className={cn(
         "bg-white border-r border-border transition-all duration-300 z-50 overflow-hidden",
-        "fixed inset-y-0 left-0 md:relative flex flex-col shrink-0 h-full",
+        "fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 h-full",
         isSidebarOpen 
-          ? "translate-x-0 w-72 md:w-[280px] px-6 py-6 shadow-2xl md:shadow-none" 
-          : "-translate-x-full md:translate-x-0 w-72 md:w-20 px-6 md:px-3 py-6"
+          ? "translate-x-0 w-72 lg:w-[280px] px-6 py-6 shadow-2xl lg:shadow-none" 
+          : "-translate-x-full lg:translate-x-0 w-72 lg:w-20 px-6 lg:px-3 py-6"
       )}>
-        <Link to="/" className="mb-8 px-2 hover:opacity-80 transition-opacity flex justify-center items-center">
+        <Link to="/" onClick={handleSidebarItemClick} className="mb-8 px-2 hover:opacity-80 transition-opacity flex justify-center items-center">
           <BrandLogo showText={false} size={isSidebarOpen ? "md" : "sm"} />
         </Link>
 
@@ -721,18 +876,19 @@ export default function App() {
           <div>
             {isSidebarOpen && <span className="block text-[11px] font-bold text-text-sub uppercase tracking-widest mb-2 ml-3 opacity-50">Principal</span>}
             <nav className="space-y-0.5">
-              <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} iconColor="text-blue-500" />
-              <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} iconColor="text-indigo-500" />
-              <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} iconColor="text-emerald-500" />
-              <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} iconColor="text-rose-500" />
-              <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} iconColor="text-orange-500" />
-              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} iconColor="text-violet-500" />
-              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} iconColor="text-cyan-500" />
-              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} iconColor="text-fuchsia-500" /> 
-              <SidebarItem to="/audiocasts" icon={Headphones} label="Audiocasts" active={location.pathname === '/audiocasts'} collapsed={!isSidebarOpen} iconColor="text-pink-500" />
-              <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} iconColor="text-sky-500" />
+              <SidebarItem id="tour-painel" to="/" icon={LayoutDashboard} label="Painel" active={location.pathname === '/'} collapsed={!isSidebarOpen} iconColor="text-blue-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-edital" to="/materias" icon={BookOpen} label="Edital" active={location.pathname === '/materias'} collapsed={!isSidebarOpen} iconColor="text-indigo-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-cronograma" to="/cronograma" icon={Calendar} label="Cronograma" active={location.pathname === '/cronograma'} collapsed={!isSidebarOpen} iconColor="text-emerald-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-pareto" to="/pareto" icon={Target} label="Pareto" active={location.pathname === '/pareto'} collapsed={!isSidebarOpen} iconColor="text-orange-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-revisao" to="/microaprendizado" icon={Notebook} label="Notebook" active={location.pathname === '/microaprendizado' && !location.search.includes('tab=library')} collapsed={!isSidebarOpen} iconColor="text-violet-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-resumos" to="/resumos" icon={BrainCircuit} label="Resumos" active={location.pathname === '/resumos'} collapsed={!isSidebarOpen} iconColor="text-amber-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-foco" to="/foco" icon={Timer} label="Sessão foco" active={location.pathname === '/foco'} collapsed={!isSidebarOpen} iconColor="text-rose-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-mepp" to="/mepp" icon={Award} label="Revisão" active={location.pathname === '/mepp'} collapsed={!isSidebarOpen} iconColor="text-cyan-500" onClick={handleSidebarItemClick} />
+              <SidebarItem to="/audiocasts" icon={Headphones} label="Audiocasts" active={location.pathname === '/audiocasts'} collapsed={!isSidebarOpen} iconColor="text-pink-500" onClick={handleSidebarItemClick} />
+              <SidebarItem id="tour-comunidade" to="/comunidade" icon={Users} label="Comunidade" active={location.pathname === '/comunidade'} collapsed={!isSidebarOpen} iconColor="text-fuchsia-500" onClick={handleSidebarItemClick} /> 
+              <SidebarItem to="/explorar" icon={Compass} label="Explorar" active={location.pathname === '/explorar'} collapsed={!isSidebarOpen} iconColor="text-sky-500" onClick={handleSidebarItemClick} />
               {!isPro && (
-                <SidebarItem to="/planos" icon={Crown} label="Assinar Pro" active={location.pathname === '/planos'} collapsed={!isSidebarOpen} variant="highlight" />
+                <SidebarItem to="/planos" icon={Crown} label="Assinar Pro" active={location.pathname === '/planos'} collapsed={!isSidebarOpen} variant="highlight" onClick={handleSidebarItemClick} />
               )}
             </nav>
           </div>
@@ -742,6 +898,7 @@ export default function App() {
             <div className="mt-4">
               <Link
                 to="/planos"
+                onClick={handleSidebarItemClick}
                 className={cn(
                   "flex items-center gap-3 py-3 rounded-xl transition-all duration-300 group shadow-md shadow-indigo-500/20",
                   "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:from-indigo-700 hover:to-indigo-600 opacity-90 hover:opacity-100",
@@ -760,6 +917,7 @@ export default function App() {
           <Link 
             id="tour-importar"
             to="/configuracoes"
+            onClick={handleSidebarItemClick}
             className={cn(
               "flex items-center gap-4 py-2.5 rounded-xl transition-all mb-1 text-[13px] font-bold uppercase tracking-wider",
               location.pathname === '/configuracoes' ? "bg-slate-100 text-text-main" : "text-text-sub hover:bg-slate-50 ",
@@ -775,7 +933,7 @@ export default function App() {
 
       {/* Main Content */}
       <main ref={mainRef} className={cn("flex-1 min-w-0 overflow-x-hidden bg-bg relative scroll-smooth flex flex-col", location.pathname === '/tutor' ? "overflow-hidden" : "overflow-y-auto")}>
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 md:px-10 py-3.5 flex shrink-0 items-center justify-between border-b border-border">
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md px-6 lg:px-10 py-3.5 flex shrink-0 items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -1002,6 +1160,7 @@ export default function App() {
               <Route path="/" element={<Dashboard contest={currentContest || { id: 'empty', name: '', role: '', examDate: '', subjects: [] }} onUpdate={handleUpdateContest} contests={contests} onSwitchContest={handleSwitchContest} onDelete={handleDeleteContest} />} />
               <Route path="/foco" element={<FocusMode contest={currentContest} onUpdate={handleUpdateContest} />} />
               <Route path="/materias" element={currentContest ? <Subjects contest={currentContest} contests={contests} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
+              <Route path="/resumos" element={currentContest ? <Resumos contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
               <Route path="/estatisticas" element={currentContest ? <Estatisticas contest={currentContest} onUpdate={handleUpdateContest} /> : <div className="p-20 text-center text-text-sub text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</div>} />
               <Route path="/pareto" element={currentContest ? <Pareto contest={currentContest} contests={contests} onContestChange={handleSwitchContest} onUpdate={handleUpdateContest} /> : <div className="p-20 flex flex-col items-center justify-center text-center text-text-sub space-y-4"><Target className="w-12 h-12 text-slate-300 mb-4" /><span className="text-sm font-bold uppercase tracking-wider">Importe um edital no botão "Importar Edital" ou pela "Comunidade"</span></div>} />
               <Route path="/microaprendizado" element={<Microlearning contest={currentContest} onUpdate={handleUpdateContest} />} />

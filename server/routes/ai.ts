@@ -88,7 +88,12 @@ async function handleAiRequest(req: AuthRequest, res: any, usageField: string, l
         if (transactionErr?.message?.includes('Limite atingido')) {
           throw transactionErr; // Re-throw limit errors
         }
-        console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, transactionErr?.message || transactionErr);
+        const errMsg = transactionErr?.message || String(transactionErr);
+        if (errMsg.includes('PERMISSION_DENIED') || transactionErr?.code === 7) {
+          console.log(`ℹ️ [AI Route] Registro de uso no Firestore ignorado para ${userId} (Ambiente local de testes sem Service Account do Admin SDK configurado).`);
+        } else {
+          console.warn(`⚠️ [AI Route] Falha ao registrar uso no DB para ${userId}:`, errMsg);
+        }
       }
     } else {
       console.warn(`⚠️ [AI Route] Firestore não está disponível para registrar uso, continuando sem tracking de limites.`);
@@ -134,8 +139,8 @@ router.post('/flashcards', authenticate, (req, res) => {
 });
 
 router.post('/summary', authenticate, (req, res) => {
-  const { text } = req.body;
-  handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.generateSummary(text));
+  const { text, banca, role, contestName } = req.body;
+  handleAiRequest(req, res, 'summaryUsage', 'summaryLimit', () => GeminiService.generateSummary(text, banca, role, contestName));
 });
 
 router.post('/suggest-questions', authenticate, (req, res) => {

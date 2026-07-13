@@ -137,11 +137,34 @@ export async function generateFlashcards(topic: string, count: number = 10) {
   return parseJsonResponse(text || "[]", []);
 }
 
-export async function generateSummary(text: string) {
-  const params = { text };
-  const prompt = `Resuma o texto abaixo em pontos-chave focados em memorização para concursos.
-  Texto: "${text}"
-  Retorne o resumo formatado em Markdown limpo.`;
+export async function generateSummary(text: string, banca?: string, role?: string, contestName?: string) {
+  const params = { text, banca, role, contestName };
+  
+  let contextInfo = "";
+  if (banca || role || contestName) {
+    contextInfo = `Este resumo estratégico DEVE ser rigorosamente adaptado e focado nas seguintes especificações do concurso:
+- **Banca Examinadora**: ${banca || 'Não especificada'}
+- **Cargo Pretendido**: ${role || 'Não especificado'}
+- **Edital/Concurso**: ${contestName || 'Não especificado'}
+
+Adote o perfil de um **Especialista em Preparação para Concursos Públicos de Elite**. 
+Ao sintetizar o tópico abaixo, estruture o conteúdo em Markdown claro e profissional, utilizando as seguintes seções técnicas:
+
+1. 🎯 **Análise de Incidência & Foco da Banca (${banca || 'Geral'})**: Explique como a banca costuma abordar este assunto específico, as pegadinhas clássicas ("cascas de banana"), se cobra mais a literalidade ("lei seca") ou a doutrina/jurisprudência (STF/STJ), e quais artigos são indispensáveis.
+2. 📝 **Literalidade & Doutrina Cirúrgica**: Forneça uma síntese direta, focada e estruturada dos artigos e conceitos essenciais que o candidato precisa dominar para gabaritar o assunto (focado nas atribuições do cargo de ${role || 'candidato'}).
+3. 🧠 **Mnemônicos & Esquemas de Memorização**: Crie ou inclua mnemônicos práticos, esquemas estruturados ou tabelas comparativas rápidas para facilitar a fixação instantânea.
+4. ⚠️ **Alerta Máximo de Pegadinha**: Destaque um ou dois pontos críticos onde o candidato desatento costuma errar por conta de sutilezas da banca.`;
+  } else {
+    contextInfo = `Resuma o assunto abaixo em pontos-chave focados em memorização de alto rendimento para concursos públicos.`;
+  }
+
+  const prompt = `Como um Especialista em Preparação e Aprendizado de Alto Rendimento para Concursos Públicos, elabore um resumo estratégico de excelência técnica.
+
+${contextInfo}
+
+Assunto/Tópico a ser resumido: "${text}"
+
+Retorne o resumo formatado em Markdown limpo, rico e visualmente bem-organizado, pronto para estudos de revisão rápida.`;
 
   const result = await generateContentWithCache("generateSummary", params, prompt);
   return result;
