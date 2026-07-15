@@ -89,6 +89,9 @@ export interface Contest {
   likesCount?: number;
   isPublic?: boolean;     // Se o plano é público na comunidade
   banca?: string;         // Banca examinadora (FGV, Cebraspe, etc)
+  completedTopicsCount?: number;
+  totalTopicsCount?: number;
+  subjectsCount?: number;
   
   // Contadores de uso de IA (para planos limitados)
   summaryUsage?: number;

@@ -32,6 +32,8 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
   const [selectedTopic, setSelectedTopic] = useState<{ subId: string, subjectName: string, topicId: string, topicName: string, savedSummary?: string } | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [isNewSummary, setIsNewSummary] = useState(false);
+  const [activeSummaryIndex, setActiveSummaryIndex] = useState<number>(0);
   const [activeErrorNote, setActiveErrorNote] = useState<{ subId: string, topicId: string, note: string } | null>(null);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [mergeSourceContestId, setMergeSourceContestId] = useState<string>('');
@@ -53,42 +55,53 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
   const handleAiAsk = (e: React.MouseEvent, subId: string, subjectName: string, topicId: string, topicName: string) => {
     e.stopPropagation();
     
-    // Check if topic already has a saved summary
     const subject = contest.subjects.find(s => s.id === subId);
     const topic = subject?.topics?.find(t => t.id === topicId);
     
-    if (topic?.aiSummary) {
-      // Already has a saved summary, show it instantly!
-      setSelectedTopic({ subId, subjectName, topicId, topicName, savedSummary: topic.aiSummary });
-      setAiSummary(topic.aiSummary);
-      setIsLoadingAi(false);
-      return;
-    }
-
-    // Limits check
-    const limit = getLimit();
-    if ((contest.summaryUsage || 0) >= limit) {
-      setProFeatureName(`Resumos Estratégicos (Máx: ${limit})`);
-      setShowProModal(true);
-      return;
-    }
-
     setSelectedTopic({ subId, subjectName, topicId, topicName });
-    setAiSummary(null);
-    setIsLoadingAi(true);
-    generateStudySummary(subjectName, topicName, contest.banca, contest.role, contest.name).then(async (summary) => {
-      setAiSummary(summary);
+
+    const existingSummaries = topic?.savedSummaries || [];
+    const legacySummary = topic?.aiSummary;
+
+    if (existingSummaries.length > 0) {
+      // If summaries exist, show the latest saved summary by default, allow switching
+      setAiSummary(existingSummaries[existingSummaries.length - 1].aiSummary);
+      setActiveSummaryIndex(existingSummaries.length - 1);
+      setIsNewSummary(false);
       setIsLoadingAi(false);
-      
-      // Update global usage
-      onUpdate({ 
-        ...contest, 
-        summaryUsage: (contest.summaryUsage || 0) + 1 
+    } else if (legacySummary) {
+      // Migrate legacy summary to list virtually
+      setAiSummary(legacySummary);
+      setActiveSummaryIndex(0);
+      setIsNewSummary(false);
+      setIsLoadingAi(false);
+    } else {
+      // No summaries exist, automatically generate the first one
+      const limit = getLimit();
+      if ((contest.summaryUsage || 0) >= limit) {
+        setProFeatureName(`Resumos Estratégicos (Máx: ${limit})`);
+        setShowProModal(true);
+        setSelectedTopic(null);
+        return;
+      }
+
+      setAiSummary(null);
+      setIsLoadingAi(true);
+      setIsNewSummary(true);
+      generateStudySummary(subjectName, topicName, contest.banca, contest.role, contest.name).then(async (summary) => {
+        setAiSummary(summary);
+        setIsLoadingAi(false);
+        
+        // Update global usage
+        onUpdate({ 
+          ...contest, 
+          summaryUsage: (contest.summaryUsage || 0) + 1 
+        });
+      }).catch(() => {
+        setAiSummary("Erro ao gerar resumo.");
+        setIsLoadingAi(false);
       });
-    }).catch(() => {
-      setAiSummary("Erro ao gerar resumo.");
-      setIsLoadingAi(false);
-    });
+    }
   };
 
   const handleRegenerateSummary = () => {
@@ -104,6 +117,8 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
 
     setAiSummary(null);
     setIsLoadingAi(true);
+    setIsNewSummary(true); // Newly generated summary is marked as new
+
     generateStudySummary(selectedTopic.subjectName, selectedTopic.topicName, contest.banca, contest.role, contest.name).then(async (summary) => {
       setAiSummary(summary);
       setIsLoadingAi(false);
@@ -456,74 +471,135 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
       
       {/* AI Summary Modal */}
       <AnimatePresence>
-        {selectedTopic && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
-            <motion.div 
-              initial={{ scale: 0.98, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.98, opacity: 0, y: 10 }}
-              className="w-full max-w-2xl bg-white border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-            >
-              <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-[#FFFFFF] ">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl text-primary">
-                    <BrainCircuit className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-xl text-text-main font-bold tracking-tight">Resumo do Tópico</h3>
-                    <p className="text-xs font-bold text-text-sub uppercase tracking-wider whitespace-normal break-words">{selectedTopic.topicName}</p>
-                  </div>
-                </div>
-                <button onClick={() => setSelectedTopic(null)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-text-sub hover:text-text-main">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        {selectedTopic && (() => {
+          const targetSubject = contest.subjects.find(s => s.id === selectedTopic.subId);
+          const targetTopic = targetSubject?.topics?.find(t => t.id === selectedTopic.topicId);
+          
+          const summariesList: Array<{ id: string; aiSummary: string; savedAt: string }> = [];
+          if (targetTopic) {
+            if (targetTopic.savedSummaries && targetTopic.savedSummaries.length > 0) {
+              summariesList.push(...targetTopic.savedSummaries);
+            } else if (targetTopic.aiSummary) {
+              summariesList.push({
+                id: 'legacy-' + targetTopic.id,
+                aiSummary: targetTopic.aiSummary,
+                savedAt: targetTopic.aiSummarySavedAt || new Date().toISOString()
+              });
+            }
+          }
 
-              <div className="p-8 md:p-10 max-h-[60vh] overflow-y-auto">
-                {isLoadingAi ? (
-                  <div className="flex flex-col items-center justify-center py-20 space-y-6">
-                    <div className="w-12 h-12 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-                    <p className="text-text-sub text-xs font-bold uppercase tracking-wider animate-pulse">Gerando síntese estratégica...</p>
+          return (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md">
+              <motion.div 
+                initial={{ scale: 0.98, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.98, opacity: 0, y: 10 }}
+                className="w-full max-w-2xl bg-white border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+              >
+                <div className="p-6 md:p-8 border-b border-border flex justify-between items-center bg-[#FFFFFF] ">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl text-primary">
+                      <BrainCircuit className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-xl text-text-main font-bold tracking-tight">Resumo do Tópico</h3>
+                      <p className="text-xs font-bold text-text-sub uppercase tracking-wider whitespace-normal break-words">{selectedTopic.topicName}</p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="markdown-body prose max-w-none text-text-sub text-sm leading-relaxed border-l-2 border-primary/20 pl-6">
-                    <Markdown>{aiSummary || "Nenhum resumo gerado."}</Markdown>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 border-t border-border flex justify-between items-center bg-[#FFFFFF] ">
-                <div>
-                  {!isLoadingAi && (
-                    <button
-                      onClick={handleRegenerateSummary}
-                      className="px-4 py-2 border border-border hover:border-primary hover:text-primary rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
-                      title="Forçar a IA a refazer o resumo estratégico"
-                    >
-                      Regerar com IA
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => setSelectedTopic(null)}
-                    className="px-5 py-3 border border-border text-text-sub hover:bg-slate-50 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
-                  >
-                    Fechar
+                  <button onClick={() => setSelectedTopic(null)} className="p-2 hover:bg-slate-200 rounded-lg transition-all text-text-sub hover:text-text-main">
+                    <X className="w-5 h-5" />
                   </button>
-                  {!isLoadingAi && aiSummary && aiSummary !== "Erro ao gerar resumo." && (
-                    <button 
-                      onClick={handleConfirmLeitura}
-                      className="px-8 py-3 bg-primary text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
-                    >
-                      Confirmar Leitura & Salvar
-                    </button>
+                </div>
+
+                <div className="p-8 md:p-10 max-h-[60vh] overflow-y-auto">
+                  {/* Tabs/List of existing summaries */}
+                  {!isLoadingAi && summariesList.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6 border-b border-border pb-4 overflow-x-auto">
+                      {summariesList.map((sum, idx) => (
+                        <button
+                          key={sum.id}
+                          onClick={() => {
+                            setAiSummary(sum.aiSummary);
+                            setActiveSummaryIndex(idx);
+                            setIsNewSummary(false);
+                          }}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0",
+                            (!isNewSummary && activeSummaryIndex === idx)
+                              ? "bg-indigo-50 border-indigo-200 text-indigo-600"
+                              : "bg-slate-50 border-border text-text-sub hover:bg-slate-100"
+                          )}
+                        >
+                          Resumo #{idx + 1} ({new Date(sum.savedAt).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'})})
+                        </button>
+                      ))}
+                      <button
+                        onClick={handleRegenerateSummary}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0 flex items-center gap-1",
+                          isNewSummary
+                            ? "bg-primary/10 border-primary/20 text-primary animate-pulse"
+                            : "bg-white border-dashed border-primary/40 text-primary hover:bg-primary/5"
+                        )}
+                      >
+                        <span>+ Novo Resumo</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {isLoadingAi ? (
+                    <div className="flex flex-col items-center justify-center py-20 space-y-6">
+                      <div className="w-12 h-12 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+                      <p className="text-text-sub text-xs font-bold uppercase tracking-wider animate-pulse">Gerando síntese estratégica...</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {isNewSummary && (
+                        <div className="mb-4 bg-amber-50 border border-amber-200/50 rounded-xl p-3 text-amber-800 text-xs flex items-center gap-2 animate-pulse">
+                          <span className="flex h-2 w-2 rounded-full bg-amber-500" />
+                          <span>Este é um resumo novo e ainda não está salvo no seu edital.</span>
+                        </div>
+                      )}
+                      <div className="markdown-body prose max-w-none text-text-sub text-sm leading-relaxed border-l-2 border-primary/20 pl-6">
+                        <Markdown>{aiSummary || "Nenhum resumo gerado."}</Markdown>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+
+                <div className="p-6 border-t border-border flex justify-between items-center bg-[#FFFFFF] ">
+                  <div>
+                    {!isLoadingAi && !isNewSummary && (
+                      <button
+                        onClick={handleRegenerateSummary}
+                        className="px-4 py-2 border border-border hover:border-primary hover:text-primary rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
+                        title="Gerar uma nova variação do resumo"
+                      >
+                        Gerar Outra Opção com IA
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => setSelectedTopic(null)}
+                      className="px-5 py-3 border border-border text-text-sub hover:bg-slate-50 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                    >
+                      {isNewSummary ? "Cancelar" : "Fechar"}
+                    </button>
+                    {!isLoadingAi && isNewSummary && aiSummary && aiSummary !== "Erro ao gerar resumo." && (
+                      <button 
+                        onClick={handleConfirmLeitura}
+                        className="px-8 py-3 bg-primary text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all shadow-md flex items-center gap-2"
+                      >
+                        <span>Salvar Como Novo Card</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Error Notebook Modal */}

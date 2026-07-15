@@ -304,10 +304,42 @@ export default function App() {
         setCurrentContest(contests[0]);
       }
     } else {
-      // If we HAVE a currentContest, just make sure it stays in sync with its DB counterpart
+      // If we HAVE a currentContest, just make sure its metadata stays in sync with its DB counterpart, WITHOUT wiping out loaded details
       const inSync = contests.find(c => c.id === currentContest.id);
-      if (inSync && JSON.stringify(inSync) !== JSON.stringify(currentContest)) {
-        setCurrentContest(inSync);
+      if (inSync) {
+        // Compare metadata properties to decide if we need to update
+        const hasMetadataChanged = 
+          inSync.name !== currentContest.name ||
+          inSync.role !== currentContest.role ||
+          inSync.examDate !== currentContest.examDate ||
+          inSync.banca !== currentContest.banca ||
+          inSync.completedTopicsCount !== currentContest.completedTopicsCount ||
+          inSync.totalTopicsCount !== currentContest.totalTopicsCount ||
+          inSync.subjectsCount !== currentContest.subjectsCount ||
+          inSync.dailyGoalHours !== currentContest.dailyGoalHours ||
+          inSync.dailyGoalQuestions !== currentContest.dailyGoalQuestions ||
+          inSync.dailyContentVolume !== currentContest.dailyContentVolume ||
+          inSync.paretoAnalyzed !== currentContest.paretoAnalyzed;
+
+        if (hasMetadataChanged) {
+          setCurrentContest(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              name: inSync.name,
+              role: inSync.role,
+              examDate: inSync.examDate,
+              banca: inSync.banca,
+              completedTopicsCount: inSync.completedTopicsCount,
+              totalTopicsCount: inSync.totalTopicsCount,
+              subjectsCount: inSync.subjectsCount,
+              dailyGoalHours: inSync.dailyGoalHours,
+              dailyGoalQuestions: inSync.dailyGoalQuestions,
+              dailyContentVolume: inSync.dailyContentVolume,
+              paretoAnalyzed: inSync.paretoAnalyzed,
+            };
+          });
+        }
       }
     }
   }, [profile, contests, authLoading]); // Added contests to ensure sync works on data changes
@@ -367,20 +399,37 @@ export default function App() {
     };
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dbContests = snapshot.docs.map(doc => {
+      const incomingMetadata = snapshot.docs.map(doc => {
         const data = doc.data();
-        
         return {
           ...data,
           id: doc.id,
-          subjects: sanitizeSubjects(data.subjects),
-          schedule: (data.schedule || []).map((d: any) => ({
-            ...d,
-            completed: !!d.completed
-          }))
-        } as Contest;
+        };
       });
-      setContests(dbContests);
+
+      setContests(prev => {
+        return incomingMetadata.map(incoming => {
+          const existing = prev.find(c => c.id === incoming.id);
+          
+          // Preserve loaded details if they already exist in React state
+          const subjects = (existing && existing.subjects && existing.subjects.length > 0)
+            ? existing.subjects
+            : sanitizeSubjects((incoming as any).subjects);
+          
+          const schedule = (existing && existing.schedule && existing.schedule.length > 0)
+            ? existing.schedule
+            : ((incoming as any).schedule || []).map((d: any) => ({ ...d, completed: !!d.completed }));
+
+          return {
+            ...incoming,
+            subjects,
+            schedule,
+            paretoData: existing?.paretoData || (incoming as any).paretoData || null,
+            meppReviews: existing?.meppReviews || (incoming as any).meppReviews || [],
+            dailyHistory: existing?.dailyHistory || (incoming as any).dailyHistory || [],
+          } as Contest;
+        });
+      });
       setDataLoading(false);
     }, (error) => {
       console.error("Firestore Error in contests snapshot:", error);
@@ -440,8 +489,17 @@ export default function App() {
           
           if (subjectsDiff || scheduleDiff) {
             setCurrentContest(mergedContest);
-            setContests(prev => prev.map(c => c.id === currentContest.id ? mergedContest : c));
           }
+
+          // Always synchronize loaded details into the contests state list
+          setContests(prev => prev.map(c => c.id === currentContest.id ? {
+            ...c,
+            subjects: mergedContest.subjects,
+            schedule: mergedContest.schedule,
+            paretoData: mergedContest.paretoData,
+            meppReviews: mergedContest.meppReviews,
+            dailyHistory: mergedContest.dailyHistory,
+          } : c));
         }
       } catch (err) {
         console.error("Erro ao carregar detalhes do edital:", err);
