@@ -35,6 +35,10 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
   const [hasMoreMindMaps, setHasMoreMindMaps] = useState(true);
   const [pageLoading, setPageLoading] = useState(false);
 
+  const [hasFetchedAllContests, setHasFetchedAllContests] = useState(false);
+  const [hasFetchedAllDecks, setHasFetchedAllDecks] = useState(false);
+  const [hasFetchedAllMindMaps, setHasFetchedAllMindMaps] = useState(false);
+
   const PAGE_SIZE = 6;
 
   useEffect(() => {
@@ -231,6 +235,86 @@ export default function Comunidade({ onImport, contests }: { onImport: (contest:
       }
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (searchTerm.trim() === '') return;
+
+    const delayDebounceFn = setTimeout(async () => {
+      if (activeTab === 'contests' && !hasFetchedAllContests) {
+        setPageLoading(true);
+        try {
+          const q = query(
+            collection(db, 'shared_contests'),
+            orderBy('updatedAt', 'desc'),
+            limit(200)
+          );
+          const snapshot = await getDocs(q);
+          const docs = snapshot.docs.map(doc => ({
+            ...(doc.data() as any),
+            id: doc.id
+          })) as Contest[];
+          
+          setSharedContests(docs);
+          setLastVisibleContest(snapshot.docs[snapshot.docs.length - 1] || null);
+          setHasMoreContests(snapshot.docs.length === 200);
+          setHasFetchedAllContests(true);
+        } catch (err) {
+          console.error("Erro ao carregar banco para busca:", err);
+        } finally {
+          setPageLoading(false);
+        }
+      } else if (activeTab === 'flashcards' && !hasFetchedAllDecks) {
+        setPageLoading(true);
+        try {
+          const q = query(
+            collection(db, 'shared_decks'),
+            orderBy('createdAt', 'desc'),
+            limit(200)
+          );
+          const snapshot = await getDocs(q);
+          const docs = snapshot.docs.map(doc => ({
+            ...(doc.data() as any),
+            id: doc.id
+          }));
+          
+          setSharedDecks(docs);
+          setLastVisibleDeck(snapshot.docs[snapshot.docs.length - 1] || null);
+          setHasMoreDecks(snapshot.docs.length === 200);
+          setHasFetchedAllDecks(true);
+        } catch (err) {
+          console.error("Erro ao carregar banco de decks para busca:", err);
+        } finally {
+          setPageLoading(false);
+        }
+      } else if (activeTab === 'mindmaps' && !hasFetchedAllMindMaps) {
+        setPageLoading(true);
+        try {
+          const q = query(
+            collection(db, 'mindmaps'),
+            where('isPublic', '==', true),
+            orderBy('createdAt', 'desc'),
+            limit(200)
+          );
+          const snapshot = await getDocs(q);
+          const docs = snapshot.docs.map(doc => ({
+            ...(doc.data() as any),
+            id: doc.id
+          }));
+          
+          setSharedMindMaps(docs);
+          setLastVisibleMindMap(snapshot.docs[snapshot.docs.length - 1] || null);
+          setHasMoreMindMaps(snapshot.docs.length === 200);
+          setHasFetchedAllMindMaps(true);
+        } catch (err) {
+          console.error("Erro ao carregar banco de mapas para busca:", err);
+        } finally {
+          setPageLoading(false);
+        }
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, activeTab, hasFetchedAllContests, hasFetchedAllDecks, hasFetchedAllMindMaps]);
 
   const handleLike = async (id: string, collectionName: string, e: React.MouseEvent) => {
     e.stopPropagation();

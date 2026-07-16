@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
+import { User, onAuthStateChanged, sendPasswordResetEmail, sendEmailVerification, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, updateDoc } from 'firebase/firestore';
 import { auth, db, loginWithGoogle, logout, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, identifyUserForAnalytics } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorUtils';
@@ -8,8 +8,8 @@ import { Profile } from '../types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: () => Promise<any>;
-  loginEmail: (email: string, pass: string) => Promise<any>;
+  login: (rememberMe?: boolean) => Promise<any>;
+  loginEmail: (email: string, pass: string, rememberMe?: boolean) => Promise<any>;
   signup: (email: string, pass: string, name: string) => Promise<any>;
   resetPassword: (email: string) => Promise<any>;
   logout: () => Promise<void>;
@@ -170,7 +170,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res;
   };
 
-  const loginEmail = (email: string, pass: string) => {
+  const loginGoogle = async (rememberMe = true) => {
+    try {
+      const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+    } catch (err) {
+      console.warn("Erro ao definir persistência de login Google:", err);
+    }
+    return loginWithGoogle();
+  };
+
+  const loginEmail = async (email: string, pass: string, rememberMe = true) => {
+    try {
+      const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+    } catch (err) {
+      console.warn("Erro ao definir persistência de login Email:", err);
+    }
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
@@ -211,7 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{ 
       user, 
       loading, 
-      login: loginWithGoogle, 
+      login: loginGoogle, 
       loginEmail,
       signup,
       resetPassword,

@@ -864,8 +864,8 @@ export default function App() {
     return (
       <div className="h-[100dvh] w-screen flex flex-col items-center justify-center overflow-x-hidden bg-bg gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <div className="text-xs font-black text-text-sub uppercase tracking-wider animate-pulse">
-          {authLoading ? "Autenticando..." : "Sincronizando seus Dados..."}
+        <div className="text-[11px] font-black text-text-sub uppercase tracking-wider animate-pulse">
+          Sincronizando Plataforma Estratégica...
         </div>
       </div>
     );

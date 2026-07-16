@@ -24,6 +24,7 @@ export default function Auth() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function Auth() {
 
     try {
       if (authMode === 'login') {
-        await loginEmail(email, password);
+        await loginEmail(email, password, rememberMe);
         navigate('/');
       } else if (authMode === 'signup') {
         if (!agreeTerms || !agreePrivacy) {
@@ -109,7 +110,7 @@ export default function Auth() {
     setError('');
     setLoading(true);
     try {
-      await login();
+      await login(rememberMe);
       navigate('/');
     } catch (err: any) {
       console.error(err);
@@ -285,6 +286,21 @@ export default function Auth() {
                       className="w-full bg-white border border-border rounded-xl py-3 pl-12 pr-6 text-sm font-semibold text-text-main focus:ring-2 ring-primary/10 outline-none transition-all placeholder:text-text-sub/30"
                     />
                   </div>
+                </div>
+              )}
+
+              {authMode === 'login' && (
+                <div className="flex items-center gap-2.5 px-1 pt-1 pb-1">
+                  <input
+                    id="remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 text-primary bg-white border-slate-300 rounded focus:ring-primary/20 focus:ring-2 accent-primary cursor-pointer shrink-0"
+                  />
+                  <label htmlFor="remember-me" className="text-xs text-text-sub font-semibold leading-relaxed cursor-pointer select-none">
+                    Manter-me conectado neste dispositivo
+                  </label>
                 </div>
               )}
 
