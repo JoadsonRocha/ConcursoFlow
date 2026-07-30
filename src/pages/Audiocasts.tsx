@@ -33,6 +33,7 @@ import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverT
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/errorUtils';
+import ProModal from '../components/ProModal';
 
 interface Audiocast {
   id: string;
@@ -79,6 +80,8 @@ export default function Audiocasts() {
   const [volume, setVolume] = useState(0.8);
   const [completedAudios, setCompletedAudios] = useState<string[]>([]);
   const [favoriteAudios, setFavoriteAudios] = useState<string[]>([]);
+  const [showProModal, setShowProModal] = useState<boolean>(false);
+  const [proFeatureName, setProFeatureName] = useState<string>('Audiocasts & Áudio-Aulas PRO');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -322,7 +325,8 @@ export default function Audiocasts() {
     if (!audioRef.current || !currentAudiocast) return;
 
     if (currentAudiocast.isPremium && !isPro) {
-      toast.error('Este conteúdo é exclusivo para assinantes PRO!');
+      setProFeatureName(`Audiocast PRO: ${currentAudiocast.title}`);
+      setShowProModal(true);
       return;
     }
 
@@ -412,7 +416,8 @@ export default function Audiocasts() {
 
   const selectAndPlay = (cast: Audiocast) => {
     if (cast.isPremium && !isPro) {
-      toast.error('Este conteúdo é exclusivo para assinantes PRO!');
+      setProFeatureName(`Audiocast PRO: ${cast.title}`);
+      setShowProModal(true);
       return;
     }
     
@@ -1060,6 +1065,13 @@ export default function Audiocasts() {
           </div>
         </div>
       </div>
+
+      {/* Modal PRO */}
+      <ProModal 
+        isOpen={showProModal} 
+        onClose={() => setShowProModal(false)} 
+        featureName={proFeatureName} 
+      />
     </div>
   );
 }

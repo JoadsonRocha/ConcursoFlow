@@ -46,6 +46,7 @@ import Cronograma from './pages/Cronograma';
 import Comunidade from './pages/Comunidade';
 import Feedback from './pages/Feedback';
 import FeedbackModal from './components/FeedbackModal';
+import PWAInstallButton from './components/PWAInstallButton';
 import Landing from './pages/Landing';
 import TermsOfUse from './pages/TermsOfUse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -130,6 +131,43 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const mainRef = useRef<HTMLDivElement>(null);
+
+  // Debounced Auto-Save Refs & Handler (350ms-500ms Debounce para Otimização de IOPS no Firestore)
+  const pendingSaveRef = useRef<{ contestId: string; uid: string; metadata: any; content: any } | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const flushPendingSave = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    if (!pendingSaveRef.current) return;
+
+    const { contestId, uid, metadata, content } = pendingSaveRef.current;
+    pendingSaveRef.current = null;
+
+    try {
+      const docRef = doc(db, 'users', uid, 'contests', contestId);
+      const contentDocRef = doc(db, 'users', uid, 'contests', contestId, 'details', 'content');
+
+      await setDoc(docRef, metadata, { merge: true });
+      await setDoc(contentDocRef, content, { merge: true });
+    } catch (err) {
+      console.error("Erro na gravação diferida (debounced save) no Firestore:", err);
+    }
+  };
+
+  // Garante que edições pendentes são gravadas antes do unmount ou fechamento da página
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      flushPendingSave();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      flushPendingSave();
+    };
+  }, []);
 
   const handleSidebarItemClick = () => {
     if (window.innerWidth <= 1024) {
@@ -681,15 +719,13 @@ export default function App() {
         schedule: newContest.schedule || [],
         paretoData: newContest.paretoData || null,
         meppReviews: newContest.meppReviews || [],
-        dailyHistory: newContest.dailyHistory || [],
+        // Prevenção contra limite de 1 MB do Firestore: Cobre histórico dos últimos 365 dias
+        dailyHistory: (newContest.dailyHistory || []).slice(-365),
       };
 
       const sanitizedMetadata = sanitizeFirestoreData(metadataPayload);
       const sanitizedContent = sanitizeFirestoreData(contentPayload);
 
-      await setDoc(docRef, sanitizedMetadata, { merge: true });
-      await setDoc(contentDocRef, sanitizedContent, { merge: true });
-      
       const contestToSave = {
         ...metadataPayload,
         ...contentPayload,
@@ -697,7 +733,7 @@ export default function App() {
         updatedAt: new Date().toISOString(),
       };
 
-      // Update local state immediately to ensure UI refresh
+      // 1. Atualização Instantânea no Estado Local (0ms latency para UI fluida e ágil)
       setContests(prev => {
         const index = prev.findIndex(c => c.id === contestId);
         if (index > -1) {
@@ -708,7 +744,31 @@ export default function App() {
         return [...prev, contestToSave as Contest];
       });
       setCurrentContest(contestToSave as Contest);
-      
+
+      // 2. Agrupamento e Debounce de Operações de Auto-Save no Firestore (400ms)
+      if (isEdit) {
+        pendingSaveRef.current = {
+          contestId,
+          uid: user.uid,
+          metadata: sanitizedMetadata,
+          content: sanitizedContent,
+        };
+
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(() => {
+          flushPendingSave();
+        }, 400);
+      } else {
+        // Para novas criações de edital, salva imediatamente
+        const docRef = doc(db, 'users', user.uid, 'contests', contestId);
+        const contentDocRef = doc(db, 'users', user.uid, 'contests', contestId, 'details', 'content');
+        await setDoc(docRef, sanitizedMetadata, { merge: true });
+        await setDoc(contentDocRef, sanitizedContent, { merge: true });
+      }
+
       // Update profile with last selected contest
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { 
@@ -1329,7 +1389,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Feedback Modal */}
+      {/* Floating PWA Install Button & Floating Feedback Modal */}
+      <PWAInstallButton />
       <FeedbackModal />
     </div>
   );

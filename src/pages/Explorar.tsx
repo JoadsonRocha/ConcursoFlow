@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { 
   Compass, 
   BookOpen, 
@@ -433,7 +434,7 @@ export default function Explorar() {
                     prose-blockquote:border-l-[6px] prose-blockquote:border-primary prose-blockquote:bg-slate-50 prose-blockquote:p-12 rounded-2xl prose-blockquote:text-text-main prose-blockquote:font-display prose-blockquote:text-2xl prose-blockquote:font-bold prose-blockquote:my-16 prose-blockquote:shadow-sm
                     prose-strong:text-text-main prose-strong:font-black
                     ">
-                      <Markdown remarkPlugins={[remarkGfm]}>
+                      <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                         {selectedItem.content}
                       </Markdown>
                     </div>

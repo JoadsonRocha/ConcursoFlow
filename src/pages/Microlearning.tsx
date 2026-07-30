@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Contest } from '../types';
 import { toast } from 'sonner';
@@ -1017,7 +1018,7 @@ export default function Microlearning({ contest, onUpdate }: { contest?: Contest
                       <div className="w-full h-full flex items-center justify-center p-1 opacity-80 group-hover:opacity-100 transition-opacity overflow-hidden">
                          <div 
                            className="w-[800px] h-[1131px] scale-[0.08] sm:scale-[0.1] origin-center pointer-events-none [&>svg]:w-full [&>svg]:h-full" 
-                           dangerouslySetInnerHTML={{ __html: m.svgData?.[0] || m.rawSvg }} 
+                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.svgData?.[0] || m.rawSvg || '', { USE_PROFILES: { svg: true } }) }} 
                          />
                       </div>
                     ) : (

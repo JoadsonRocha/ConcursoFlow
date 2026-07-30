@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { toast } from 'sonner';
 import * as pdfjs from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -1048,7 +1049,7 @@ export default function NotebookSources({ onBack, subjects, contestId, onOpenFla
                     }`}>
                       {m.role === 'model' ? (
                         <div className="prose prose-slate max-w-none select-text marker:text-slate-900 prose-p:leading-relaxed prose-headings:font-bold prose-headings:tracking-tight prose-a:text-slate-900 prose-strong:text-slate-900">
-                          <Markdown>{m.content}</Markdown>
+                          <Markdown rehypePlugins={[rehypeSanitize]}>{m.content}</Markdown>
                         </div>
                       ) : (
                         <div className="whitespace-pre-wrap">

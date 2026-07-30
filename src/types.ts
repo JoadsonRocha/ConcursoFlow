@@ -15,6 +15,8 @@ export interface Topic {
     id: string;
     aiSummary: string;
     savedAt: string;
+    revisionCount?: number;
+    lastReviewedAt?: string;
   }>;
 }
 

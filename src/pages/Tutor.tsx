@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { chatWithTutor } from '../services/gemini';
 import { useContestStats } from '../hooks/useContestStats';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface TutorProps {
   contest?: Contest | null;
@@ -318,7 +319,7 @@ export default function Tutor({ contest }: TutorProps) {
                       <p className="whitespace-pre-wrap !text-white leading-relaxed">{msg.content}</p>
                     ) : (
                       <div className="markdown-body prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-p:mb-3 prose-p:last-of-type:mb-0 prose-ul:list-disc prose-li:my-1 prose-strong:text-amber-600 prose-strong:font-bold">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{msg.content}</ReactMarkdown>
                       </div>
                     )}
                   </div>

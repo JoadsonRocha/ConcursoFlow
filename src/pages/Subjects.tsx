@@ -4,6 +4,7 @@ import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import ProModal from '../components/ProModal';
 import Markdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { 
   CheckCircle2, 
   Circle, 
@@ -561,7 +562,7 @@ export default function Subjects({ contest, contests, onUpdate }: { contest: Con
                         </div>
                       )}
                       <div className="markdown-body prose max-w-none text-text-sub text-sm leading-relaxed border-l-2 border-primary/20 pl-6">
-                        <Markdown>{aiSummary || "Nenhum resumo gerado."}</Markdown>
+                        <Markdown rehypePlugins={[rehypeSanitize]}>{aiSummary || "Nenhum resumo gerado."}</Markdown>
                       </div>
                     </div>
                   )}

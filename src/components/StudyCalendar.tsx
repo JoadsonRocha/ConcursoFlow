@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Calendar, Flame, Info, Sparkles } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect } from 'react';
+import { Calendar, Flame, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface StudyCalendarProps {
@@ -8,6 +8,7 @@ interface StudyCalendarProps {
 }
 
 export default function StudyCalendar({ dailyHistory = [], streak }: StudyCalendarProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredDay, setHoveredDay] = useState<{
     date: string;
     hours: number;
@@ -15,6 +16,27 @@ export default function StudyCalendar({ dailyHistory = [], streak }: StudyCalend
     formattedDate: string;
     label: string;
   } | null>(null);
+
+  // Auto-scroll to the end (most recent days/weeks) so green study blocks are always visible on mount
+  const scrollToRecent = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
+    }
+  };
+
+  useLayoutEffect(() => {
+    scrollToRecent();
+  }, []);
+
+  useEffect(() => {
+    scrollToRecent();
+    const t1 = setTimeout(scrollToRecent, 100);
+    const t2 = setTimeout(scrollToRecent, 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [dailyHistory]);
 
   // Parse and build the weeks calendar grid representing the last 365 days
   const weeks = useMemo(() => {
@@ -185,7 +207,10 @@ export default function StudyCalendar({ dailyHistory = [], streak }: StudyCalend
 
       {/* Main Roadmap Grid container */}
       <div className="relative">
-        <div className="overflow-x-auto pb-4 scrollbar-thin flex flex-col min-w-full">
+        <div 
+          ref={scrollContainerRef}
+          className="overflow-x-auto pb-4 scrollbar-thin flex flex-col min-w-full"
+        >
           {/* Month Labels row */}
           <div className="h-5 flex relative mb-1 text-[9px] font-bold text-slate-400 uppercase select-none min-w-[760px]">
             {/* Empty space for day labels */}

@@ -4,6 +4,7 @@ import { generateSVGMap } from '../services/gemini';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import ProModal from './ProModal';
+import DOMPurify from 'dompurify';
 
 export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onClose: () => void, saveMap: (svgData: string[], title: string) => void, currentCount: number }) {
   const { profile, updateProfile, isPro, planType } = useAuth();
@@ -120,7 +121,7 @@ export default function SVGMapCreator({ onClose, saveMap, currentCount }: { onCl
           <div className="m-auto w-full flex flex-wrap justify-center gap-4 sm:gap-6">
             {svgs.map((svg, index) => (
               <div key={index} className="w-[45%] sm:w-48 aspect-[1/1.414] bg-white shadow-sm sm:shadow-md rounded-none overflow-hidden flex items-center justify-center shrink-0">
-                <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: svg }} />
+                <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } }) }} />
               </div>
             ))}
             {svgs.length < 5 && (
